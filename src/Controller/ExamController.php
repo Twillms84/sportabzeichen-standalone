@@ -308,7 +308,7 @@ final class ExamController extends AbstractController
         $groupResults = $conn->fetchAllAssociative($sqlGroups, [$id]); 
 
         $assignedGroups = $groupResults;
-        
+
         // Jetzt holen wir die IDs aus dem Datenbank-Ergebnis
         $assignedActs = array_column($groupResults, 'act');
 
@@ -383,7 +383,7 @@ final class ExamController extends AbstractController
             ];
         }
 
-        return $this->render('app_exams/edit.html.twig', [
+        return $this->render('exams/edit.html.twig', [
             'exam' => $exam,
             'assigned_groups' => $assignedGroups,
             'available_groups' => $availableGroups,
