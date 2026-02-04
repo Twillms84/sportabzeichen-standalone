@@ -34,9 +34,10 @@ final class AnforderungUploadController extends AbstractController
         // --------------------------------------------------------
         // Logging
         // --------------------------------------------------------
-        $logDir = '/var/lib/iserv/sportabzeichen/logs';
+       $logDir = $this->getParameter('kernel.project_dir') . '/var/log/import';
+
         if (!is_dir($logDir)) {
-            mkdir($logDir, 0775, true);
+            mkdir($logDir, 0777, true);
         }
         $logFile = $logDir . '/requirements_import.log';
 
