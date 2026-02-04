@@ -98,7 +98,7 @@ final class ExamController extends AbstractController
     #[Route('/new', name: 'new')]
     public function new(Request $request, EntityManagerInterface $em, Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         // Gruppen laden (Für Dropdown)
         $groupRepo = $em->getRepository(Group::class);
@@ -560,7 +560,7 @@ final class ExamController extends AbstractController
     #[Route('/{id}/add_participant', name: 'add_participant', methods: ['GET', 'POST'])]
     public function addParticipant(int $id, Request $request, Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
 
         $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = :id", ['id' => $id]);
         if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
