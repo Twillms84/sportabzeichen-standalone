@@ -18,6 +18,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     private ?string $username = null;
 
+    #[ORM\Column(length: 50)]
+    private ?string $origin = 'MANUAL'; // Default: Manuell
+
+    #[ORM\Column(length: 255, nullable: true, unique: true)]
+    private ?string $externalId = null; // Eduplaces-UUID oder CSV-ID
+    
     #[ORM\Column]
     private array $roles = [];
 
