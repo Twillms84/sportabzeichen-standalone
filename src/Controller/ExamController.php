@@ -296,7 +296,7 @@ final class ExamController extends AbstractController
         // --- GET DATEN LADEN ---
 
         // A) Zugeordnete Gruppen
-        $assignedGroups = "
+        $sqlGroups = "
             SELECT seg.group_id as act, g.name 
             FROM sportabzeichen_exam_groups seg 
             LEFT JOIN app_groups g ON seg.group_id = g.id
@@ -304,14 +304,23 @@ final class ExamController extends AbstractController
             ORDER BY g.name ASC
         ";
         
-        $assignedActs = array_column($assignedGroups, 'act');
+        // WICHTIG: Hier führen wir den SQL-Befehl erst aus!
+        $groupResults = $conn->fetchAllAssociative($sqlGroups, [$id]); 
+
+        // Jetzt holen wir die IDs aus dem Datenbank-Ergebnis
+        $assignedActs = array_column($groupResults, 'act');
 
         // B) Verfügbare Gruppen
         $allGroupsObj = $em->getRepository(Group::class)->findBy([], ['name' => 'ASC']);
         $availableGroups = [];
+        
         foreach ($allGroupsObj as $g) {
-            if ($g->getAccount() && !in_array($g->getAccount(), $assignedActs)) {
-                $availableGroups[$g->getAccount()] = $g->getName();
+            // ACHTUNG: Wir vergleichen hier IDs. 
+            // Falls $assignedActs IDs enthält (was es tut), müssen wir $g->getId() prüfen!
+            if (!in_array($g->getId(), $assignedActs)) {
+                // Hier kannst du entscheiden, ob du die ID oder den Account als Key willst
+                // Ich nehme mal getId(), das ist sicherer für neue Einträge
+                $availableGroups[$g->getId()] = $g->getName();
             }
         }
 
