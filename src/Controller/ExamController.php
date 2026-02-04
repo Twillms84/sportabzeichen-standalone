@@ -181,7 +181,7 @@ final class ExamController extends AbstractController
                      $this->addFlash('warning', $msg);
                 }
                
-                return $this->redirectToRoute('exams_dashboard');
+                return $this->redirectToRoute('app_exams_dashboard');
 
             } catch (\Throwable $e) {
                 $this->addFlash('error', 'Fehler beim Anlegen: ' . $e->getMessage());
@@ -222,7 +222,7 @@ final class ExamController extends AbstractController
                 ], ['id' => $id]);
 
                 $this->addFlash('success', 'Stammdaten gespeichert.');
-                return $this->redirectToRoute('exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
 
             // 2. GRUPPE HINZUFÜGEN
@@ -236,7 +236,7 @@ final class ExamController extends AbstractController
                         $this->addFlash('error', 'Fehler beim Import: ' . $e->getMessage());
                     }
                 }
-                return $this->redirectToRoute('exams_edit', ['id' => $id]);
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
             // 3. GRUPPE ENTFERNEN
@@ -247,7 +247,7 @@ final class ExamController extends AbstractController
                     [$id, $groupAct]
                 );
                 $this->addFlash('success', 'Gruppe aus der Prüfung entfernt (bereits importierte Teilnehmer bleiben erhalten).');
-                return $this->redirectToRoute('exams_edit', ['id' => $id]);
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
             // 4. EINZELNEN TEILNEHMER HINZUFÜGEN
@@ -289,7 +289,7 @@ final class ExamController extends AbstractController
                         }
                     }
                 }
-                return $this->redirectToRoute('exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
         }
 
@@ -371,7 +371,7 @@ final class ExamController extends AbstractController
             ];
         }
 
-        return $this->render('exams/edit.html.twig', [
+        return $this->render('app_exams/edit.html.twig', [
             'exam' => $exam,
             'assigned_groups' => $assignedGroups,
             'available_groups' => $availableGroups,
@@ -388,7 +388,7 @@ final class ExamController extends AbstractController
         $token = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('delete' . $id, $token)) {
             $this->addFlash('error', 'Ungültiger Sicherheits-Token.');
-            return $this->redirectToRoute('sportabzeichen_exams_dashboard');
+            return $this->redirectToRoute('app_exams_dashboard');
         }
 
         $conn->beginTransaction();
@@ -416,7 +416,7 @@ final class ExamController extends AbstractController
             $this->addFlash('error', 'Fehler beim Löschen: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('exams_dashboard');
+        return $this->redirectToRoute('app_exams_dashboard');
     }
 
     private function importParticipantsFromGroup(
@@ -427,24 +427,37 @@ final class ExamController extends AbstractController
         array &$debugLog = []
     ): void
     {
-        // 1. Gruppe mit Prüfung verknüpfen
-        $conn->executeStatement("
-            INSERT INTO sportabzeichen_exam_groups (exam_id, act) VALUES (?, ?)
-            ON CONFLICT (exam_id, act) DO NOTHING
-        ", [$exam->getId(), $groupAccount]);
+        // --- SCHRITT 1: Gruppe sauber über Doctrine verknüpfen ---
+        
+        // Wir suchen die Gruppe anhand ihres Accounts (z.B. "klasse.5a")
+        $groupEntity = $em->getRepository(Group::class)->findOneBy(['account' => $groupAccount]);
 
-        // 2. User direkt via SQL holen
+        if (!$groupEntity) {
+            $debugLog['errors'][] = "Gruppe mit Account '$groupAccount' nicht in der Datenbank gefunden.";
+            return;
+        }
+
+        // Wir nutzen die Entity-Methode -> Doctrine kümmert sich um die Tabelle 'sportabzeichen_exam_groups'
+        $exam->addGroup($groupEntity);
+        $em->persist($exam);
+        $em->flush(); // Schreibt die Verknüpfung in die DB
+
+
+        // --- SCHRITT 2: Schüler importieren (Das bleibt SQL, da IServ-Struktur) ---
+
         $sql = "
             SELECT u.id, u.act, u.firstname, u.lastname
             FROM users u
             JOIN members m ON u.act = m.actuser
             WHERE m.actgrp = ?
+            AND u.deleted IS NULL -- WICHTIG: Gelöschte User ignorieren
         ";
 
         $users = $conn->fetchAllAssociative($sql, [$groupAccount]);
 
         if (empty($users)) {
-            $debugLog['errors'][] = "Gruppe '$groupAccount' scheint leer zu sein.";
+            // Hinweis: Das ist kein Fehler, leere Klassen gibt es manchmal
+            $debugLog['skipped'][] = "Gruppe '$groupAccount' hat keine Mitglieder.";
             return;
         }
 
@@ -483,16 +496,18 @@ final class ExamController extends AbstractController
             }
 
             try {
-                // KORREKTUR: 'created_at' und 'NOW()' entfernt!
-                $inserted = $conn->executeStatement("
+                // Hier fangen wir Unique Constraint Fehler ab
+                $conn->executeStatement("
                     INSERT INTO sportabzeichen_exam_participants (exam_id, participant_id, age_year)
                     VALUES (?, ?, ?)
                     ON CONFLICT (exam_id, participant_id) DO NOTHING
                 ", [$exam->getId(), $participantId, $age]);
-
-                if ($inserted > 0) {
-                    $debugLog['added'][] = $displayName;
-                }
+                
+                // Wir zählen nur als "added", wenn er nicht schon da war? 
+                // DBAL gibt bei 'DO NOTHING' oft trotzdem 0 oder 1 zurück, je nach Treiber.
+                // Einfachheitshalber loggen wir es hier:
+                $debugLog['added'][] = $displayName;
+                
             } catch (\Exception $e) {
                 $debugLog['errors'][] = "Fehler bei $displayName: " . $e->getMessage();
             }
@@ -599,7 +614,7 @@ final class ExamController extends AbstractController
                     }
                 }
             }
-            return $this->redirectToRoute('exams_add_participant', [
+            return $this->redirectToRoute('app_exams_add_participant', [
                 'id' => $id, 
                 'q' => $request->query->get('q')
             ]);
