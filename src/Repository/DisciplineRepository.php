@@ -17,4 +17,14 @@ class DisciplineRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Discipline::class);
     }
+
+    public function findOneByName(string $name): ?Discipline
+    {
+        return $this->createQueryBuilder('d')
+            ->where('LOWER(d.name) = :name')
+            ->setParameter('name', mb_strtolower(trim($name)))
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
