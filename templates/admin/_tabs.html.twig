@@ -1,33 +1,19 @@
-{# templates/admin/_tabs.html.twig #}
-
+{# Definition der Tabs #}
 {% set tabs = [
-    { id: 'dashboard', route: 'sportabzeichen_admin_dashboard', icon: 'home', label: 'Übersicht' },
-    { id: 'participants_manage', route: 'sportabzeichen_admin_participants_index', icon: 'users', label: 'Teilnehmer' },
-    { id: 'import', route: 'sportabzeichen_admin_upload_participants', icon: 'upload', label: 'Import' },
-    { id: 'requirements', route: 'sportabzeichen_admin_upload', icon: 'list-alt', label: 'Anforderungen' }
+    { id: 'dashboard', route: 'sportabzeichen_admin_dashboard', icon: 'fa-home', label: 'Übersicht' },
+    { id: 'participants_manage', route: 'sportabzeichen_admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
+    { id: 'import', route: 'sportabzeichen_admin_upload_participants', icon: 'fa-file-upload', label: 'Import Teilnehmer' },
+    { id: 'requirements_upload', route: 'sportabzeichen_admin_upload', icon: 'fa-list-alt', label: 'Anforderungen' }
 ] %}
 
-{# 2. Desktop-Ansicht: Klassische Tabs (Versteckt auf Handy 'hidden-xs') #}
-<div class="hidden-xs" style="margin-bottom: 20px;">
+<div class="mb-4">
     <ul class="nav nav-tabs">
         {% for tab in tabs %}
-            <li class="{{ activeTab == tab.id ? 'active' : '' }}">
-                <a href="{{ path(tab.route) }}">
-                    {{ icon(tab.icon) }} {{ _(tab.label) }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
-</div>
-
-{# 3. Handy-Ansicht: Gestapelte "Pills" (Nur sichtbar auf Handy 'visible-xs') #}
-<div class="visible-xs" style="margin-bottom: 20px;">
-    {# 'nav-pills' sieht aus wie Buttons, 'nav-stacked' stapelt sie untereinander #}
-    <ul class="nav nav-pills nav-stacked">
-        {% for tab in tabs %}
-            <li class="{{ activeTab == tab.id ? 'active' : '' }}">
-                <a href="{{ path(tab.route) }}">
-                    {{ icon(tab.icon) }} {{ _(tab.label) }}
+            <li class="nav-item">
+                <a class="nav-link {{ activeTab == tab.id ? 'active' : '' }}" 
+                   href="{{ path(tab.route) }}">
+                   {# Wir nutzen hier direkt das FontAwesome Tag #}
+                   <i class="fas {{ tab.icon }}"></i> {{ tab.label }}
                 </a>
             </li>
         {% endfor %}

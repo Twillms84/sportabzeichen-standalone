@@ -1,25 +1,29 @@
 {% extends 'base.html.twig' %}
 
-{% block page_title %}
-    {{ 'Sportabzeichen – Verwaltung'|trans }}
-{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
-{# WICHTIG: page_content statt content nutzen! #}
-{% block page_content %}
-    
-    <div class="content"> {# Dieser Wrapper hilft oft für das Padding #}
-        
-        {# 1. Navigation #}
-        {% include 'admin/_tabs.html.twig' with {'activeTab': 'dashboard'} %}
+{% block body %}
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800">Verwaltung</h1>
 
-        {# 2. Inhalt #}
-        <div class="panel panel-default">
-            <div class="panel-body">
-                <h3>Herzlich Willkommen in der Verwaltung</h3>
-                <p>Wählen Sie oben einen Reiter aus, um Teilnehmer oder Anforderungen zu verwalten.</p>
+        {# Tabs einbinden #}
+        {% include 'admin/_tabs.html.twig' with {'activeTab': activeTab} %}
+
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <h4>Willkommen im Administrationsbereich</h4>
+                <p>Hier können Teilnehmer importiert, Gruppen verwaltet und die Anforderungen für das Sportabzeichen aktualisiert werden.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-database"></i> Anforderungen</h5>
+                            <p>Importiere die aktuelle Tabelle des DOSB.</p>
+                            <a href="{{ path('sportabzeichen_admin_upload') }}" class="btn btn-sm btn-primary">Zum Upload</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
     </div>
-
 {% endblock %}
