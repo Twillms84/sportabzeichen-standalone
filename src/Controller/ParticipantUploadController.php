@@ -66,22 +66,29 @@ final class ParticipantUploadController extends AbstractController
                     }
 
                     try {
-                        // Mindest-Spalten Check
+                        // Mapping angepasst an deine Datei:
+                        // 0: ID (1115860)
+                        // 1: ID doppelt (1115860) -> ignorieren
+                        // 2: Geschlecht (m)
+                        // 3: Datum (06.01.2008)
+                        // 4: Nachname (Penning)
+                        // 5: Vorname (Raimo)
+                        // 6: Klasse (8b) - falls vorhanden
+
                         if (count($row) < 3) {
                             $skipped++;
-                            $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten (gefunden: ".count($row).", Trennzeichen war: '$separator').";
+                            $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten.";
                             continue;
                         }
 
-                        // Mapping der Spalten
                         $identifier      = trim($row[0]); 
-                        $geschlechtRaw   = trim($row[1]);
-                        $geburtsdatumRaw = trim($row[2]);
+                        $geschlechtRaw   = trim($row[1]); // Spalte 3 (Index 2)
+                        $geburtsdatumRaw = trim($row[2]); // Spalte 4 (Index 3)
                         
-                        // Standalone Felder (optional, außer bei Standalone-Modus)
-                        $csvFirstname = isset($row[3]) ? trim($row[3]) : null;
-                        $csvLastname  = isset($row[4]) ? trim($row[4]) : null;
-                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null;
+                        // Namen & Gruppe (Achtung: Erst Nachname, dann Vorname in deiner CSV)
+                        $csvLastname  = isset($row[3]) ? trim($row[4]) : null; 
+                        $csvFirstname = isset($row[4]) ? trim($row[5]) : null;
+                        $csvGroup     = isset($row[5]) ? trim($row[6]) : null;
 
                         if ($identifier === '') continue;
 
@@ -93,19 +100,19 @@ final class ParticipantUploadController extends AbstractController
                         $groupName = $csvGroup;
                         $origin    = 'CSV_STANDALONE';
                         $externalId = $identifier;
-                        $username   = $csvFirstname . ' ' . $csvLastname; // Default Username
+                        $username   = $csvFirstname . ' ' . $csvLastname; 
 
-                        // Fall A: Standalone Modus (IServ ignorieren)
+                        // Fall A: Standalone Modus
                         if ($strategy === 'standalone') {
                             if (empty($csvFirstname) || empty($csvLastname)) {
                                 $skipped++;
-                                $detailedErrors[] = "Zeile $lineNumber ($identifier): Standalone-Modus gewählt, aber Vorname/Nachname fehlen (Spalte 4+5).";
+                                $detailedErrors[] = "Zeile $lineNumber ($identifier): Standalone-Modus, aber Namen fehlen.";
                                 continue;
                             }
-                            // Hier ist alles gut, Daten wurden oben schon zugewiesen
                         } 
                         // Fall B: IServ Integration
                         else {
+                            // Lookup ausführen
                             $iservUser = $stmtLookup->executeQuery(['val' => $identifier])->fetchAssociative();
 
                             if ($iservUser) {
@@ -115,26 +122,21 @@ final class ParticipantUploadController extends AbstractController
                                 $lastname  = $iservUser['lastname'];
                                 $origin    = 'ISERV_IMPORT';
                                 $externalId = null; 
-                                
-                                // Gruppe nehmen wir aus CSV, falls da, sonst lassen wir es leer (oder implementieren später IServ-Gruppen-Logik)
                             } else {
-                                // Kein IServ User gefunden?
-                                // -> Wenn Namen da sind, importieren wir ihn trotzdem als "Gast" (Fallback),
-                                // -> Wenn keine Namen da sind -> Fehler.
+                                // Nicht im IServ -> Fallback auf CSV Namen
                                 if (empty($csvFirstname) || empty($csvLastname)) {
                                     $skipped++;
-                                    $detailedErrors[] = "Zeile $lineNumber ($identifier): Nicht im IServ gefunden und keine Namen in CSV angegeben.";
+                                    $detailedErrors[] = "Zeile $lineNumber ($identifier): Nicht im IServ gefunden und keine Namen in CSV.";
                                     continue;
                                 }
-                                // Fallback: Als externen User anlegen
                             }
                         }
 
                         // --- VALIDIERUNG ---
 
                         $geschlecht = match (strtolower($geschlechtRaw)) {
-                            'm', 'male', 'männlich', 'maennlich' => 'MALE',
-                            'w', 'f', 'female', 'weiblich'       => 'FEMALE',
+                            'm', 'male', 'männlich' => 'MALE',
+                            'w', 'f', 'female', 'weiblich' => 'FEMALE',
                             default => null, 
                         };
 
@@ -151,12 +153,13 @@ final class ParticipantUploadController extends AbstractController
                             continue;
                         }
 
-                        // --- DB WRITE ---
-
-                        $existingPartId = $stmtCheckExist->executeQuery([
-                            'uid'    => $userId,
-                            'ext_id' => $externalId
-                        ])->fetchOne();
+                        // --- DB WRITE (KORRIGIERT) ---
+                        
+                        // Wir prüfen direkt, ohne Prepared Statement Objekt, um den Fehler zu vermeiden
+                        $existingPartId = $conn->fetchOne(
+                            'SELECT id FROM sportabzeichen_participants WHERE user_id = :uid OR external_id = :ext_id',
+                            ['uid' => $userId, 'ext_id' => $externalId]
+                        );
 
                         $data = [
                             'user_id'      => $userId,
