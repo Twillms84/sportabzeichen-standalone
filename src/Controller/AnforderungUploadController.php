@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -167,49 +168,49 @@ final class AnforderungUploadController extends AbstractController
                             // Requirement upserten
                             // ------------------------------------------------
                             $sql = <<<SQL
-INSERT INTO sportabzeichen_requirements
-(discipline_id, jahr, age_min, age_max, geschlecht,
- auswahlnummer, bronze, silber, gold, schwimmnachweis)
-VALUES
-(:discipline_id, :jahr, :age_min, :age_max, :geschlecht,
- :auswahl, :bronze, :silber, :gold, :sn)
-ON CONFLICT (discipline_id, jahr, age_min, age_max, geschlecht)
-DO UPDATE SET
- auswahlnummer   = EXCLUDED.auswahlnummer,
- bronze          = EXCLUDED.bronze,
- silber          = EXCLUDED.silber,
- gold            = EXCLUDED.gold,
- schwimmnachweis = EXCLUDED.schwimmnachweis
-SQL;
+                            INSERT INTO sportabzeichen_requirements
+                            (discipline_id, jahr, age_min, age_max, geschlecht,
+                            auswahlnummer, bronze, silber, gold, schwimmnachweis)
+                            VALUES
+                            (:discipline_id, :jahr, :age_min, :age_max, :geschlecht,
+                            :auswahl, :bronze, :silber, :gold, :sn)
+                            ON CONFLICT (discipline_id, jahr, age_min, age_max, geschlecht)
+                            DO UPDATE SET
+                            auswahlnummer   = EXCLUDED.auswahlnummer,
+                            bronze          = EXCLUDED.bronze,
+                            silber          = EXCLUDED.silber,
+                            gold            = EXCLUDED.gold,
+                            schwimmnachweis = EXCLUDED.schwimmnachweis
+                            SQL;
 
                             $conn->executeStatement(
-                            $sql,
-                            [
-                                'discipline_id' => $disciplineId,
-                                'jahr'          => $jahr,
-                                'age_min'       => $ageMin,
-                                'age_max'       => $ageMax,
-                                'geschlecht'    => $geschlecht,
-                                'auswahl'       => $auswahlNr,
-                                'bronze'        => $bronze,
-                                'silber'        => $silber,
-                                'gold'          => $gold,
-                                'sn'            => $schwimmnachweis,
-                            ],
-                            [
-                                'discipline_id' => \PDO::PARAM_INT,
-                                'jahr'          => \PDO::PARAM_INT,
-                                'age_min'       => \PDO::PARAM_INT,
-                                'age_max'       => \PDO::PARAM_INT,
-                                'geschlecht'    => \PDO::PARAM_STR,
-                                'auswahl'       => \PDO::PARAM_INT,
-                                'bronze'        => \PDO::PARAM_STR,
-                                'silber'        => \PDO::PARAM_STR,
-                                'gold'          => \PDO::PARAM_STR,
-                                'sn'            => \PDO::PARAM_BOOL,   // 🔥 DAS IST DER ENTSCHEIDENDE TEIL
-                            ]
-                        );
-
+                                $sql,
+                                [
+                                    'discipline_id' => $disciplineId,
+                                    'jahr'          => $jahr,
+                                    'age_min'       => $ageMin,
+                                    'age_max'       => $ageMax,
+                                    'geschlecht'    => $geschlecht,
+                                    'auswahl'       => $auswahlNr,
+                                    'bronze'        => $bronze,
+                                    'silber'        => $silber,
+                                    'gold'          => $gold,
+                                    'sn'            => $schwimmnachweis,
+                                ],
+                                [
+                                    // HIER WAR DER FEHLER:
+                                    'discipline_id' => ParameterType::INTEGER, // Statt \PDO::PARAM_INT
+                                    'jahr'          => ParameterType::INTEGER,
+                                    'age_min'       => ParameterType::INTEGER,
+                                    'age_max'       => ParameterType::INTEGER,
+                                    'geschlecht'    => ParameterType::STRING,  // Statt \PDO::PARAM_STR
+                                    'auswahl'       => ParameterType::INTEGER,
+                                    'bronze'        => ParameterType::STRING,  // Floats als String binden ist sicherer für DBAL
+                                    'silber'        => ParameterType::STRING,
+                                    'gold'          => ParameterType::STRING,
+                                    'sn'            => ParameterType::BOOLEAN, // Statt \PDO::PARAM_BOOL
+                                ]
+                            );
                             $imported++;
 
                         } catch (\Throwable $e) {
