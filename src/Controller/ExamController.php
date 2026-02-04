@@ -328,7 +328,6 @@ final class ExamController extends AbstractController
         $searchTerm = trim($request->query->get('q', ''));
         $missingStudents = [];
 
-        // KORREKTUR: Verwendung der Standard-IServ-Spalten 'actuser' und 'actgrp'
         $sql = "
             SELECT DISTINCT
                 u.id, u.act, u.firstname, u.lastname,
@@ -337,26 +336,30 @@ final class ExamController extends AbstractController
                 (sp.geburtsdatum IS NULL) as is_missing_dob
             FROM users u
             INNER JOIN members m ON u.act = m.actuser
-            INNER JOIN sportabzeichen_exam_groups seg ON m.actgrp = seg.act 
-            LEFT JOIN app_groups g ON seg.act = g.act
+            
+            -- FIX: String (m.actgrp) in ID wandeln via app_groups
+            INNER JOIN app_groups g ON m.actgrp = CAST(g.id AS VARCHAR)
+            
+            -- FIX: Korrekter Spaltenname group_id statt act
+            INNER JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id 
+            
             LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
             
             WHERE u.deleted IS NULL
             AND seg.exam_id = :examId
             
             AND (
-                -- FALL 1: Schüler nimmt noch gar nicht teil (Normalfall für diese Liste)
+                -- FALL 1: Schüler nimmt noch gar nicht teil
                 NOT EXISTS (
                     SELECT 1 FROM sportabzeichen_exam_participants sep
                     JOIN sportabzeichen_participants sp_inner ON sep.participant_id = sp_inner.id
                     WHERE sp_inner.user_id = u.id AND sep.exam_id = :examId
                 )
-                
                 OR
-                
-                -- FALL 2: Schüler nimmt schon teil, hat aber KEIN Geburtsdatum (damit er hier trotzdem erscheint)
+                -- FALL 2: Schüler nimmt schon teil, hat aber KEIN Geburtsdatum
                 (sp.geburtsdatum IS NULL OR sp.geschlecht IS NULL OR sp.geschlecht = '')
             )
+            ORDER BY is_missing_dob DESC, u.lastname ASC, u.firstname ASC LIMIT 300
         ";
 
         $params = ['examId' => $id];
