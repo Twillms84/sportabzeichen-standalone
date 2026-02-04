@@ -240,7 +240,7 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/upload', name: 'participants_upload')]
+    #[Route('/participants_upload', name: 'participants_upload')]
     public function importIndex(): Response
     {
         //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');

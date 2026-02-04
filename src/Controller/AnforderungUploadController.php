@@ -21,7 +21,7 @@ final class AnforderungUploadController extends AbstractController
         'SWIMMING'     => 'Schwimmen',
     ];
 
-    #[Route('/upload', name: 'upload')]
+    #[Route('/requirements_upload', name: 'upload')]
     public function upload(Request $request, Connection $conn): Response
     {
         //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
