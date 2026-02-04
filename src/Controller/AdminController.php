@@ -35,42 +35,60 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/participants', name: 'participants_index')]
-    public function participantsIndex(Request $request): Response
+    // WICHTIG: Connection $conn muss hier oben als Parameter rein!
+    public function participantsIndex(Request $request, Connection $conn): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
-        $repo = $this->em->getRepository(Participant::class);
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 50;
+        $offset = ($page - 1) * $limit;
         $searchTerm = trim((string)$request->query->get('q'));
 
-        $qb = $repo->createQueryBuilder('p')
-            ->leftJoin('p.user', 'u')
-            ->addSelect('u'); // Eager Loading des Users verhindert N+1 Probleme im Template
-
-        if ($searchTerm !== '') {
-            $qb->andWhere('LOWER(u.lastname) LIKE :q OR LOWER(u.firstname) LIKE :q OR LOWER(u.username) LIKE :q')
-               ->setParameter('q', '%' . mb_strtolower($searchTerm) . '%');
-        }
-
-        // Pagination Count
-        $countQb = clone $qb;
-        $totalCount = (int) $countQb->select('count(p.id)')->getQuery()->getSingleScalarResult();
-        $maxPages = max(1, (int) ceil($totalCount / $limit));
-
-        // Results
-        $sql = "
-        SELECT 
-            p.*, 
-            u.firstname, 
-            u.lastname, 
-            u.act AS iserv_account
-        FROM sportabzeichen_participants p
-        LEFT JOIN users u ON p.user_id = u.id
-        ORDER BY u.lastname ASC, u.firstname ASC
+        // --- SQL ZUSAMMENBAUEN ---
+        
+        // Basis-Query: Wir joinen Users, um auch dort suchen zu können
+        $sqlBody = "
+            FROM sportabzeichen_participants p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE 1=1
         ";
 
-        $participants = $conn->fetchAllAssociative($sql);
+        $params = [];
+
+        // Such-Logik (rein in SQL)
+        if ($searchTerm !== '') {
+            // Wir suchen in der User-Tabelle UND in der Participants-Tabelle (für die CSV-Importe)
+            $sqlBody .= " AND (
+                u.lastname ILIKE :q OR u.firstname ILIKE :q OR u.act ILIKE :q OR
+                p.lastname ILIKE :q OR p.firstname ILIKE :q
+            )";
+            $params['q'] = '%' . $searchTerm . '%';
+        }
+
+        // --- 1. ZÄHLEN (Pagination) ---
+        $countSql = "SELECT COUNT(p.id) " . $sqlBody;
+        $totalCount = (int) $conn->fetchOne($countSql, $params);
+        $maxPages = max(1, (int) ceil($totalCount / $limit));
+
+        // --- 2. DATEN LADEN ---
+        // COALESCE sorgt dafür, dass wir nach Nachnamen sortieren, egal ob IServ-User oder CSV-Import
+        $dataSql = "
+            SELECT 
+                p.*, 
+                u.firstname as u_firstname, 
+                u.lastname as u_lastname, 
+                u.act AS iserv_account
+            " . $sqlBody . "
+            ORDER BY COALESCE(u.lastname, p.lastname) ASC, COALESCE(u.firstname, p.firstname) ASC
+            LIMIT :limit OFFSET :offset
+        ";
+
+        // Limit und Offset hinzufügen
+        $params['limit'] = $limit;
+        $params['offset'] = $offset;
+
+        $participants = $conn->fetchAllAssociative($dataSql, $params);
 
         return $this->render('admin/participants/index.html.twig', [
             'participants' => $participants,
