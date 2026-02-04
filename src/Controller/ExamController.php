@@ -736,7 +736,7 @@ final class ExamController extends AbstractController
                 -- Subquery für Gruppen (verhindert doppelte Zeilen)
                 (
                     SELECT STRING_AGG(DISTINCT g_sub.name, ', ')
-                    FROM groups g_sub
+                    FROM app_groups g_sub
                     JOIN members m_sub ON g_sub.act = m_sub.actgrp
                     WHERE m_sub.actuser = u.act
                     AND g_sub.act IN (SELECT act FROM sportabzeichen_exam_groups WHERE exam_id = :id)
