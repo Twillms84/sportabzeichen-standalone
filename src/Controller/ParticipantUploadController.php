@@ -58,6 +58,10 @@ final class ParticipantUploadController extends AbstractController
                 ');
 
                 while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
+                    $row = array_map(function($cell) {
+                        return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
+                    }, $row);
+                    
                     $lineNumber++;
 
                     // Leere Zeilen ignorieren
