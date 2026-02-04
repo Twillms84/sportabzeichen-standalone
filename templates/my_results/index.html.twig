@@ -1,0 +1,156 @@
+{% extends '@IServCore/page.html.twig' %}
+
+{% block title %}Mein Sportabzeichen {{ year }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sportabzeichen_my_results.css', 'pulsr-sportabzeichen') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set unitMap = {
+    'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 
+    'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 
+    'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'
+} %}
+{% set time_units = ['UNIT_SECONDS', 'UNIT_MINUTES', 'UNIT_HOURS'] %}
+
+{# Icon Änderung: time statt heart (sicherer in Bootstrap 3) #}
+{% set cat_icons = {
+    'Ausdauer': 'glyphicon-time',
+    'Kraft': 'glyphicon-fire',
+    'Schnelligkeit': 'glyphicon-flash',
+    'Koordination': 'glyphicon-random'
+} %}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1">Mein Sportabzeichen {{ year }}</h1>
+            <p class="text-muted mb-0">Übersicht deiner Leistungen und Ziele</p>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'error' ? 'danger' : label }} shadow-sm">{{ message }}</div>
+        {% endfor %}
+    {% endfor %}
+
+    {% for catName, disciplines in categories %}
+        {% if disciplines is not empty %}
+        
+        {% set colorClass = cycle(['primary', 'success', 'warning', 'info'], loop.index0) %}
+        
+        <div class="card shadow-sm mb-4 sa-border-{{ colorClass }}">
+            <div class="card-header bg-white py-3 d-flex align-items-center">
+                <span class="glyphicon {{ cat_icons[catName]|default('glyphicon-list') }} text-{{ colorClass }} me-2" aria-hidden="true"></span>
+                <h5 class="m-0 font-weight-bold text-dark" style="display:inline-block; margin-left: 10px;">{{ catName }}</h5>
+            </div>
+            
+            <div class="table-responsive">
+                {# CSS Klasse sa-table-fixed sorgt für Desktop Layout & Mobile Switch #}
+                <table class="table table-hover mb-0 align-middle sa-table-fixed">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 sa-col-discipline">Disziplin</th>
+                            <th class="text-center sa-col-medal sa-text-bronze">Bronze</th>
+                            <th class="text-center sa-col-medal sa-text-silver">Silber</th>
+                            <th class="text-center sa-col-medal sa-text-gold">Gold</th>
+                            <th class="text-center sa-col-official text-dark">Ergebnis</th>
+                            <th class="ps-4 sa-col-training">Mein Training</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in disciplines %}
+                            {% set einheit_label = unitMap[row.einheit]|default(row.einheit) %}
+                            {% set is_time = row.einheit in time_units %}
+                            
+                            <tr>
+                                {# Mobile Header: Disziplin Name #}
+                                <td class="ps-4 sa-mobile-header" data-label="Disziplin">
+                                    <div class="fw-bold">{{ row.name }}</div>
+                                    <span class="badge bg-light text-muted border">{{ einheit_label }}</span>
+                                </td>
+                                
+                                {# Formatierung Variablen vorbereiten #}
+                                {% if is_time %}
+                                    {% set val_bronze = row.bronze|number_format(2, '.', '')|replace({'.': ':'}) %}
+                                    {% set val_silver = row.silber|number_format(2, '.', '')|replace({'.': ':'}) %}
+                                    {% set val_gold   = row.gold|number_format(2, '.', '')|replace({'.': ':'}) %}
+                                {% else %}
+                                    {% set val_bronze = row.bronze|number_format(2, ',', '.')|trim('0', 'right')|trim(',') %}
+                                    {% set val_silver = row.silber|number_format(2, ',', '.')|trim('0', 'right')|trim(',') %}
+                                    {% set val_gold   = row.gold|number_format(2, ',', '.')|trim('0', 'right')|trim(',') %}
+                                {% endif %}
+
+                                {# Werte mit data-label für Mobile #}
+                                <td class="text-center small font-monospace" data-label="Bronze">
+                                    <span class="visible-xs-inline sa-text-bronze me-1"></span> {{ val_bronze }}
+                                </td>
+                                <td class="text-center small font-monospace" data-label="Silber">
+                                    <span class="visible-xs-inline sa-text-silver me-1"></span> {{ val_silver }}
+                                </td>
+                                <td class="text-center small font-monospace" data-label="Gold">
+                                    <span class="visible-xs-inline sa-text-gold me-1"></span> {{ val_gold }}
+                                </td>
+
+                                {# Offizielles Ergebnis #}
+                                <td class="text-center" data-label="Ergebnis">
+                                    {% if row.official_result %}
+                                        <div class="fw-bold font-monospace" style="display:inline-block;">
+                                            {% if is_time %}
+                                                {{ row.official_result.leistung|number_format(2, '.', '')|replace({'.': ':'}) }}
+                                            {% else %}
+                                                {{ row.official_result.leistung|number_format(2, ',', '.')|trim('0', 'right')|trim(',') }}
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if row.official_result.points == 3 %}
+                                            <span class="label label-gold" title="Gold">Gold</span>
+                                        {% elseif row.official_result.points == 2 %}
+                                            <span class="label label-silver" title="Silber">Silber</span>
+                                        {% elseif row.official_result.points == 1 %}
+                                            <span class="label label-bronze" title="Bronze">Bronze</span>
+                                        {% else %}
+                                            <span class="label label-danger">0 Pkt</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+
+                                {# Training Button #}
+                                <td class="ps-4 sa-mobile-action">
+                                    <a href="{{ path('pulsr_sportabzeichen_training_detail', { disciplineId: row.discipline_id }) }}" 
+                                       class="btn btn-outline-primary btn-sm w-100 d-flex justify-content-between align-items-center sa-btn-hover">
+                                        <span>
+                                            {% if row.training_value is not empty %}
+                                                {% if row.training_value matches '/^\\d+(\\.\\d+)?$/' %}
+                                                    {% if is_time %}
+                                                        <span class="fw-bold">{{ row.training_value|replace({'.': ':'}) }}</span>
+                                                    {% else %}
+                                                        <span class="fw-bold">{{ row.training_value|number_format(2, ',', '.')|trim('0', 'right')|trim(',') }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                     <span class="fw-bold">{{ row.training_value }}</span>
+                                                {% endif %}
+                                                <small>{{ einheit_label }}</small>
+                                            {% else %}
+                                                <span class="small text-muted fst-italic">Training...</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="glyphicon glyphicon-chevron-right small text-muted" aria-hidden="true"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

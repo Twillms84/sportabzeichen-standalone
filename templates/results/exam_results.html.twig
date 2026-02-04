@@ -1,0 +1,322 @@
+{% extends '@IServCore/page.html.twig' %}
+
+{% block title %}Ergebnisse – {{ exam.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sportabzeichen_results.css', 'pulsr-sportabzeichen') }}">
+{% endblock %}
+
+{% block content %}
+{% set unitMap = {'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'} %}
+
+<div class="container-fluid mt-3">
+    
+    {# --- 1. ACTION BUTTONS (Oben Rechts & Klein) --- #}
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        {# ZURÜCK #}
+        <a href="{{ path('sportabzeichen_exams_dashboard') }}" 
+           class="btn btn-primary btn-sm d-flex align-items-center shadow-sm">
+            {{ icon('arrow-left')|raw }} <span class="ms-2">{{ 'Zurück'|trans }}</span>
+        </a>
+
+        {# DRUCKEN #}
+        <a id="btn-print-groupcard" 
+            href="{{ path('sportabzeichen_results_print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+            class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
+            {{ icon('print')|raw }} <span class="ms-2">{{ 'Drucken'|trans }}</span>
+        </a>
+    </div>
+
+    {# --- 2. FILTER LEISTE (Card Design) --- #}
+    <div class="card shadow-sm mb-3 bg-light border-0">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+                
+                {# A) ANSICHT / DISZIPLINEN FILTER (Zuerst) #}
+                <div class="col-12 col-md-4">
+                    <select id="viewSelector" 
+                            class="form-control selectpicker show-tick" 
+                            multiple 
+                            data-select-all-text="Alle"
+                            data-deselect-all-text="Keine"
+                            data-none-selected-text="Ansicht / Disziplinen..."
+                            data-width="100%">
+                        
+                        <option value="SWIMMING" selected>Schwimmen</option>
+
+                        {% for category in disciplines|keys %}
+                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                                <option value="{{ category }}" selected>{{ category }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# B) KLASSEN FILTER (Danach) #}
+                <div class="col-12 col-md-4">
+                    <select id="client-class-filter" 
+                            class="form-control selectpicker show-tick" 
+                            multiple 
+                            data-live-search="true" 
+                            data-select-all-text="Alle"
+                            data-deselect-all-text="Keine"
+                            data-none-selected-text="Klasse filtern..."
+                            data-width="100%">
+                        {# Optionen werden per JS befüllt #}
+                    </select>
+                </div>
+
+                {# C) SUCHLEISTE (Zuletzt) #}
+                <div class="col-12 col-md-4">
+                    <input type="text" id="client-search-input" class="form-control" placeholder="Schüler suchen...">
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {# --- 3. TABELLE --- #}
+    <form id="autosave-form" 
+      data-discipline-route="{{ path('sportabzeichen_results_exam_discipline_save') }}"
+      data-result-route="{{ path('sportabzeichen_results_exam_result_save') }}"
+      data-swimming-route="{{ path('sportabzeichen_results_exam_swimming_add_proof') }}"
+      data-swimming-delete-route="{{ path('sportabzeichen_results_exam_swimming_remove_proof') }}"
+      data-global-token="{{ csrf_token('authenticate') }}">
+
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-results-compact align-middle table-hover">
+                <thead class="table-light text-center align-middle sticky-header">
+                    <tr>
+                        {# TEILNEHMER SPALTE (Sticky via CSS Class) #}
+                        <th class="col-name text-start shadow-sm col-sticky-left">
+                            {% set currentSort = app.request.query.get('sort', 'lastname') %}
+                            {% set currentOrder = app.request.query.get('order', 'asc') %}
+                            {% set nextOrder = (currentSort == 'lastname' and currentOrder == 'asc') ? 'desc' : 'asc' %}
+                            {% set sortIcon = (currentSort == 'lastname') ? (currentOrder == 'asc' ? icon('arrow-down') : icon('arrow-up')) : '' %}
+
+                            <a href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({'id': exam.id, 'sort': 'lastname', 'order': nextOrder})) }}" 
+                            class="sort-header d-flex justify-content-between align-items-center text-dark text-decoration-none">
+                                <span>Teilnehmer</span>
+                                <span>{{ sortIcon|raw }}</span>
+                            </a>
+                        </th>
+
+                        {# SCHWIMM SPALTE #}
+                        <th class="col-swimming text-center col-discipline col-cat-SWIMMING">🏊</th>
+
+                        {# DISZIPLINEN SPALTEN #}
+                        {% for category in disciplines|keys %}
+                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                                <th class="col-discipline col-cat-{{ category }}">{{ category }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in participants %}
+                    {% set epResults = results[p.ep_id] ?? {} %}
+                    <tr data-ep-id="{{ p.ep_id }}" 
+                        id="row-{{ p.ep_id }}" 
+                        class="participant-row" 
+                        data-class="{{ p.klasse|default('') }}"
+                        data-group="{{ p.group|default('') }}">
+
+                        {# 1. TEILNEHMER INFOS (Sticky via CSS Class) #}
+                        <td class="col-name py-2 shadow-sm col-sticky-left">
+                            <div class="name-container text-truncate ps-1">
+                                <div class="name-main text-truncate">
+                                    {{ p.nachname }}<span class="fw-normal">, {{ p.vorname }}</span>
+                                </div>
+                                
+                                {# HIER AUCH ANPASSEN: Wenn keine Klasse, zeige die Gruppe an #}
+                                <div class="name-age text-truncate mb-2">
+                                    {{ p.klasse|default(p.group)|default('-') }} | {{ p.age_year }} J.
+                                </div>
+
+                                <div class="d-flex gap-2 align-items-center">
+                                    {# Punkte Badge #}
+                                    <div class="result-badge-box bg-light" title="Gesamtpunkte">
+                                        <div class="badge-label-small text-muted">Pkt</div>
+                                        <div class="fw-bold fs-6" id="total-points-{{ p.ep_id }}">{{ p.total_points|default(0) }}</div>
+                                    </div>
+                                    
+                                    {# Medaille Badge #}
+                                    {% set medalValue = p.final_medal|default('none')|lower %}
+                                    {% set medalLabel = (medalValue == 'gold') ? 'Gold' : ((medalValue in ['silver','silber']) ? 'Silber' : ((medalValue == 'bronze') ? 'Bronze' : '-')) %}
+                                    {% set medalClass = 'bg-light text-muted border' %}
+                                    
+                                    {% if medalValue == 'gold' %}
+                                        {% set medalClass = 'bg-gold-transparent' %}
+                                    {% elseif medalValue in ['silver','silber'] %}
+                                        {% set medalClass = 'bg-silver-transparent' %}
+                                    {% elseif medalValue == 'bronze' %}
+                                        {% set medalClass = 'bg-bronze-transparent' %} 
+                                    {% endif %}
+
+                                    <div class="result-badge-box js-medal-badge {{ medalClass }}" id="final-medal-{{ p.ep_id }}">
+                                        <div class="badge-label-small text-uppercase opacity-75">Rang</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="fw-bold fs-6 js-medal-label">{{ medalLabel }}</div>
+                                        </div>
+                                    </div>
+                                </div>    
+                            </div>
+                        </td>
+
+                        {# 2. SCHWIMMEN #}
+                        <td class="col-swimming align-middle p-2 text-center col-discipline col-cat-SWIMMING">
+                            <div id="swimming-wrapper-{{ p.ep_id }}" class="swimming-wrapper">
+                                {% set hasSwimming = p.has_swimming %}
+                                
+                                {# --- LOGIK START: Den Namen aus dem String "DISCIPLINE:ID" extrahieren --- #}
+                                {% set swimDisplayName = null %}
+                                {% set rawSource = p.swimming_met_via|default('') %} {# Hier steht "DISCIPLINE:193" drin #}
+
+                                {# Wir prüfen jede mögliche Disziplin #}
+                                {% for sd in swimming_disciplines %}
+                                    {# Wir bauen den String, wie er in der DB steht: z.B. "DISCIPLINE:193" #}
+                                    {% set searchString = 'DISCIPLINE:' ~ sd.id %}
+                                    
+                                    {# Wenn dieser String in den Daten gefunden wird, haben wir den Namen gefunden! #}
+                                    {% if searchString in rawSource %}
+                                        {% set swimDisplayName = sd.name %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                {# Fallback: Wenn es keine Disziplin-ID war, sondern Freitext (z.B. "DLRG Schein") #}
+                                {% if swimDisplayName is empty %}
+                                    {% set swimDisplayName = rawSource %}
+                                {% endif %}
+
+                                {# Putzfrau: Falls immer noch "DISCIPLINE:..." sichtbar wäre (sollte nicht passieren) #}
+                                {% if 'DISCIPLINE' in swimDisplayName %}
+                                    {% set swimDisplayName = 'Nachweis erbracht' %}
+                                {% endif %}
+                                {# --- LOGIK ENDE --- #}
+
+
+                                {% set proofYear = p.swimming_year|default(exam.year) %} 
+                                
+                                {# A) Anzeige Badge #}
+                                <div class="swim-badge-container {{ hasSwimming ? '' : 'd-none' }}">
+                                    <div class="d-flex flex-column align-items-center justify-content-center w-100">
+                                        <small class="swim-info-text text-success fw-bold d-block text-truncate" title="{{ swimDisplayName }}">
+                                            {{ swimDisplayName }}
+                                        </small>
+                                        
+                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 btn-delete-swimming mt-1" 
+                                                data-ep-id="{{ p.ep_id }}" 
+                                                data-proof-year="{{ proofYear }}"
+                                                data-exam-year="{{ exam.year }}"
+                                                data-source="{{ p.swimming_met_via|default('') }}"
+                                                title="Nachweis löschen" style="font-size: 0.7rem;">
+                                            {{ icon('trash')|raw }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {# B) Dropdown #}
+                                <div class="swim-dropdown-container {{ hasSwimming ? 'd-none' : '' }}">
+                                    <select class="form-select form-select-sm swimming-select-compact" 
+                                            data-ep-id="{{ p.ep_id }}" data-type="swimming_select" data-save="true">
+                                        <option value="" selected disabled class="text-muted">-- Nachweis --</option>
+                                        {% for swimDisc in swimming_disciplines %}
+                                            <option value="{{ swimDisc.id }}">{{ swimDisc.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </td>
+
+                        {# 3. DISZIPLINEN #}
+                        {% for category, items in disciplines %}
+                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                                <td class="p-1 col-discipline col-cat-{{ category }} align-middle">
+                                    <div class="d-flex flex-column h-100 justify-content-center">
+                                        {# Filter Logic #}
+                                        {% set options = [] %}
+                                        {% for discipline in items %}
+                                            {% if discipline.requirements is defined %}
+                                                {% for req in discipline.requirements %}
+                                                    {% if req.gender == p.geschlecht and p.age_year >= req.minAge and p.age_year <= req.maxAge %}
+                                                        {% set options = options|merge([req|merge({'discipline': discipline})]) %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% set selectedReq = options|first %}
+                                        {% set resObj = null %}
+                                        {% for req in options %}
+                                            {% if epResults[req.discipline.id] is defined %}
+                                                {% set selectedReq = req %}
+                                                {% set resObj = epResults[req.discipline.id] %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {# Klasse für Rahmenfarbe initial #}
+                                        {% set mClass = 'medal-none' %}
+                                        {% if resObj %}
+                                            {% if resObj.points == 3 %}{% set mClass = 'medal-gold' %}
+                                            {% elseif resObj.points == 2 %}{% set mClass = 'medal-silber' %}
+                                            {% elseif resObj.points == 1 %}{% set mClass = 'medal-bronze' %}
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        {% set isNoneUnit = (selectedReq and (selectedReq.discipline.unit == 'NONE' or selectedReq.discipline.unit == 'UNIT_NONE')) %}
+
+                                        {# Select #}
+                                        <select class="discipline-selector js-discipline-select mb-1 form-select form-select-sm {{ mClass }}" 
+                                                data-save data-ep-id="{{ p.ep_id }}" data-type="discipline" data-kategorie="{{ category }}">
+                                            {% if options is empty %}
+                                                <option value="">--</option>
+                                            {% else %}
+                                                {% for req in options %}
+                                                    {% set cleanUnit = unitMap[req.discipline.unit] ?? req.discipline.unit %}
+                                                    <option value="{{ req.discipline.id }}" 
+                                                            {{ selectedReq and selectedReq.discipline.id == req.discipline.id ? 'selected' : '' }}
+                                                            data-unit-label="{{ cleanUnit }}"
+                                                            data-bronze="{{ req.bronze }}" data-silber="{{ req.silver }}" data-gold="{{ req.gold }}">
+                                                        {{ req.discipline.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </select>
+
+                                        {# Input #}
+                                        <input type="text" class="form-control form-control-custom fw-bold {{ mClass }}"
+                                               value="{{ resObj ? resObj.leistung : '' }}"
+                                               {{ isNoneUnit ? 'disabled' : '' }}
+                                               placeholder="{{ isNoneUnit ? '✓' : '' }}"
+                                               data-save data-ep-id="{{ p.ep_id }}" data-type="leistung" data-kategorie="{{ category }}">
+
+                                        {# Hint #}
+                                        <div class="req-hint">
+                                            <div class="req-values-wrapper js-req-values">
+                                                {% set showReqs = (selectedReq and not isNoneUnit) %}
+                                                <span class="req-val-b">{{ showReqs ? selectedReq.bronze : '-' }}</span>
+                                                <span class="mx-1">|</span>
+                                                <span class="req-val-s">{{ showReqs ? selectedReq.silver : '-' }}</span>
+                                                <span class="mx-1">|</span>
+                                                <span class="req-val-g">{{ showReqs ? selectedReq.gold : '-' }}</span>
+                                            </div>
+                                            <div class="req-unit js-unit-label">{{ selectedReq ? (unitMap[selectedReq.discipline.unit] ?? '') : '' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/exam_results_autosave.js', 'pulsr-sportabzeichen') }}"></script>
+{% endblock %}
