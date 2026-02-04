@@ -192,8 +192,7 @@ final class ParticipantUploadController extends AbstractController
         ]);
     }
     
-    // ... parseDate Funktion bleibt gleich ...
-    private static function parseDate(?string $input): ?string { 
+    private static function parseDate(?string $input): ?string
     {
         if (!$input) return null;
         
@@ -213,6 +212,5 @@ final class ParticipantUploadController extends AbstractController
             }
         }
         return null;
-        }
     }
 }
