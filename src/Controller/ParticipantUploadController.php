@@ -16,7 +16,7 @@ final class ParticipantUploadController extends AbstractController
     #[Route('/upload_participants', name: 'upload_participants')]
     public function upload(Request $request, Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         $imported = 0;
         $skipped  = 0;
