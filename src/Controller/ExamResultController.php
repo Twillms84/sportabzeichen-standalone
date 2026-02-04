@@ -18,8 +18,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/sportabzeichen/exams/results', name: 'sportabzeichen_results_')]
-#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
+#[Route('exams/results')]
+//#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
 final class ExamResultController extends AbstractController
 {
     public function __construct(
@@ -31,11 +31,11 @@ final class ExamResultController extends AbstractController
     /**
      * Jahresauswahl (Startseite)
      */
-    #[Route('/', name: 'exams', methods: ['GET'])]
+    #[Route('/', name: 'app_results_dashboard', methods: ['GET'])]
     public function examSelection(): Response
     {
         $exams = $this->em->getRepository(Exam::class)->findBy([], ['year' => 'DESC']);
-        return $this->render('@PulsRSportabzeichen/results/index.html.twig', ['exams' => $exams]);
+        return $this->render('results/index.html.twig', ['exams' => $exams]);
     }
 
     /**
@@ -221,7 +221,7 @@ final class ExamResultController extends AbstractController
             ['name' => 'ASC']
         );
 
-        return $this->render('@PulsRSportabzeichen/results/exam_results.html.twig', [
+        return $this->render('results/exam_results.html.twig', [
             'exam' => $exam,
             'participants' => $participantsData,
             'disciplines' => $disciplines,
@@ -607,7 +607,7 @@ final class ExamResultController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/print_groupcard.html.twig', [
+        return $this->render('exams/print_groupcard.html.twig', [
             'batches' => $batches,
             'exam' => $exam,
             'exam_year_short' => substr((string)$examYear, -2),
