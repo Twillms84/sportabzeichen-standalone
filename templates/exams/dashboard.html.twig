@@ -43,11 +43,11 @@
                                         
                                         {# Name und Datum #}
                                         <div>
-                                            <h4 class="list-group-item-heading mt-0 mb-1">
+                                            {#<h4 class="list-group-item-heading mt-0 mb-1">
                                                 <a href="{{ path('results_index', {id: exam.id}) }}" class="text-primary font-weight-bold">
                                                     {{ exam.exam_name }}
                                                 </a>
-                                            </h4>
+                                            </h4>#}
                                             <p class="list-group-item-text text-muted small">
                                                 <span class="icon icon-calendar"></span> 
                                                 {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
