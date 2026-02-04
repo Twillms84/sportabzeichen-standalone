@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Controller;
+namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
-use IServ\CoreBundle\Controller\AbstractPageController;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/sportabzeichen/admin', name: 'sportabzeichen_admin_')]
-final class AnforderungUploadController extends AbstractPageController
+final class AnforderungUploadController extends AbstractController
 {
     private const CATEGORY_MAP = [
         'ENDURANCE'    => 'Ausdauer',

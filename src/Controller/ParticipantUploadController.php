@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Controller;
+namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
-use IServ\CoreBundle\Controller\AbstractPageController;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/sportabzeichen/admin', name: 'sportabzeichen_admin_')]
-final class ParticipantUploadController extends AbstractPageController
+final class ParticipantUploadController extends AbstractController
 {
     #[Route('/upload_participants', name: 'upload_participants')]
     public function upload(Request $request, Connection $conn): Response

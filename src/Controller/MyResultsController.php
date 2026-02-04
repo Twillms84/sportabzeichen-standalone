@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Controller;
+namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use PulsR\SportabzeichenBundle\Repository\DisciplineRepository;
+use App\Repository\DisciplineRepository;
 
 #[ORM\Entity(repositoryClass: DisciplineRepository::class)]
 #[ORM\Table(name: 'sportabzeichen_disciplines')]

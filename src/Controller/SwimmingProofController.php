@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Controller;
+namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use IServ\CoreBundle\Controller\AbstractPageController;
-use PulsR\SportabzeichenBundle\Entity\Discipline;
-use PulsR\SportabzeichenBundle\Entity\ExamParticipant;
-use PulsR\SportabzeichenBundle\Entity\SwimmingProof;
-use PulsR\SportabzeichenBundle\Service\SportabzeichenService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\Discipline;
+use App\Entity\ExamParticipant;
+use App\Entity\SwimmingProof;
+use App\Service\SportabzeichenService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -17,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/sportabzeichen/swimming', name: 'sportabzeichen_results_')]
 #[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
-final class SwimmingProofController extends AbstractPageController
+final class SwimmingProofController extends AbstractController
 {
     // Konstanten vermeiden Tippfehler
     private const BLOCKING_CATEGORIES = ['AUSDAUER', 'ENDURANCE', 'SCHNELLIGKEIT', 'RAPIDNESS'];

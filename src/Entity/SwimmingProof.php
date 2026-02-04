@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: 'PulsR\SportabzeichenBundle\Repository\SwimmingProofRepository')]
+#[ORM\Entity(repositoryClass: 'App\Repository\SwimmingProofRepository')]
 #[ORM\Table(name: 'sportabzeichen_swimming_proofs')]
 class SwimmingProof
 {

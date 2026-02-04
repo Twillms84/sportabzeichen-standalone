@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Controller;
+namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
-use IServ\CoreBundle\Controller\AbstractPageController;
-use IServ\CoreBundle\Entity\Group;
-use PulsR\SportabzeichenBundle\Entity\Exam;
-use PulsR\SportabzeichenBundle\Repository\ExamRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\Group;
+use App\Entity\Exam;
+use App\Repository\ExamRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/sportabzeichen/exams', name: 'sportabzeichen_exams_')]
-final class ExamController extends AbstractPageController
+final class ExamController extends AbstractController
 {
     #[Route('/', name: 'dashboard')]
     public function index(Connection $conn): Response

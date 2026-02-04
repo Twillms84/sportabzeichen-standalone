@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use PulsR\SportabzeichenBundle\Repository\ExamRepository;
-use IServ\CoreBundle\Entity\User; // <--- WICHTIG: User importieren
+use App\Repository\ExamRepository;
+use App\Entity\User; // <--- WICHTIG: User importieren
 
 #[ORM\Table(name: 'sportabzeichen_exams')]
 #[ORM\Entity(repositoryClass: ExamRepository::class)]

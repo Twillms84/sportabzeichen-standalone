@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use PulsR\SportabzeichenBundle\Repository\ExamParticipantRepository;
+use App\Repository\ExamParticipantRepository;
 
 #[ORM\Entity] // Ggf. hier repositoryClass hinzufügen, falls du eins hast
 #[ORM\Table(name: 'sportabzeichen_exam_participants')]

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Service;
+namespace App\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
-use PulsR\SportabzeichenBundle\Entity\Discipline;
-use PulsR\SportabzeichenBundle\Entity\ExamParticipant;
-use PulsR\SportabzeichenBundle\Entity\Requirement;
-use PulsR\SportabzeichenBundle\Entity\SwimmingProof;
+use App\Entity\Discipline;
+use App\Entity\ExamParticipant;
+use App\Entity\Requirement;
+use App\Entity\SwimmingProof;
 
 class SportabzeichenService
 {

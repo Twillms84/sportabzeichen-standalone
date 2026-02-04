@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace PulsR\SportabzeichenBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use PulsR\SportabzeichenBundle\Repository\RequirementRepository;
-use PulsR\SportabzeichenBundle\Entity\Discipline;
+use App\Repository\RequirementRepository;
+use App\Entity\Discipline;
 
 #[ORM\Entity(repositoryClass: RequirementRepository::class)]
 #[ORM\Table(name: 'sportabzeichen_requirements')]
