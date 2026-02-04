@@ -296,7 +296,7 @@ final class ExamController extends AbstractController
         // --- GET DATEN LADEN ---
 
         // A) Zugeordnete Gruppen
-        $sqlGroups = "
+        $assignedGroups = "
             SELECT seg.group_id as act, g.name 
             FROM sportabzeichen_exam_groups seg 
             LEFT JOIN app_groups g ON seg.group_id = g.id
