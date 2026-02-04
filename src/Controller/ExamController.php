@@ -90,7 +90,7 @@ final class ExamController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/dashboard.html.twig', [
+        return $this->render('exams/dashboard.html.twig', [
             'yearlyStats' => $yearlyStats,
         ]);
     }
@@ -181,14 +181,14 @@ final class ExamController extends AbstractController
                      $this->addFlash('warning', $msg);
                 }
                
-                return $this->redirectToRoute('sportabzeichen_exams_dashboard');
+                return $this->redirectToRoute('exams_dashboard');
 
             } catch (\Throwable $e) {
                 $this->addFlash('error', 'Fehler beim Anlegen: ' . $e->getMessage());
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/new.html.twig', [
+        return $this->render('exams/new.html.twig', [
             'groups'  => $groupsForDropdown
         ]);
     }
@@ -196,7 +196,7 @@ final class ExamController extends AbstractController
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(int $id, Request $request, Connection $conn, EntityManagerInterface $em): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
 
         // Wir brauchen das Entity für die Helper-Methode importParticipantsFromGroup
         $examEntity = $em->getRepository(Exam::class)->find($id);
@@ -222,7 +222,7 @@ final class ExamController extends AbstractController
                 ], ['id' => $id]);
 
                 $this->addFlash('success', 'Stammdaten gespeichert.');
-                return $this->redirectToRoute('sportabzeichen_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
+                return $this->redirectToRoute('exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
 
             // 2. GRUPPE HINZUFÜGEN
@@ -236,7 +236,7 @@ final class ExamController extends AbstractController
                         $this->addFlash('error', 'Fehler beim Import: ' . $e->getMessage());
                     }
                 }
-                return $this->redirectToRoute('sportabzeichen_exams_edit', ['id' => $id]);
+                return $this->redirectToRoute('exams_edit', ['id' => $id]);
             }
 
             // 3. GRUPPE ENTFERNEN
@@ -247,7 +247,7 @@ final class ExamController extends AbstractController
                     [$id, $groupAct]
                 );
                 $this->addFlash('success', 'Gruppe aus der Prüfung entfernt (bereits importierte Teilnehmer bleiben erhalten).');
-                return $this->redirectToRoute('sportabzeichen_exams_edit', ['id' => $id]);
+                return $this->redirectToRoute('exams_edit', ['id' => $id]);
             }
 
             // 4. EINZELNEN TEILNEHMER HINZUFÜGEN
@@ -289,7 +289,7 @@ final class ExamController extends AbstractController
                         }
                     }
                 }
-                return $this->redirectToRoute('sportabzeichen_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
+                return $this->redirectToRoute('exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
         }
 
@@ -371,7 +371,7 @@ final class ExamController extends AbstractController
             ];
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/edit.html.twig', [
+        return $this->render('exams/edit.html.twig', [
             'exam' => $exam,
             'assigned_groups' => $assignedGroups,
             'available_groups' => $availableGroups,
@@ -383,7 +383,7 @@ final class ExamController extends AbstractController
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
     public function delete(int $id, Request $request, Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
 
         $token = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('delete' . $id, $token)) {
@@ -416,7 +416,7 @@ final class ExamController extends AbstractController
             $this->addFlash('error', 'Fehler beim Löschen: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('sportabzeichen_exams_dashboard');
+        return $this->redirectToRoute('exams_dashboard');
     }
 
     private function importParticipantsFromGroup(
@@ -599,7 +599,7 @@ final class ExamController extends AbstractController
                     }
                 }
             }
-            return $this->redirectToRoute('sportabzeichen_exams_add_participant', [
+            return $this->redirectToRoute('exams_add_participant', [
                 'id' => $id, 
                 'q' => $request->query->get('q')
             ]);
@@ -651,7 +651,7 @@ final class ExamController extends AbstractController
             ];
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/add_participant.html.twig', [
+        return $this->render('exams/add_participant.html.twig', [
             'exam' => $exam,
             'missing_students' => $missingStudents,
             'search_term' => $searchTerm
@@ -661,7 +661,7 @@ final class ExamController extends AbstractController
     #[Route('/{id}/stats', name: 'stats', methods: ['GET'])]
     public function stats(int $id, Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
 
         // 1. Prüfungsdaten laden
         $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = :id", ['id' => $id]);
@@ -815,7 +815,7 @@ final class ExamController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/exams/stats.html.twig', [
+        return $this->render('exams/stats.html.twig', [
             'exam' => $exam,
             'stats' => $stats,
             'topList' => $topList,
