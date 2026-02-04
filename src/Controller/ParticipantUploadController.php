@@ -71,13 +71,14 @@ final class ParticipantUploadController extends AbstractController
                         }
 
                         // CSV Parsing
-                        $identifier      = trim($row[0]); // ID (Import-ID oder Externe ID)
+                        $identifier      = trim($row[0]); 
                         $geschlechtRaw   = trim($row[1]);
                         $geburtsdatumRaw = trim($row[2]);
                         
-                        // Namen optional aus CSV lesen
+                        // Optional: Namen und GRUPPE aus CSV lesen
                         $csvFirstname = isset($row[3]) ? trim($row[3]) : null;
                         $csvLastname  = isset($row[4]) ? trim($row[4]) : null;
+                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null; // <--- NEU: Spalte 6
 
                         if ($identifier === '') continue;
 
@@ -94,29 +95,31 @@ final class ParticipantUploadController extends AbstractController
 
                         // Entscheidung treffen
                         $userId = null;
-                        $username = null;
                         $firstname = $csvFirstname;
                         $lastname  = $csvLastname;
+                        // Wir nehmen die Gruppe aus der CSV, wenn vorhanden. 
+                        // Falls leer, lassen wir es null (oder könnten später Logik bauen).
+                        $groupName = $csvGroup; 
+                        
                         $origin    = 'CSV_STANDALONE';
                         $externalId = $identifier;
 
                         if ($iservUser) {
                             // TREFFER im IServ
                             $userId    = $iservUser['id'];
-                            $username  = $iservUser['act'];
+                            $username  = $iservUser['act']; // Accountname
                             $firstname = $iservUser['firstname']; // IServ Namen haben Vorrang
                             $lastname  = $iservUser['lastname'];
                             $origin    = 'ISERV_IMPORT';
-                            $externalId = null; // Wenn IServ User, brauchen wir oft keine ext_id, oder wir speichern die Import-ID trotzdem
+                            $externalId = null; 
                         } else {
-                            // KEIN TREFFER -> Standalone Fall
+                            // Standalone Fall
                             if (!$hasNames || empty($firstname) || empty($lastname)) {
                                 $skipped++;
                                 $detailedErrors[] = "Zeile $lineNumber ($identifier): Kein IServ-Treffer und keine Namen in CSV.";
                                 continue;
                             }
-                            // Hier behalten wir die Werte aus der CSV
-                            $username = $firstname . ' ' . $lastname; // Fallback Username
+                            $username = $firstname . ' ' . $lastname; 
                         }
 
                         // -----------------------------------------------------------
@@ -148,12 +151,13 @@ final class ParticipantUploadController extends AbstractController
                         ])->fetchOne();
 
                         $data = [
-                            'user_id'      => $userId,      // Kann NULL sein!
-                            'external_id'  => $externalId,  // Kann NULL sein (wenn user_id gesetzt)
+                            'user_id'      => $userId,
+                            'external_id'  => $externalId,
                             'origin'       => $origin,
                             'firstname'    => $firstname,
                             'lastname'     => $lastname,
                             'username'     => $username,
+                            'group_name'   => $groupName, // <--- NEU: Speichern
                             'geschlecht'   => $geschlecht,
                             'geburtsdatum' => $geburtsdatum,
                             'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s')
@@ -164,7 +168,7 @@ final class ParticipantUploadController extends AbstractController
                         } else {
                             $conn->insert('sportabzeichen_participants', $data);
                         }
-
+                        
                         $imported++;
 
                     } catch (\Throwable $e) {
