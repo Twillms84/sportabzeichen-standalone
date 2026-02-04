@@ -127,8 +127,8 @@
                         
                         <hr class="sidebar-divider my-0">
 
-                        <li class="nav-item {{ app.request.get('_route') starts with 'sportabzeichen_admin_' ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ path('sportabzeichen_admin_dashboard') }}">
+                        <li class="nav-item {{ app.request.get('_route') starts with 'admin_' ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ path('admin_dashboard') }}">
                                 <i class="fas fa-fw fa-tools"></i>
                                 <span>Sportabzeichen Admin</span>
                             </a>
