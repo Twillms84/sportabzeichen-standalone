@@ -20,7 +20,7 @@ final class ExamController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function index(Connection $conn): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
 
         // 1. Alle Prüfungen laden (als Array für einfache Handhabung)
         $exams = $conn->fetchAllAssociative("
