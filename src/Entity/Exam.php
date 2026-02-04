@@ -7,6 +7,9 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\ExamRepository;
 use App\Entity\User; // <--- WICHTIG: User importieren
+use App\Entity\Group;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Table(name: 'sportabzeichen_exams')]
 #[ORM\Entity(repositoryClass: ExamRepository::class)]
@@ -62,5 +65,37 @@ class Exam
     public function getDisplayName(): string
     {
         return 'Sportabzeichen ' . $this->year;
+    }
+    #[ORM\ManyToMany(targetEntity: Group::class)]
+    #[ORM\JoinTable(name: 'sportabzeichen_exam_groups')] // <--- Das löst deinen Fehler!
+    private Collection $groups;
+
+    public function __construct()
+    {
+        $this->groups = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, Group>
+     */
+    public function getGroups(): Collection
+    {
+        return $this->groups;
+    }
+
+    public function addGroup(Group $group): static
+    {
+        if (!$this->groups->contains($group)) {
+            $this->groups->add($group);
+        }
+
+        return $this;
+    }
+
+    public function removeGroup(Group $group): static
+    {
+        $this->groups->removeElement($group);
+
+        return $this;
     }
 }
