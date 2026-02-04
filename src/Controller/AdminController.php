@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin', name: 'app_admin_')]
+#[Route('/admin', name: 'admin_')]
 final class AdminController extends AbstractController
 {
     public function __construct(
