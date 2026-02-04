@@ -22,129 +22,137 @@ final class ParticipantUploadController extends AbstractController
         $error    = null;
         $message  = null;
         $detailedErrors = [];
-        
+
         if ($request->isMethod('POST')) {
             $file = $request->files->get('csvFile');
-            // Strategie: 'iserv_match' (Versucht Zuordnung zu IServ) oder 'standalone' (Nur Import)
-            $strategy = $request->request->get('strategy', 'iserv_match'); 
+            $strategy = $request->request->get('strategy', 'import_id');
 
             if (!$file || strtolower($file->getClientOriginalExtension()) !== 'csv') {
                 $error = 'Bitte eine gültige CSV-Datei auswählen.';
             } else {
-                $handle = fopen($file->getRealPath(), 'r');
+                $filePath = $file->getRealPath();
                 
-                // Header lesen
-                $header = fgetcsv($handle, 1000, ';'); 
+                // 1. Trennzeichen automatisch erkennen (wichtig!)
+                $firstLine = fgets(fopen($filePath, 'r'));
+                $separator = str_contains($firstLine, ';') ? ';' : ',';
                 
-                // Prüfen ob wir genug Spalten für Standalone haben (ID;Geschlecht;Datum;Vorname;Nachname)
-                // Wenn nicht, können wir nur IServ-Matching machen.
-                $hasNames = count($header) >= 5;
-
+                $handle = fopen($filePath, 'r');
+                
+                // Header lesen (wir gehen davon aus, dass Zeile 1 IMMER Überschriften sind)
+                $header = fgetcsv($handle, 0, $separator); 
                 $lineNumber = 1;
 
-                // Prepared Statements vorbereiten
-                // 1. Suche in IServ Users (nur nötig wenn Strategy nicht rein standalone ist)
+                // Prepared Statements
+                // IServ Lookup (nur nötig, wenn NICHT Standalone)
                 $sqlLookup = "SELECT id, act, firstname, lastname FROM users WHERE import_id = :val AND deleted IS NULL LIMIT 1";
+                if ($strategy === 'act') {
+                    $sqlLookup = "SELECT id, act, firstname, lastname FROM users WHERE LOWER(act) = LOWER(:val) AND deleted IS NULL LIMIT 1";
+                }
                 $stmtLookup = $conn->prepare($sqlLookup);
 
-                // 2. Suche existierenden Participant (über external_id ODER user_id)
+                // Existenz-Check
                 $stmtCheckExist = $conn->prepare('
                     SELECT id FROM sportabzeichen_participants 
                     WHERE (user_id = :uid AND :uid IS NOT NULL) 
-                       OR (external_id = :ext_id AND :ext_id IS NOT NULL)
+                    OR (external_id = :ext_id AND :ext_id IS NOT NULL)
                 ');
 
-                while (($row = fgetcsv($handle, 1000, ';')) !== false) {
+                while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
                     $lineNumber++;
 
-                    // Fallback für Komma
-                    if (count($row) < 2) {
-                        $lineParsed = str_getcsv($row[0], ',');
-                        if (count($lineParsed) >= 2) $row = $lineParsed;
+                    // Leere Zeilen ignorieren
+                    if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
+                        continue;
                     }
 
                     try {
+                        // Mindest-Spalten Check
                         if (count($row) < 3) {
                             $skipped++;
-                            $detailedErrors[] = "Zeile $lineNumber: Zu wenige Spalten.";
+                            $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten (gefunden: ".count($row).", Trennzeichen war: '$separator').";
                             continue;
                         }
 
-                        // CSV Parsing
+                        // Mapping der Spalten
                         $identifier      = trim($row[0]); 
                         $geschlechtRaw   = trim($row[1]);
                         $geburtsdatumRaw = trim($row[2]);
                         
-                        // Optional: Namen und GRUPPE aus CSV lesen
+                        // Standalone Felder (optional, außer bei Standalone-Modus)
                         $csvFirstname = isset($row[3]) ? trim($row[3]) : null;
                         $csvLastname  = isset($row[4]) ? trim($row[4]) : null;
-                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null; // <--- NEU: Spalte 6
+                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null;
 
                         if ($identifier === '') continue;
 
-                        // -----------------------------------------------------------
-                        // LOGIK: WER IST DAS?
-                        // -----------------------------------------------------------
-                        
-                        $iservUser = null;
-                        
-                        // Versuch 1: Matching mit IServ Datenbank (wenn gewünscht)
-                        if ($strategy !== 'standalone') {
-                            $iservUser = $stmtLookup->executeQuery(['val' => $identifier])->fetchAssociative();
-                        }
+                        // --- LOGIK START ---
 
-                        // Entscheidung treffen
                         $userId = null;
                         $firstname = $csvFirstname;
                         $lastname  = $csvLastname;
-                        // Wir nehmen die Gruppe aus der CSV, wenn vorhanden. 
-                        // Falls leer, lassen wir es null (oder könnten später Logik bauen).
-                        $groupName = $csvGroup; 
-                        
+                        $groupName = $csvGroup;
                         $origin    = 'CSV_STANDALONE';
                         $externalId = $identifier;
+                        $username   = $csvFirstname . ' ' . $csvLastname; // Default Username
 
-                        if ($iservUser) {
-                            // TREFFER im IServ
-                            $userId    = $iservUser['id'];
-                            $username  = $iservUser['act']; // Accountname
-                            $firstname = $iservUser['firstname']; // IServ Namen haben Vorrang
-                            $lastname  = $iservUser['lastname'];
-                            $origin    = 'ISERV_IMPORT';
-                            $externalId = null; 
-                        } else {
-                            // Standalone Fall
-                            if (!$hasNames || empty($firstname) || empty($lastname)) {
+                        // Fall A: Standalone Modus (IServ ignorieren)
+                        if ($strategy === 'standalone') {
+                            if (empty($csvFirstname) || empty($csvLastname)) {
                                 $skipped++;
-                                $detailedErrors[] = "Zeile $lineNumber ($identifier): Kein IServ-Treffer und keine Namen in CSV.";
+                                $detailedErrors[] = "Zeile $lineNumber ($identifier): Standalone-Modus gewählt, aber Vorname/Nachname fehlen (Spalte 4+5).";
                                 continue;
                             }
-                            $username = $firstname . ' ' . $lastname; 
+                            // Hier ist alles gut, Daten wurden oben schon zugewiesen
+                        } 
+                        // Fall B: IServ Integration
+                        else {
+                            $iservUser = $stmtLookup->executeQuery(['val' => $identifier])->fetchAssociative();
+
+                            if ($iservUser) {
+                                $userId    = $iservUser['id'];
+                                $username  = $iservUser['act'];
+                                $firstname = $iservUser['firstname']; 
+                                $lastname  = $iservUser['lastname'];
+                                $origin    = 'ISERV_IMPORT';
+                                $externalId = null; 
+                                
+                                // Gruppe nehmen wir aus CSV, falls da, sonst lassen wir es leer (oder implementieren später IServ-Gruppen-Logik)
+                            } else {
+                                // Kein IServ User gefunden?
+                                // -> Wenn Namen da sind, importieren wir ihn trotzdem als "Gast" (Fallback),
+                                // -> Wenn keine Namen da sind -> Fehler.
+                                if (empty($csvFirstname) || empty($csvLastname)) {
+                                    $skipped++;
+                                    $detailedErrors[] = "Zeile $lineNumber ($identifier): Nicht im IServ gefunden und keine Namen in CSV angegeben.";
+                                    continue;
+                                }
+                                // Fallback: Als externen User anlegen
+                            }
                         }
 
-                        // -----------------------------------------------------------
-                        // VALIDIERUNG
-                        // -----------------------------------------------------------
+                        // --- VALIDIERUNG ---
+
                         $geschlecht = match (strtolower($geschlechtRaw)) {
-                            'm', 'male', 'männlich' => 'MALE',
-                            'w', 'f', 'female', 'weiblich' => 'FEMALE',
+                            'm', 'male', 'männlich', 'maennlich' => 'MALE',
+                            'w', 'f', 'female', 'weiblich'       => 'FEMALE',
                             default => null, 
                         };
 
                         if (!$geschlecht) {
-                            $skipped++; continue;
+                            $skipped++; 
+                            $detailedErrors[] = "Zeile $lineNumber: Ungültiges Geschlecht '$geschlechtRaw'";
+                            continue;
                         }
 
                         $geburtsdatum = self::parseDate($geburtsdatumRaw);
                         if (!$geburtsdatum) {
-                            $skipped++; continue;
+                            $skipped++; 
+                            $detailedErrors[] = "Zeile $lineNumber: Ungültiges Datum '$geburtsdatumRaw'";
+                            continue;
                         }
 
-                        // -----------------------------------------------------------
-                        // SPEICHERN (Upsert Logik)
-                        // -----------------------------------------------------------
-                        
-                        // Existiert dieser Teilnehmer schon im Sportabzeichen-System?
+                        // --- DB WRITE ---
+
                         $existingPartId = $stmtCheckExist->executeQuery([
                             'uid'    => $userId,
                             'ext_id' => $externalId
@@ -157,7 +165,7 @@ final class ParticipantUploadController extends AbstractController
                             'firstname'    => $firstname,
                             'lastname'     => $lastname,
                             'username'     => $username,
-                            'group_name'   => $groupName, // <--- NEU: Speichern
+                            'group_name'   => $groupName,
                             'geschlecht'   => $geschlecht,
                             'geburtsdatum' => $geburtsdatum,
                             'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s')
@@ -168,20 +176,20 @@ final class ParticipantUploadController extends AbstractController
                         } else {
                             $conn->insert('sportabzeichen_participants', $data);
                         }
-                        
+
                         $imported++;
 
                     } catch (\Throwable $e) {
                         $skipped++;
-                        $detailedErrors[] = "Zeile $lineNumber: " . $e->getMessage();
+                        $detailedErrors[] = "Zeile $lineNumber: Systemfehler: " . $e->getMessage();
                     }
                 }
                 fclose($handle);
                 
                 if ($imported > 0) {
-                    $message = "Import: $imported verarbeitet ($skipped übersprungen).";
+                    $message = "Import: $imported erfolgreich, $skipped übersprungen.";
                 } elseif ($skipped > 0) {
-                    $error = "Fehler beim Import.";
+                    $error = "Import fehlgeschlagen ($skipped Zeilen übersprungen). Bitte Fehlerliste prüfen.";
                 }
             }
         }
