@@ -31,7 +31,7 @@ final class ExamResultController extends AbstractController
     /**
      * Jahresauswahl (Startseite)
      */
-    #[Route('/', name: 'app_results_dashboard', methods: ['GET'])]
+    #[Route('/', name: 'results_dashboard', methods: ['GET'])]
     public function examSelection(): Response
     {
         $exams = $this->em->getRepository(Exam::class)->findBy([], ['year' => 'DESC']);
