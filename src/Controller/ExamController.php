@@ -307,6 +307,8 @@ final class ExamController extends AbstractController
         // WICHTIG: Hier führen wir den SQL-Befehl erst aus!
         $groupResults = $conn->fetchAllAssociative($sqlGroups, [$id]); 
 
+        $assignedGroups = $groupResults;
+        
         // Jetzt holen wir die IDs aus dem Datenbank-Ergebnis
         $assignedActs = array_column($groupResults, 'act');
 
