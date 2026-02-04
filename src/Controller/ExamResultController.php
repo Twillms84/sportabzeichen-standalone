@@ -17,7 +17,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/exams/results')]
 //#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
@@ -51,7 +50,6 @@ final class ExamResultController extends AbstractController
         // ---------------------------------------------------------
         // 0. PRÜFUNGSGRUPPEN LADEN
         // ---------------------------------------------------------
-        // Wir holen uns die Acts der Gruppen, die explizit zugeordnet sind.
         $allowedGroupActs = $this->em->getConnection()->fetchFirstColumn(
             'SELECT act FROM sportabzeichen_exam_groups WHERE exam_id = ?',
             [$exam->getId()]
@@ -66,7 +64,7 @@ final class ExamResultController extends AbstractController
             ->from(ExamParticipant::class, 'ep')
             ->join('ep.participant', 'p')
             ->join('p.user', 'u')
-            ->leftJoin('u.groups', 'ug') // IServ User -> Groups Relation
+            ->leftJoin('u.groups', 'ug') 
             ->leftJoin('p.swimmingProofs', 'sp')
             ->leftJoin('ep.results', 'res')
             ->leftJoin('res.discipline', 'd')
@@ -74,9 +72,8 @@ final class ExamResultController extends AbstractController
             ->setParameter('exam', $exam);
 
         // --- Filter direkt in der Datenbank ---
-        // Nur Teilnehmer laden, die in einer der erlaubten Gruppen sind
         if (!empty($allowedGroupActs)) {
-            // FIX: Use 'ug.account' instead of 'ug.act'
+            // FIX: Use 'ug.account' instead of 'ug.act' wenn nötig
             $qb->andWhere('ug.account IN (:allowedGroups)')
                ->setParameter('allowedGroups', $allowedGroupActs);
         }
@@ -92,7 +89,6 @@ final class ExamResultController extends AbstractController
         }
 
         /** @var ExamParticipant[] $examParticipants */
-        // DISTINCT wichtig, da User in mehreren Gruppen sein können und durch den Join sonst vervielfacht werden
         $examParticipants = $qb->distinct()->getQuery()->getResult();
 
         // ---------------------------------------------------------
@@ -112,25 +108,18 @@ final class ExamResultController extends AbstractController
             
             if (!empty($allowedGroupActs)) {
                 foreach ($userGroups as $g) {
-                    // Wir prüfen, welche der Gruppen des Users diejenige ist, die im Exam erlaubt ist
-                    // Wir nutzen getAct() oder getAccount(), je nach Entity-Version. Meist getAct() oder via __toString()
                     $gAct = (method_exists($g, 'getAct')) ? $g->getAct() : $g->getAccount();
-                    
                     if (in_array($gAct, $allowedGroupActs)) {
-                        $categoryName = $g->getName(); // Der Anzeigename (z.B. "Klasse 5a")
+                        $categoryName = $g->getName(); 
                         break; 
                     }
                 }
             } else {
-                // Fallback: Erste Gruppe nehmen, idealerweise eine Klasse (startet oft mit Ziffer)
                 if (!$userGroups->isEmpty()) {
-                    // Einfache Heuristik: Nimm die erste Gruppe
                     $categoryName = $userGroups->first()->getName();
-                    // Optional: Man könnte hier durchloopen und bevorzugt Gruppen nehmen, die wie Klassen aussehen
                 }
             }
 
-            // Kategorie für das Dropdown-Menü merken
             $filterOptions[] = $categoryName;
 
             // --- FILTER PRÜFUNG (Frontend Filter via URL) ---
@@ -181,7 +170,6 @@ final class ExamResultController extends AbstractController
             ];
         }
 
-        // Filter-Optionen bereinigen
         $filterOptions = array_unique($filterOptions);
         sort($filterOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
@@ -447,7 +435,6 @@ final class ExamResultController extends AbstractController
         $examYearEnd = $examYear . '-12-31';
 
         // 3. Basis-SQL vorbereiten
-        // KORREKTUR: actgrp statt group, actuser statt user, ~ statt REGEXP
         $groupNameSql = "
             (SELECT g.name FROM members m 
              JOIN groups g ON m.actgrp = g.act 
@@ -497,7 +484,7 @@ final class ExamResultController extends AbstractController
         else {
             // B) Filterung via Gruppe und/oder Suche
             
-            // 1. Gruppe filtern (KORREKTUR: actgrp/actuser)
+            // 1. Gruppe filtern
             if ($selectedClass) {
                 $sql .= " AND EXISTS (
                             SELECT 1 FROM members m 
