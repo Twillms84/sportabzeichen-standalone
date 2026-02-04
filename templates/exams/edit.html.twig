@@ -6,7 +6,7 @@
     <div class="content">
         <div class="d-flex justify-content-between align-items-center mb-3">
             {# Button: Zurück zur Übersicht #}
-            <a href="{{ path('sportabzeichen_exams_dashboard') }}" class="btn btn-secondary">
+            <a href="{{ path('exams_dashboard') }}" class="btn btn-secondary">
                 {{ icon('arrow-left') }} {{ 'Zurück zur Übersicht'|trans }}
             </a>
             
@@ -14,7 +14,7 @@
                ACHTUNG: Dieser Button wurde vorläufig deaktiviert, da die Route 'sportabzeichen_results_exam_index'
                noch nicht existiert oder anders heißt. Aktiviere ihn, sobald der ResultsController fertig ist.
             
-            <a href="{{ path('sportabzeichen_results_exam_index', {'id': exam.id}) }}" class="btn btn-primary">
+            <a href="{{ path('results_exam_index', {'id': exam.id}) }}" class="btn btn-primary">
                 {{ icon('list') }} {{ 'Ergebnisse erfassen'|trans }}
             </a>
             #}
@@ -143,7 +143,7 @@
                     <div class="col-auto">
                         <button type="submit" class="btn btn-secondary">{{ 'Suchen'|trans }}</button>
                         {% if search_term %}
-                            <a href="{{ path('sportabzeichen_exams_edit', {'id': exam.id}) }}" class="btn btn-outline-secondary" title="{{ 'Suche zurücksetzen'|trans }}">
+                            <a href="{{ path('exams_edit', {'id': exam.id}) }}" class="btn btn-outline-secondary" title="{{ 'Suche zurücksetzen'|trans }}">
                                 {{ icon('remove') }}
                             </a>
                         {% endif %}
