@@ -86,9 +86,9 @@ final class ParticipantUploadController extends AbstractController
                         $geburtsdatumRaw = trim($row[2]); // Spalte 4 (Index 3)
                         
                         // Namen & Gruppe (Achtung: Erst Nachname, dann Vorname in deiner CSV)
-                        $csvLastname  = isset($row[3]) ? trim($row[4]) : null; 
-                        $csvFirstname = isset($row[4]) ? trim($row[5]) : null;
-                        $csvGroup     = isset($row[5]) ? trim($row[6]) : null;
+                        $csvLastname  = isset($row[3]) ? trim($row[3]) : null; 
+                        $csvFirstname = isset($row[4]) ? trim($row[4]) : null;
+                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null;
 
                         if ($identifier === '') continue;
 
