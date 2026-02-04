@@ -43,21 +43,22 @@
                     {% for p in participants %}
                         <tr>
                             <td>
-                                {% if p.user %}
-                                    {{ p.user.lastname }}, {{ p.user.firstname }}
+                                {# 1. Check: Haben wir User-Daten aus dem Join (u_lastname)? #}
+                                {% if p.u_lastname %}
+                                    {{ p.u_lastname }}, {{ p.u_firstname }}
+                                    
+                                    {# Optional: IServ-Account anzeigen #}
+                                    {% if p.iserv_account %}
+                                        <br><small class="text-muted">{{ p.iserv_account }}</small>
+                                    {% endif %}
+
+                                {# 2. Check: Haben wir lokale Participant-Daten (CSV Import)? #}
+                                {% elseif p.lastname %}
+                                    {{ p.lastname }}, {{ p.firstname }}
+
+                                {# 3. Fallback: Wenn beides fehlt, ist der User wohl gelöscht #}
                                 {% else %}
-                                    <span class="text-muted"><em>{{'Gelöschter Nutzer'}}</em></span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if p.user %}
-                                    {% for group in p.user.groups %}
-                                        <span class="label label-default">{{ group.name }}</span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endfor %}
-                                {% else %}
-                                    -
+                                    <span class="text-muted"><em>{{ 'Gelöschter Nutzer'|trans }}</em></span>
                                 {% endif %}
                             </td>
                             <td>{{ p.geburtsdatum ? p.geburtsdatum|date('d.m.Y') : '-' }}</td>
