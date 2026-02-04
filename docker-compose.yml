@@ -34,18 +34,6 @@ services:
     depends_on:
       - app
 
-###> doctrine/doctrine-bundle ###
-  
-  services:
-  database:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: app_db
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: app_password
-    volumes:
-      - db-data:/var/lib/postgresql/data
-
 volumes:
   db_data:
 
