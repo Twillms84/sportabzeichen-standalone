@@ -8,15 +8,15 @@
     <div class="panel panel-default">
         <div class="panel-heading d-flex justify-content-between align-items-center">
             <h3 class="panel-title">
-                {{ 'Registrierte Teilnehmer'|trans }}
+                {{'Registrierte Teilnehmer'|trans}}
                 <span class="badge">{{ totalCount }}</span>
             </h3>
             <div class="btn-group pull-right">
                 <a href="{{ path('admin_participants_missing') }}" class="btn btn-primary btn-sm">
-                    {{ icon('plus') }} {{ _('Nacherfassen') }}
+                    {{ icon('plus') }} {{'Nacherfassen'|trans}}
                 </a>
                 <a href="{{ path('admin_upload_participants') }}" class="btn btn-default btn-sm">
-                    {{ icon('upload') }} {{  'Nacherfassen'|trans }}
+                    {{ icon('upload') }} {{'Nacherfassen'|trans}}
                 </a>
             </div>
         </div>
@@ -36,7 +36,7 @@
                             <th>{{ _('Klasse') }}</th>
                             <th>{{ _('Geburtstag') }}</th>
                             <th>{{ _('Geschlecht') }}</th>
-                            <th class="text-end">{{ _('Aktion') }}</th>
+                            <th class="text-end">{{ 'Aktion'}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -46,7 +46,7 @@
                                 {% if p.user %}
                                     {{ p.user.lastname }}, {{ p.user.firstname }}
                                 {% else %}
-                                    <span class="text-muted"><em>{{ _('Gelöschter Nutzer') }}</em></span>
+                                    <span class="text-muted"><em>{{'Gelöschter Nutzer'}}</em></span>
                                 {% endif %}
                             </td>
                             <td>
@@ -117,7 +117,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Abbrechen') }}</button>
-                                            <button type="submit" class="btn btn-primary">{{ _('Speichern') }}</button>
+                                            <button type="submit" class="btn btn-primary">{{'Speichern'}}</button>
                                         </div>
                                     </div>
                                 </form>
@@ -128,7 +128,7 @@
                     {% else %}
                         <tr>
                             <td colspan="5" class="text-center text-muted">
-                                {{ _('Keine Teilnehmer gefunden.') }}
+                                {{'Keine Teilnehmer gefunden.'}}
                             </td>
                         </tr>
                     {% endfor %}
