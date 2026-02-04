@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('exams/results', name: 'results_')]
+#[Route('exams/results')]
 //#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
 final class ExamResultController extends AbstractController
 {
@@ -41,7 +41,7 @@ final class ExamResultController extends AbstractController
     /**
      * Hauptansicht der Ergebnisse für eine Prüfung
      */
-    #[Route('/exam/{id}', name: 'index', methods: ['GET'])]
+#[Route('/exam/{id}', name: 'results_index', methods: ['GET'])]
     public function index(Exam $exam, Request $request): Response
     {
         // Der gewünschte Filter aus der URL (z.B. ?class=5a)
