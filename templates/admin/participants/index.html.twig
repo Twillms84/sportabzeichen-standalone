@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-<h1>{{ 'Teilnehmerverwaltung'|trans }}</h1>
+{% block title %}{{ 'Teilnehmerverwaltung'|trans }}{% endblock %}
 
 {% block body %}
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_manage'} %}
