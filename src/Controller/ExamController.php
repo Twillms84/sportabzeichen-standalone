@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/exams', name: 'sportabzeichen_exams_')]
+#[Route('/exams', name: 'app_exams_')]
 final class ExamController extends AbstractController
 {
     #[Route('/', name: 'dashboard')]
