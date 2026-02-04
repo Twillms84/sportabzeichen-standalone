@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Query\Expr\Join;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
