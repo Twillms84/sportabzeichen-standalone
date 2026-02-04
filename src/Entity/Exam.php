@@ -6,7 +6,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\ExamRepository;
-use App\Entity\User; // <--- WICHTIG: User importieren
+use App\Entity\User; 
 use App\Entity\Group;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

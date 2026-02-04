@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/sportabzeichen/training/{disciplineId}', name: 'pulsr_sportabzeichen_training_detail')]
+#[Route('/sportabzeichen/training/{disciplineId}', name: 'training_detail')]
 class TrainingDetailController extends AbstractController
 {
     public function __construct(
@@ -70,7 +70,7 @@ class TrainingDetailController extends AbstractController
                     'val' => $newValue
                 ]);
                 $this->addFlash('success', 'Trainingseinheit gespeichert!');
-                return $this->redirectToRoute('pulsr_sportabzeichen_training_detail', ['disciplineId' => $disciplineId]);
+                return $this->redirectToRoute('training_detail', ['disciplineId' => $disciplineId]);
             }
         }
 
@@ -90,7 +90,7 @@ class TrainingDetailController extends AbstractController
         $latestValue = $history[0]['value'] ?? null;
         $analysis = $this->analyzePerformance($latestValue, $req);
 
-        return $this->render('@PulsRSportabzeichen/my_results/detail.html.twig', [
+        return $this->render('my_results/detail.html.twig', [
             'discipline' => $req,
             'history' => $history,
             'analysis' => $analysis,

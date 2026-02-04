@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('css/sportabzeichen_my_results.css', 'pulsr-sportabzeichen') }}">
+    <link rel="stylesheet" href="{{ asset('css/sportabzeichen_my_results.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -123,7 +123,7 @@
 
                                 {# Training Button #}
                                 <td class="ps-4 sa-mobile-action">
-                                    <a href="{{ path('pulsr_sportabzeichen_training_detail', { disciplineId: row.discipline_id }) }}" 
+                                    <a href="{{ path('raining_detail', { disciplineId: row.discipline_id }) }}" 
                                        class="btn btn-outline-primary btn-sm w-100 d-flex justify-content-between align-items-center sa-btn-hover">
                                         <span>
                                             {% if row.training_value is not empty %}

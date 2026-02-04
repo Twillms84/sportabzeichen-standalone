@@ -229,7 +229,7 @@ SQL;
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/admin/upload.html.twig', [
+        return $this->render('admin/upload.html.twig', [
             'activeTab' => 'requirements_upload',
             'message'   => $message,
             'error'     => $error,

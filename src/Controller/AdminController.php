@@ -29,7 +29,7 @@ final class AdminController extends AbstractController
     {
         $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
-        return $this->render('@PulsRSportabzeichen/admin/dashboard.html.twig', [
+        return $this->render('admin/dashboard.html.twig', [
             'activeTab' => 'dashboard',
         ]);
     }
@@ -66,7 +66,7 @@ final class AdminController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        return $this->render('@PulsRSportabzeichen/admin/participants/index.html.twig', [
+        return $this->render('admin/participants/index.html.twig', [
             'participants' => $participants,
             'activeTab'    => 'participants_manage',
             'currentPage'  => $page,
@@ -125,7 +125,7 @@ final class AdminController extends AbstractController
             array_pop($results);
         }
 
-        return $this->render('@PulsRSportabzeichen/admin/participants/missing.html.twig', [
+        return $this->render('admin/participants/missing.html.twig', [
             'missingUsers' => $results,
             'searchTerm'   => $searchTerm,
             'limitReached' => $limitReached,
@@ -179,7 +179,7 @@ final class AdminController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/admin/participants/add.html.twig', [
+        return $this->render('admin/participants/add.html.twig', [
             'form' => $form->createView(),
             'user' => $user // Entity an View übergeben (Twig: user.firstname statt user['firstname'])
         ]);
@@ -234,7 +234,7 @@ final class AdminController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/admin/add.html.twig', [
+        return $this->render('admin/add.html.twig', [
             'form' => $form->createView(),
             'user' => $participant->getUser() // Entity statt Array
         ]);
@@ -244,7 +244,7 @@ final class AdminController extends AbstractController
     public function importIndex(): Response
     {
         $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
-        return $this->render('@PulsRSportabzeichen/admin/upload_participants.html.twig', [
+        return $this->render('admin/upload_participants.html.twig', [
             'activeTab' => 'import',
             'message' => null, 'error' => null, 'imported' => 0, 'skipped' => 0
         ]);

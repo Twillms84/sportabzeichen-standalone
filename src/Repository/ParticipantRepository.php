@@ -6,7 +6,7 @@ namespace App\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use PulsR\SportabzeichenBundle\Entity\Participant;
+use App\Entity\Participant;
 
 /**
  * @extends ServiceEntityRepository<Participant>

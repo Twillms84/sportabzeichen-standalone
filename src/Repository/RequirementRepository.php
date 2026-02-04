@@ -6,8 +6,8 @@ namespace App\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use PulsR\SportabzeichenBundle\Entity\Requirement;
-use PulsR\SportabzeichenBundle\Entity\Discipline;
+use App\Entity\Requirement;
+use App\Entity\Discipline;
 
 /**
  * @extends ServiceEntityRepository<Requirement>

@@ -178,7 +178,7 @@ final class ParticipantUploadController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/admin/upload_participants.html.twig', [
+        return $this->render('admin/upload_participants.html.twig', [
             'activeTab' => 'import', // Achte darauf, dass der Tab-Name stimmt (import oder participants_upload)
             'imported'  => $imported,
             'skipped'   => $skipped,

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/sportabzeichen/my_results', name: 'pulsr_sportabzeichen_my_results')]
+#[Route('/sportabzeichen/my_results', name: 'my_results')]
 class MyResultsController extends AbstractController
 {
     public function __construct(
@@ -153,7 +153,7 @@ class MyResultsController extends AbstractController
             }
         }
 
-        return $this->render('@PulsRSportabzeichen/my_results/index.html.twig', [
+        return $this->render('my_results/index.html.twig', [
             'year' => $currentYear,
             'age' => $age,
             'gender' => $participant['geschlecht'],
