@@ -3,52 +3,95 @@
     <head>
         <meta charset="UTF-8">
         <title>{% block title %}Sportabzeichen App{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         
-        {# Bootstrap 5 & FontAwesome via CDN laden (Schnellste Lösung für Styles & Icons) #}
+        {# Bootstrap CSS (CDN für den schnellen Start) #}
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        {# FontAwesome für Icons #}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        
-        {% block stylesheets %}{% endblock %}
+
+        {% block stylesheets %}
+            {# Falls du Webpack Encore nutzt, hier die Zeile einkommentieren: #}
+            {# {{ encore_entry_link_tags('app') }} #}
+        {% endblock %}
+
+        <style>
+            body { padding-top: 70px; /* Platz für die fixierte Navbar */ }
+            .navbar-brand { font-weight: bold; }
+        </style>
     </head>
     <body>
-        {# Einfache Navbar (Ersatz für das IServ-Menü) #}
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
             <div class="container">
-                <a class="navbar-brand" href="#">Sportabzeichen</a>
-                <div class="navbar-nav">
-                     {# Hier später deine Links rein #}
-                    <a class="nav-link" href="#">Start</a>
-                    <a class="nav-link" href="#">Prüfungen</a>
+                <a class="navbar-brand" href="{{ path('app_exams_dashboard') }}">
+                    <i class="fas fa-medal"></i> Sportabzeichen
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_exams_dashboard') }}">Übersicht</a>
+                        </li>
+
+                        {# ADMIN BEREICH - Nur sichtbar für Admins #}
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog"></i> Verwaltung
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">Benutzer verwalten</a></li>
+                                    <li><a class="dropdown-item" href="#">Gruppen verwalten</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#">System-Einstellungen</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    </ul>
+
+                    <ul class="navbar-nav ms-auto">
+                        {% if app.user %}
+                            <li class="nav-item">
+                                <span class="nav-link text-light">Hallo, {{ app.user.firstname|default('User') }}</span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-danger" href="{{ path('app_logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        {% else %}
+                             <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_login') }}">Login</a>
+                            </li>
+                        {% endif %}
+                    </ul>
                 </div>
             </div>
         </nav>
 
-        <div class="container">
-            {# Flash Messages (Erfolgsmeldungen anzeigen) #}
+        <div class="container mt-4">
+            {# Hier werden Fehlermeldungen (Flash Messages) angezeigt #}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ label }}">
+                    <div class="alert alert-{{ label }} alert-dismissible fade show">
                         {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endfor %}
 
-            {# --- HIER IST DER TRICK --- #}
-            {# Wir packen deine alten IServ-Blöcke in den neuen Body #}
-            {% block body %}
-                <div class="card">
-                    <div class="card-header">
-                        <h1>{% block headline %}Willkommen{% endblock %}</h1>
-                    </div>
-                    <div class="card-body">
-                        {# Hier wird der Inhalt deiner alten Templates reingeladen #}
-                        {% block content %}{% endblock %}
-                    </div>
-                </div>
-            {% endblock %}
+            {# Hier kommt der Inhalt der jeweiligen Seite rein #}
+            {% block body %}{% endblock %}
         </div>
 
+        {# Bootstrap JS #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        {% block javascripts %}{% endblock %}
+        
+        {% block javascripts %}
+            {# {{ encore_entry_script_tags('app') }} #}
+        {% endblock %}
     </body>
 </html>
