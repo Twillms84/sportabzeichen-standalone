@@ -296,13 +296,13 @@ final class ExamController extends AbstractController
         // --- GET DATEN LADEN ---
 
         // A) Zugeordnete Gruppen
-        $assignedGroups = $conn->fetchAllAssociative("
-            SELECT seg.act, g.name 
-            FROM sportabzeichen_exam_groups seg
-            LEFT JOIN app_groups g ON seg.act = g.act
-            WHERE seg.exam_id = ?
+        $sqlGroups = "
+            SELECT seg.group_id as act, g.name 
+            FROM sportabzeichen_exam_groups seg 
+            LEFT JOIN app_groups g ON seg.group_id = g.id
+            WHERE seg.exam_id = ? 
             ORDER BY g.name ASC
-        ", [$id]);
+        ";
         
         $assignedActs = array_column($assignedGroups, 'act');
 
@@ -737,7 +737,7 @@ final class ExamController extends AbstractController
                 (
                     SELECT STRING_AGG(DISTINCT g_sub.name, ', ')
                     FROM app_groups g_sub
-                    JOIN members m_sub ON g_sub.act = m_sub.actgrp
+                    JOIN members m_sub ON g_sub.id = m_sub.actgrp
                     WHERE m_sub.actuser = u.act
                     AND g_sub.act IN (SELECT act FROM sportabzeichen_exam_groups WHERE exam_id = :id)
                 ) as group_name
