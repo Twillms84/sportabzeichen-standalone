@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/sportabzeichen/admin', name: 'sportabzeichen_admin_')]
+#[Route('/admin', name: 'admin_')]
 final class AdminController extends AbstractController
 {
     public function __construct(
@@ -27,7 +27,7 @@ final class AdminController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function dashboard(): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         return $this->render('admin/dashboard.html.twig', [
             'activeTab' => 'dashboard',
@@ -79,7 +79,7 @@ final class AdminController extends AbstractController
     #[Route('/participants/missing', name: 'participants_missing')]
     public function participantsMissing(Request $request): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         $userRepo = $this->em->getRepository(User::class);
         $searchTerm = trim((string)$request->query->get('q'));
@@ -136,21 +136,21 @@ final class AdminController extends AbstractController
     #[Route('/participants/add/{username}', name: 'participants_add')]
     public function participantsAdd(Request $request, string $username): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         // User via Entity laden statt Raw SQL
         $user = $this->em->getRepository(User::class)->findOneBy(['username' => $username]); // 'act' heißt in der Entity meist 'username'
 
         if (!$user) {
             $this->addFlash('error', 'Benutzer nicht gefunden.');
-            return $this->redirectToRoute('sportabzeichen_admin_participants_missing');
+            return $this->redirectToRoute('admin_participants_missing');
         }
 
         // Check auf Existenz (über Entity Repository)
         $existing = $this->em->getRepository(Participant::class)->findOneBy(['user' => $user]);
         if ($existing) {
             $this->addFlash('warning', 'Teilnehmer existiert bereits.');
-            return $this->redirectToRoute('sportabzeichen_admin_participants_missing');
+            return $this->redirectToRoute('admin_participants_missing');
         }
 
         // Neue Entity erstellen
@@ -188,7 +188,7 @@ final class AdminController extends AbstractController
     #[Route('/participants/{id}/update', name: 'participants_update', methods: ['POST'])]
     public function participantsUpdate(Request $request, Participant $participant): Response
     {
-        $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
