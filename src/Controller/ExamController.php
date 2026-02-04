@@ -737,9 +737,12 @@ final class ExamController extends AbstractController
                 (
                     SELECT STRING_AGG(DISTINCT g_sub.name, ', ')
                     FROM app_groups g_sub
-                    JOIN members m_sub ON g_sub.id = m_sub.actgrp
-                    WHERE m_sub.actuser = u.act
-                    AND g_sub.act IN (SELECT act FROM sportabzeichen_exam_groups WHERE exam_id = :id)
+                    -- FIX 1: Typ-Umwandlung (CAST) für den Vergleich
+                    JOIN members m_sub ON CAST(g_sub.id AS VARCHAR) = m_sub.actgrp
+                    -- FIX 2: Auch hier User-ID als Text vergleichen, falls u.act alt ist
+                    WHERE m_sub.actuser = CAST(u.id AS VARCHAR)
+                    -- FIX 3: Spaltennamen anpassen (id statt act, group_id statt act)
+                    AND g_sub.id IN (SELECT group_id FROM sportabzeichen_exam_groups WHERE exam_id = :id)
                 ) as group_name
 
             FROM sportabzeichen_exam_results r
