@@ -6,14 +6,13 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User;
-use IServ\CrudBundle\Entity\CrudInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use App\Repository\ParticipantRepository;
 
 #[ORM\Entity(repositoryClass: ParticipantRepository::class)]
 #[ORM\Table(name: 'sportabzeichen_participants')]
-class Participant implements CrudInterface
+class Participant
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
