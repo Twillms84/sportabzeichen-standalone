@@ -369,8 +369,6 @@ final class ExamController extends AbstractController
             $params['search'] = '%' . $searchTerm . '%';
         }
 
-        $sql .= " ORDER BY is_missing_dob DESC, u.lastname ASC, u.firstname ASC LIMIT 300";
-
         $rows = $conn->fetchAllAssociative($sql, $params);
 
         foreach ($rows as $row) {
