@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/sportabzeichen/admin', name: 'sportabzeichen_admin_')]
+#[Route('/admin', name: 'admin_')]
 final class ParticipantUploadController extends AbstractController
 {
     #[Route('/upload_participants', name: 'upload_participants')]
