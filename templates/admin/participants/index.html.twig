@@ -89,11 +89,16 @@
                                         <div class="modal-header">
                                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                                             <h4 class="modal-title">
-                                                {{'Bearbeiten'}}: 
-                                                {% if p.user %}
-                                                    {{ p.user.firstname }} {{ p.user.lastname }}
+                                                {{ 'Bearbeiten'|trans }}: 
+                                                {% if p.u_firstname %}
+                                                    {# Fall 1: IServ User #}
+                                                    {{ p.u_firstname }} {{ p.u_lastname }}
+                                                {% elseif p.firstname %}
+                                                    {# Fall 2: CSV Import / Extern #}
+                                                    {{ p.firstname }} {{ p.lastname }}
                                                 {% else %}
-                                                    {{'Unbekannt'}}
+                                                    {# Fall 3: Fallback #}
+                                                    {{ 'Unbekannt'|trans }}
                                                 {% endif %}
                                             </h4>
                                         </div>
