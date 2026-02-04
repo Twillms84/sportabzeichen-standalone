@@ -2,7 +2,7 @@
 
 {% block page_title %}{{ _('Teilnehmerverwaltung') }}{% endblock %}
 
-{% block content %}
+{% block body %}
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_manage'} %}
 
     <div class="panel panel-default">
@@ -12,10 +12,10 @@
                 <span class="badge">{{ totalCount }}</span>
             </h3>
             <div class="btn-group pull-right">
-                <a href="{{ path('sportabzeichen_admin_participants_missing') }}" class="btn btn-primary btn-sm">
+                <a href="{{ path('admin_participants_missing') }}" class="btn btn-primary btn-sm">
                     {{ icon('plus') }} {{ _('Nacherfassen') }}
                 </a>
-                <a href="{{ path('sportabzeichen_admin_upload_participants') }}" class="btn btn-default btn-sm">
+                <a href="{{ path('admin_upload_participants') }}" class="btn btn-default btn-sm">
                     {{ icon('upload') }} {{ _('CSV Import') }}
                 </a>
             </div>
