@@ -213,5 +213,6 @@ final class ParticipantUploadController extends AbstractController
             }
         }
         return null;
+        }
     }
 }
