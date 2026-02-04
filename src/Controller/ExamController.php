@@ -299,7 +299,7 @@ final class ExamController extends AbstractController
         $assignedGroups = $conn->fetchAllAssociative("
             SELECT seg.act, g.name 
             FROM sportabzeichen_exam_groups seg
-            LEFT JOIN groups g ON seg.act = g.act
+            LEFT JOIN app_groups g ON seg.act = g.act
             WHERE seg.exam_id = ?
             ORDER BY g.name ASC
         ", [$id]);
@@ -329,7 +329,7 @@ final class ExamController extends AbstractController
             FROM users u
             INNER JOIN members m ON u.act = m.actuser
             INNER JOIN sportabzeichen_exam_groups seg ON m.actgrp = seg.act 
-            LEFT JOIN groups g ON seg.act = g.act
+            LEFT JOIN app_groups g ON seg.act = g.act
             LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
             
             WHERE u.deleted IS NULL
