@@ -59,12 +59,18 @@ final class AdminController extends AbstractController
         $maxPages = max(1, (int) ceil($totalCount / $limit));
 
         // Results
-        $participants = $qb->orderBy('u.lastname', 'ASC')
-            ->addOrderBy('u.firstname', 'ASC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $sql = "
+        SELECT 
+            p.*, 
+            u.firstname, 
+            u.lastname, 
+            u.act AS iserv_account
+        FROM sportabzeichen_participants p
+        LEFT JOIN users u ON p.user_id = u.id
+        ORDER BY u.lastname ASC, u.firstname ASC
+        ";
+
+        $participants = $conn->fetchAllAssociative($sql);
 
         return $this->render('admin/participants/index.html.twig', [
             'participants' => $participants,
