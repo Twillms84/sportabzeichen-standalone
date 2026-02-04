@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin', name: 'admin_')]
 final class ParticipantUploadController extends AbstractController
 {
-    #[Route('/upload_participants', name: 'upload_participants')]
+    #[Route('/participants_upload', name: 'participants_upload')]
     public function upload(Request $request, Connection $conn): Response
     {
         //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
