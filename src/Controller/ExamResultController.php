@@ -50,8 +50,8 @@ final class ExamResultController extends AbstractController
         // ---------------------------------------------------------
         // 0. PRÜFUNGSGRUPPEN LADEN
         // ---------------------------------------------------------
-        $allowedGroupActs = $this->em->getConnection()->fetchFirstColumn(
-            'SELECT act FROM sportabzeichen_exam_groups WHERE exam_id = ?',
+        $allowedGroupIds = $this->em->getConnection()->fetchFirstColumn(
+            'SELECT group_id FROM sportabzeichen_exam_groups WHERE exam_id = ?',
             [$exam->getId()]
         );
 
@@ -72,10 +72,10 @@ final class ExamResultController extends AbstractController
             ->setParameter('exam', $exam);
 
         // --- Filter direkt in der Datenbank ---
-        if (!empty($allowedGroupActs)) {
-            // FIX: Use 'ug.account' instead of 'ug.act' wenn nötig
-            $qb->andWhere('ug.account IN (:allowedGroups)')
-               ->setParameter('allowedGroups', $allowedGroupActs);
+        if (!empty($allowedGroupIds)) {
+            // Wir filtern über die ID der Gruppen, da wir diese gerade geladen haben
+            $qb->andWhere('ug.id IN (:allowedGroups)')
+            ->setParameter('allowedGroups', $allowedGroupIds);
         }
 
         // Sortierung
@@ -105,11 +105,11 @@ final class ExamResultController extends AbstractController
             
             // --- LOGIK: GRUPPENNAME ERMITTELN ---
             $categoryName = 'Sonstige';
-            
-            if (!empty($allowedGroupActs)) {
+
+            if (!empty($allowedGroupIds)) {
                 foreach ($userGroups as $g) {
-                    $gAct = (method_exists($g, 'getAct')) ? $g->getAct() : $g->getAccount();
-                    if (in_array($gAct, $allowedGroupActs)) {
+                    // Prüfen, ob die ID der Gruppe des Users zu den Gruppen der Prüfung gehört
+                    if (in_array($g->getId(), $allowedGroupIds)) {
                         $categoryName = $g->getName(); 
                         break; 
                     }
@@ -436,34 +436,33 @@ final class ExamResultController extends AbstractController
 
         // 3. Basis-SQL vorbereiten
         $groupNameSql = "
-            (SELECT g.name FROM members m 
-             JOIN groups g ON m.actgrp = g.act 
-             WHERE m.actuser = u.act 
-             " . ($selectedClass ? "AND g.name = :selectedClass" : "") . "
-             ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name 
-             LIMIT 1
+            (SELECT g.name FROM \"groups\" g 
+            JOIN users_groups ug ON g.id = ug.group_id 
+            WHERE ug.user_id = u.id 
+            " . ($selectedClass ? "AND g.name = :selectedClass" : "") . "
+            ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name 
+            LIMIT 1
             )
         ";
 
         $sql = "
             SELECT 
                 ep.id as ep_id, 
-                u.act as account_act,
-                u.lastname, u.firstname, 
+                u.firstname, u.lastname, 
                 p.geburtsdatum, p.geschlecht, 
                 ep.age_year, ep.total_points, ep.final_medal, ep.participant_id,
                 $groupNameSql as group_name,
                 (SELECT sp.exam_year 
-                 FROM sportabzeichen_swimming_proofs sp 
-                 WHERE sp.participant_id = ep.participant_id 
-                   AND (sp.exam_year = :year OR sp.valid_until >= :yearEnd)
-                 ORDER BY sp.confirmed_at DESC LIMIT 1
+                FROM sportabzeichen_swimming_proofs sp 
+                WHERE sp.participant_id = ep.participant_id 
+                AND (sp.exam_year = :year OR sp.valid_until >= :yearEnd)
+                ORDER BY sp.confirmed_at DESC LIMIT 1
                 ) as swimming_proof_year
             FROM sportabzeichen_exam_participants ep
             JOIN sportabzeichen_participants p ON p.id = ep.participant_id
             JOIN users u ON u.id = p.user_id  
             WHERE ep.exam_id = :examId 
-              AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
+            AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
         ";
         
         $params = ['examId' => $examId, 'year' => $examYear, 'yearEnd' => $examYearEnd];
