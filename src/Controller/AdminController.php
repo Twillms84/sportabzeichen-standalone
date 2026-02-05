@@ -41,11 +41,10 @@ final class AdminController extends AbstractController
         $q = trim((string)$request->query->get('q')); 
 
         // --- 1. SQL-Fragmente vorbereiten ---
-        
         $searchSql = '';
         $params = [];
 
-        // Basis-Join: Nur Participant und User
+        // Basis-Join: Participant -> User
         $joinSql = " 
             FROM sportabzeichen_participants p 
             LEFT JOIN users u ON p.user_id = u.id 
@@ -57,7 +56,8 @@ final class AdminController extends AbstractController
                 u.lastname ILIKE :search OR 
                 u.firstname ILIKE :search OR 
                 u.act ILIKE :search OR
-                p.username ILIKE :search
+                u.username ILIKE :search OR
+                u.import_id ILIKE :search
             )";
             $params['search'] = '%' . $q . '%';
         }
@@ -68,54 +68,37 @@ final class AdminController extends AbstractController
         $maxPages = max(1, (int) ceil($totalCount / $limit));
 
         // --- 3. DATEN LADEN ---
-        // TRICK: Wir holen die Gruppennamen per Sub-Select.
-        // STRING_AGG (Postgres) fügt alle Gruppen per Komma zusammen (z.B. "5a, Fußball-AG")
-        // Wir nehmen an, die Zwischentabelle heißt 'users_groups'.
+        // Wir holen die Gruppennamen per Sub-Select aus der neuen users_groups Tabelle
         $dataSql = "
             SELECT 
                 p.*, 
                 u.firstname as u_firstname, 
                 u.lastname as u_lastname, 
                 u.act AS iserv_account,
-                COALESCE(
-                    (
-                        SELECT STRING_AGG(g.name, ', ')
-                        FROM \"groups\" g
-                        INNER JOIN users_groups ug ON g.id = ug.group_id
-                        WHERE ug.user_id = u.id
-                    ),
-                    p.group_name -- <--- HIER: Fallback auf den importierten Text
+                u.source AS user_source,
+                u.import_id AS user_import_id,
+                (
+                    SELECT STRING_AGG(g.name, ', ')
+                    FROM \"groups\" g
+                    INNER JOIN users_groups ug ON g.id = ug.group_id
+                    WHERE ug.user_id = u.id
                 ) AS group_name
             " . $joinSql . $searchSql . "
             ORDER BY 
-                COALESCE(u.lastname, p.username) ASC, 
-                COALESCE(u.firstname, '') ASC
+                u.lastname ASC, 
+                u.firstname ASC
             LIMIT :limit OFFSET :offset
         ";
 
         $params['limit'] = $limit;
         $params['offset'] = $offset;
 
-        // Fehler abfangen, falls die Tabelle users_groups nicht existiert
         try {
             $participants = $conn->fetchAllAssociative($dataSql, $params);
         } catch (\Exception $e) {
-            // Fallback, falls users_groups nicht existiert: Ohne Gruppen laden
-            // Damit die Seite nicht crasht, wenn der Tabellenname anders ist.
-            $fallbackSql = "
-                SELECT 
-                    p.*, 
-                    u.firstname as u_firstname, 
-                    u.lastname as u_lastname, 
-                    u.act AS iserv_account,
-                    NULL AS group_name
-                " . $joinSql . $searchSql . "
-                ORDER BY u.lastname ASC LIMIT :limit OFFSET :offset
-            ";
-            $participants = $conn->fetchAllAssociative($fallbackSql, $params);
-            
-            // Optional: Fehlermeldung nur für dich zum Debuggen (auskommentieren im Live-Betrieb)
-            // dump($e->getMessage()); 
+            // Fallback für den Notfall
+            $this->addFlash('error', 'Datenbankfehler beim Laden der Liste: ' . $e->getMessage());
+            $participants = [];
         }
 
         return $this->render('admin/participants/index.html.twig', [
@@ -128,15 +111,13 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    // ... (Hier folgen wieder deine restlichen Methoden: participantsMissing, add, update, edit etc.) ...
-    // Bitte füge hier den restlichen Code ein, den du im vorherigen Schritt schon hattest.
-    
     #[Route('/participants/missing', name: 'participants_missing')]
     public function participantsMissing(Request $request): Response
     {
         $userRepo = $this->em->getRepository(User::class);
         $searchTerm = trim((string)$request->query->get('q'));
         
+        // Subquery: User, die schon Participant sind
         $completedSubQuery = $this->em->createQueryBuilder()
             ->select('IDENTITY(p.user)')
             ->from(Participant::class, 'p')
@@ -144,8 +125,9 @@ final class AdminController extends AbstractController
             ->getDQL();
 
         $qb = $userRepo->createQueryBuilder('u')
-            ->where('u.deleted IS NULL')
-            ->andWhere($userRepo->createQueryBuilder('u')->expr()->notIn('u.id', $completedSubQuery));
+            ->where('u.id NOT IN (' . $completedSubQuery . ')');
+            // 'deleted' Check entfernt, da das Feld in der neuen Entity ggf. nicht mehr existiert 
+            // oder anders gehandhabt wird. Falls du SoftDelete nutzt, hier wieder einfügen.
         
         if ($searchTerm !== '') {
             $qb->andWhere(
@@ -153,7 +135,8 @@ final class AdminController extends AbstractController
                     $qb->expr()->like('LOWER(u.username)', ':s'),
                     $qb->expr()->like('LOWER(u.firstname)', ':s'),
                     $qb->expr()->like('LOWER(u.lastname)', ':s'),
-                    $qb->expr()->like('LOWER(u.act)', ':s') 
+                    $qb->expr()->like('LOWER(u.act)', ':s'),
+                    $qb->expr()->like('LOWER(u.importId)', ':s')
                 )
             )
             ->setParameter('s', '%' . mb_strtolower($searchTerm) . '%');
@@ -161,7 +144,6 @@ final class AdminController extends AbstractController
 
         $qb->orderBy('u.lastname', 'ASC')
            ->addOrderBy('u.firstname', 'ASC')
-           ->addOrderBy('u.username', 'ASC')
            ->setMaxResults(51);
 
         $results = $qb->getQuery()->getResult();
@@ -180,43 +162,52 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/participants/add/{username}', name: 'participants_add')]
-    public function participantsAdd(Request $request, string $username): Response
+    #[Route('/participants/add/{id}', name: 'participants_add')]
+    public function participantsAdd(Request $request, int $id): Response
     {
-        $user = $this->em->getRepository(User::class)->findOneBy(['username' => $username]);
-        if (!$user) {
-            $user = $this->em->getRepository(User::class)->findOneBy(['act' => $username]);
-        }
+        // Wir suchen jetzt explizit nach ID, das ist sicherer als Username
+        $user = $this->em->getRepository(User::class)->find($id);
+
         if (!$user) {
             $this->addFlash('error', 'Benutzer nicht gefunden.');
             return $this->redirectToRoute('admin_participants_missing');
         }
+
+        // Prüfung ob schon existiert
         $existing = $this->em->getRepository(Participant::class)->findOneBy(['user' => $user]);
         if ($existing) {
             $this->addFlash('warning', 'Teilnehmer existiert bereits.');
             return $this->redirectToRoute('admin_participants_missing');
         }
+
         $participant = new Participant();
         $participant->setUser($user);
-        $importId = method_exists($user, 'getImportId') && $user->getImportId() ? $user->getImportId() : 'USER_' . $user->getId();
-        $participant->setImportId($importId);
-        $participant->setGeburtsdatum(new \DateTime('2010-01-01'));
-        $participant->setGeschlecht('MALE');
+        
+        // Neue Felder nutzen
+        $participant->setOrigin($user->getSource() === 'csv' ? 'CSV_LINKED' : 'MANUAL');
+        $participant->setUpdatedAt(new \DateTime());
+        
+        // Standardwerte (kann im Formular geändert werden)
+        $participant->setBirthdate(new \DateTime('2010-01-01')); 
+        $participant->setGender('MALE');
 
-        $form = $this->createParticipantForm($participant, 'Teilnehmer hinzufügen');
+        $form = $this->createParticipantForm($participant, 'Teilnehmer anlegen');
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->em->persist($participant);
                 $this->em->flush();
-                $name = $user->getFirstname() ?: $user->getUsername();
-                $this->addFlash('success', 'Gespeichert: ' . $name);
+                
+                $name = $user->getFirstname() . ' ' . $user->getLastname();
+                $this->addFlash('success', 'Teilnehmer angelegt: ' . $name);
+                
                 return $this->redirectToRoute('admin_participants_missing');
             } catch (\Exception $e) {
                 $this->addFlash('error', 'Fehler: ' . $e->getMessage());
             }
         }
+
         return $this->render('admin/participants/add.html.twig', [
             'form' => $form->createView(),
             'user' => $user
@@ -228,16 +219,22 @@ final class AdminController extends AbstractController
     {
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
+
         if ($dob) {
             try {
-                $participant->setGeburtsdatum(new \DateTime($dob));
+                $participant->setBirthdate(new \DateTime($dob));
             } catch (\Exception $e) {}
         }
+
         if ($gender && in_array($gender, ['MALE', 'FEMALE', 'DIVERSE'], true)) {
-             $participant->setGeschlecht($gender);
+             $participant->setGender($gender);
         }
+
+        $participant->setUpdatedAt(new \DateTime());
+        
         $this->em->flush();
         $this->addFlash('success', 'Daten gespeichert.');
+        
         return $this->redirectToRoute('admin_participants_index');
     }
 
@@ -246,8 +243,10 @@ final class AdminController extends AbstractController
     {
         $form = $this->createParticipantForm($participant, 'Änderungen speichern');
         $form->handleRequest($request);
+
         if ($form->isSubmitted() && $form->isValid()) {
             try {
+                $participant->setUpdatedAt(new \DateTime());
                 $this->em->flush(); 
                 $this->addFlash('success', 'Daten aktualisiert.');
                 return $this->redirectToRoute('admin_participants_index');
@@ -255,13 +254,19 @@ final class AdminController extends AbstractController
                 $this->addFlash('error', 'Fehler: ' . $e->getMessage());
             }
         }
+
         return $this->render('admin/participants/add.html.twig', [
             'form' => $form->createView(),
             'user' => $participant->getUser()
         ]);
     }
 
-    #[Route('/participants_upload', name: 'participants_upload')]
+    /**
+     * Hinweis: Die eigentliche Import-Logik liegt im ParticipantUploadController.
+     * Diese Route hier ist optional, falls du nur das Template rendern willst,
+     * aber der Link im Menü sollte auf den Upload-Controller zeigen.
+     */
+    #[Route('/participants_upload_view', name: 'participants_upload_view')]
     public function importIndex(): Response
     {
         return $this->render('admin/upload_participants.html.twig', [
@@ -276,7 +281,7 @@ final class AdminController extends AbstractController
             ->add('geburtsdatum', DateType::class, [ 
                 'label' => 'Geburtsdatum',
                 'widget' => 'single_text',
-                'required' => false,
+                'required' => true,
             ])
             ->add('geschlecht', ChoiceType::class, [
                 'label' => 'Geschlecht',
