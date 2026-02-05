@@ -5,13 +5,12 @@
  * which should already be in your base.html.twig.
  */
 
-
 import 'jquery';
 import 'bootstrap-select';
 
-import './exam_results_autosave.js'; // DEIN SKRIPT
-import './admin_participant.js';
-import './exam_dashboard.js';
+import './controllers/exam_results_autosave.js'; // DEIN SKRIPT
+import './controllers/admin_participant.js';
+import './controllers/exam_dashboard.js';
 
 import './styles/app.css';
 import './styles/results.css';
