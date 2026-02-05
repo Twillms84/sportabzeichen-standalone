@@ -25,33 +25,3 @@ import './styles/results.css';
 import './styles/dashboard_css.css';
 
 console.log('App started & patched 🛠️');
-
-$(document).ready(function() {
-    $('.selectpicker').each(function() {
-        var $select = $(this);
-        
-        // 1. Initialisieren
-        $select.selectpicker();
-
-        // 2. Button finden
-        var $toggle = $select.parent().find('.dropdown-toggle');
-        
-        // 3. Den Crash verhindern (wie vorhin)
-        $select.parent().off('show.bs.dropdown');
-
-        // 4. BRUTE FORCE FIX
-        // Wir hören manuell auf den Klick
-        $toggle.on('click', function(e) {
-            // Wir holen uns die "echte" Bootstrap 5 Instanz für diesen Button
-            var dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(this);
-            
-            // Wir zwingen sie zum Umschalten (Auf/Zu)
-            dropdownInstance.toggle();
-            
-            // Verhindern, dass das Plugin dazwischenfunkt
-            e.preventDefault(); 
-        });
-        
-        console.log('Force-Fix aktiviert für:', $select.attr('id'));
-    });
-});
