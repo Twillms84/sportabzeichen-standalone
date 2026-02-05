@@ -30,11 +30,10 @@ class RequirementRepository extends ServiceEntityRepository
         ->andWhere('r.gender = :gender')  // Nutzt $gender aus der Entity
         // Nutzt $minAge und $maxAge aus der Entity
         ->andWhere(':age BETWEEN r.minAge AND r.maxAge') 
-        ->setParameters([
-            'disc'   => $discipline,
-            'jahr'   => $year,
-            'gender' => $gender,
-            'age'    => $age,
+            ->setParameter('disc', $discipline)
+            ->setParameter('jahr', $year)
+            ->setParameter('gender', $gender)
+            ->setParameter('age', $age)
         ])
         ->getQuery()
         ->getOneOrNullResult();
