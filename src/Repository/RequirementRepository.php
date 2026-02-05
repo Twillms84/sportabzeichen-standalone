@@ -23,19 +23,18 @@ class RequirementRepository extends ServiceEntityRepository
      * Findet die passende Anforderung basierend auf Disziplin, Jahr, Geschlecht und Alter.
      */
     public function findMatchingRequirement(Discipline $discipline, int $year, string $gender, int $age): ?Requirement
-{
-    return $this->createQueryBuilder('r')
-        ->where('r.discipline = :disc')
-        ->andWhere('r.year = :jahr')      // Nutzt $year aus der Entity
-        ->andWhere('r.gender = :gender')  // Nutzt $gender aus der Entity
-        // Nutzt $minAge und $maxAge aus der Entity
-        ->andWhere(':age BETWEEN r.minAge AND r.maxAge') 
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.discipline = :disc')
+            ->andWhere('r.year = :jahr')
+            ->andWhere('r.gender = :gender')
+            ->andWhere(':age BETWEEN r.minAge AND r.maxAge')
+            // Hier folgen jetzt einfach die einzelnen Aufrufe:
             ->setParameter('disc', $discipline)
             ->setParameter('jahr', $year)
             ->setParameter('gender', $gender)
-            ->setParameter('age', $age)
-        ])
-        ->getQuery()
-        ->getOneOrNullResult();
-}
+            ->setParameter('age', $age) // Hier KEIN "])" mehr!
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
