@@ -25,50 +25,45 @@
     </div>
 
     {# --- 2. FILTER LEISTE (Card Design) --- #}
-    <div class="card shadow-sm mb-3 bg-light border-0">
-        <div class="card-body p-3">
-            <div class="row g-2 align-items-center">
-                
-                {# A) ANSICHT / DISZIPLINEN FILTER (Zuerst) #}
-                <div class="col-12 col-md-4">
-                    <select id="viewSelector" 
-                            class="form-control selectpicker show-tick" 
-                            multiple 
-                            data-select-all-text="Alle"
-                            data-deselect-all-text="Keine"
-                            data-none-selected-text="Ansicht / Disziplinen..."
-                            data-width="100%">
-                        
-                        <option value="SWIMMING" selected>Schwimmen</option>
+    <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
+    
+        <div class="d-flex align-items-center me-3">
+            <span class="filter-label d-none d-md-inline">Ansicht:</span>
+            <select id="viewSelector" class="selectpicker" multiple 
+                    data-style="btn-iserv" 
+                    data-selected-text-format="count > 2" 
+                    data-width="auto" 
+                    title="Alle Spalten">
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-                        {% for category in disciplines|keys %}
-                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
-                                <option value="{{ category }}" selected>{{ category }}</option>
-                            {% endif %}
-                        {% endfor %}
+        <div class="d-flex align-items-center me-3">
+            <span class="filter-label d-none d-md-inline">Gruppe:</span>
+            <select id="client-class-filter" class="selectpicker" multiple 
+                    data-style="btn-iserv" 
+                    data-actions-box="true"
+                    data-live-search="true"
+                    data-width="160px" 
+                    title="Alle Gruppen">
                     </select>
-                </div>
+        </div>
 
-                {# B) KLASSEN FILTER (Danach) #}
-                <div class="col-12 col-md-4">
-                    <select id="client-class-filter" 
-                            class="form-control selectpicker show-tick" 
-                            multiple 
-                            data-live-search="true" 
-                            data-select-all-text="Alle"
-                            data-deselect-all-text="Keine"
-                            data-none-selected-text="Klasse filtern..."
-                            data-width="100%">
-                        {# Optionen werden per JS befüllt #}
-                    </select>
-                </div>
-
-                {# C) SUCHLEISTE (Zuletzt) #}
-                <div class="col-12 col-md-4">
-                    <input type="text" id="client-search-input" class="form-control" placeholder="Schüler suchen...">
-                </div>
-
+        <div class="d-flex align-items-center flex-grow-1" style="max-width: 250px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-secondary text-secondary">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Name suchen...">
             </div>
+        </div>
+
+        <div class="ms-auto">
+            <a href="{{ path('app_sportabzeichen_groupcard') }}" id="btn-print-groupcard" class="btn btn-iserv btn-sm" target="_blank">
+                <i class="fas fa-print me-1"></i> <span class="d-none d-sm-inline">Gruppenkarte</span>
+            </a>
         </div>
     </div>
 
