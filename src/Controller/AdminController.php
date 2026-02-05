@@ -49,19 +49,26 @@ final class AdminController extends AbstractController
         $searchSql = '';
         $params = [];
 
-        // Such-Logik: Wir suchen in User (Vor-/Nachname/Account) UND Participant (Username/ImportID)
+        // JOIN: Users (für Namen) UND Groups (für Klassen/Riegen)
+        // Wir gehen davon aus, dass in sportabzeichen_participants die Spalte 'group_id' existiert.
+        $joinSql = " 
+            FROM sportabzeichen_participants p 
+            LEFT JOIN users u ON p.user_id = u.id 
+            LEFT JOIN groups g ON p.group_id = g.id
+            WHERE 1=1 
+        ";
+
+        // Such-Logik: Wir suchen in User, Participant UND Group
         if ($q !== '') {
             $searchSql = " AND (
                 u.lastname ILIKE :search OR 
                 u.firstname ILIKE :search OR 
                 u.act ILIKE :search OR
-                p.username ILIKE :search
+                p.username ILIKE :search OR
+                g.name ILIKE :search
             )";
             $params['search'] = '%' . $q . '%';
         }
-
-        // Basis-Join (Wird für Count und Data benötigt)
-        $joinSql = " FROM sportabzeichen_participants p LEFT JOIN users u ON p.user_id = u.id WHERE 1=1 ";
 
         // --- 2. ZÄHLEN (Pagination) ---
         $countSql = "SELECT COUNT(p.id)" . $joinSql . $searchSql;
@@ -69,15 +76,14 @@ final class AdminController extends AbstractController
         $maxPages = max(1, (int) ceil($totalCount / $limit));
 
         // --- 3. DATEN LADEN ---
-        // Hybrid-Logik: 
-        // - Name kommt aus 'users' (u.lastname), falls verknüpft.
-        // - Sonst aus 'participants' (p.username).
+        // Wir holen zusätzlich 'g.name' als 'group_name'
         $dataSql = "
             SELECT 
                 p.*, 
                 u.firstname as u_firstname, 
                 u.lastname as u_lastname, 
-                u.act AS iserv_account 
+                u.act AS iserv_account,
+                g.name AS group_name
             " . $joinSql . $searchSql . "
             ORDER BY 
                 COALESCE(u.lastname, p.username) ASC, 
@@ -110,7 +116,6 @@ final class AdminController extends AbstractController
         $searchTerm = trim((string)$request->query->get('q'));
         
         // --- 1. Subquery: User IDs finden, die schon Teilnehmer sind ---
-        // Wir prüfen, ob ein Participant existiert, der mit einem User verknüpft ist.
         $completedSubQuery = $this->em->createQueryBuilder()
             ->select('IDENTITY(p.user)')
             ->from(Participant::class, 'p')
@@ -129,7 +134,6 @@ final class AdminController extends AbstractController
                     $qb->expr()->like('LOWER(u.username)', ':s'),
                     $qb->expr()->like('LOWER(u.firstname)', ':s'),
                     $qb->expr()->like('LOWER(u.lastname)', ':s'),
-                    // Falls deine User Entity 'act' als Property hat, hier suchen:
                     $qb->expr()->like('LOWER(u.act)', ':s') 
                 )
             )
@@ -163,13 +167,9 @@ final class AdminController extends AbstractController
     {
         // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
-        // User via Entity laden
-        // HINWEIS: Wir suchen hier nach 'username', da die URL das so vorgibt.
-        // Falls deine User-Tabelle 'act' für den Login nutzt, ggf. hier anpassen.
         $user = $this->em->getRepository(User::class)->findOneBy(['username' => $username]);
 
         if (!$user) {
-            // Fallback: Versuch über 'act', falls username nicht gefunden
             $user = $this->em->getRepository(User::class)->findOneBy(['act' => $username]);
         }
 
@@ -178,26 +178,21 @@ final class AdminController extends AbstractController
             return $this->redirectToRoute('admin_participants_missing');
         }
 
-        // Check auf Existenz
         $existing = $this->em->getRepository(Participant::class)->findOneBy(['user' => $user]);
         if ($existing) {
             $this->addFlash('warning', 'Teilnehmer existiert bereits.');
             return $this->redirectToRoute('admin_participants_missing');
         }
 
-        // Neue Entity erstellen
         $participant = new Participant();
         $participant->setUser($user);
         
-        // Import ID generieren (IServ Import ID oder manuell)
-        // Prüfen, ob die Methode getImportId() in User existiert, sonst Fallback
         $importId = method_exists($user, 'getImportId') && $user->getImportId() 
             ? $user->getImportId() 
             : 'USER_' . $user->getId();
             
         $participant->setImportId($importId);
         
-        // Defaults
         $participant->setGeburtsdatum(new \DateTime('2010-01-01'));
         $participant->setGeschlecht('MALE');
 
@@ -267,7 +262,7 @@ final class AdminController extends AbstractController
             }
         }
 
-        return $this->render('admin/participants/add.html.twig', [ // Wiederverwendung des Templates
+        return $this->render('admin/participants/add.html.twig', [
             'form' => $form->createView(),
             'user' => $participant->getUser()
         ]);
@@ -283,9 +278,6 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    /**
-     * Hilfsmethode
-     */
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
         return $this->createFormBuilder($participant)
