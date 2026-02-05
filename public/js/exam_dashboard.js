@@ -1,31 +1,29 @@
 // public/js/exam_dashboard.js
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Alle Löschen-Buttons suchen (erkennbar an der Klasse .btn-delete-exam)
+    console.log('Sportabzeichen Dashboard JS geladen.');
+
+    // Alle Löschen-Buttons finden
     const deleteButtons = document.querySelectorAll('.btn-delete-exam');
+    console.log('Gefundene Löschen-Buttons:', deleteButtons.length);
 
     deleteButtons.forEach(function(button) {
         button.addEventListener('click', function(event) {
-            // Standard-Verhalten (Formular absenden) verhindern
-            event.preventDefault();
+            event.preventDefault(); // Standard-Klick verhindern
 
-            // Daten aus den Data-Attributen lesen
-            const examName = button.dataset.name;
-            const formId = button.dataset.formId;
+            const examName = this.getAttribute('data-name');
+            const formId = this.getAttribute('data-form-id');
 
-            // Die deutliche Sicherheitsabfrage
-            const message =
-                `ACHTUNG: Möchten Sie die Prüfung "${examName}" wirklich löschen?\n\n` +
-                `Das löscht auch ALLE bisher eingegebenen Ergebnisse und Teilnehmerdaten dieser Prüfung.\n` +
-                `Dieser Schritt kann nicht rückgängig gemacht werden!`;
+            console.log('Löschen geklickt für:', examName);
 
-            if (confirm(message)) {
-                // Wenn bestätigt, das versteckte Formular suchen und absenden
+            // Bestätigungsdialog (ganz simpel)
+            if (confirm('ACHTUNG: Möchten Sie die Prüfung "' + examName + '" wirklich löschen?\nAlle Ergebnisse dieser Prüfung werden unwiderruflich entfernt!')) {
+                // Formular absenden
                 const form = document.getElementById(formId);
                 if (form) {
                     form.submit();
                 } else {
-                    console.error('Lösch-Formular nicht gefunden: ' + formId);
+                    console.error('Formular nicht gefunden mit ID:', formId);
                 }
             }
         });
