@@ -52,13 +52,6 @@ thead .col-sticky-left {
     vertical-align: middle !important;
 }
 
-/* Schwimmen Spalte */
-.col-swimming {
-    min-width: 140px;
-    width: 140px;
-    vertical-align: middle !important;
-}
-
 /* Disziplin Spalten */
 .col-discipline {
     min-width: 160px;
@@ -409,13 +402,6 @@ thead .col-sticky-left {
     color: #666;
     margin-right: 5px;
     text-transform: uppercase;
-}
-
-/* Selectpicker Dropdown Menü Anpassung (optional) */
-.bootstrap-select .dropdown-menu {
-    font-size: 0.9rem;
-    border-radius: 0 0 4px 4px;
-    margin-top: 0;
 }
 
 /* Dark Mode Support für die Toolbar */
