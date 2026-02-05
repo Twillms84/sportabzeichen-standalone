@@ -100,7 +100,6 @@ final class ParticipantUploadController extends AbstractController
                                     'username'  => $firstname . ' ' . $lastname . '_' . substr($importIdRaw, -4), // Unique machen
                                     'source'    => 'csv',
                                     'roles'     => 'N;', // Serialisiertes leeres Array
-                                    'origin'    => 'CSV_IMPORT'
                                 ]);
                                 $userId = $conn->lastInsertId();
                             }
@@ -179,7 +178,6 @@ final class ParticipantUploadController extends AbstractController
 
                         $data = [
                             'user_id'      => $userId,
-                            'origin'       => ($strategy === 'standalone') ? 'CSV_STANDALONE' : 'ISERV_LINKED',
                             'geschlecht'   => $geschlecht,
                             'geburtsdatum' => $geburtsdatum,
                             'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s'),
