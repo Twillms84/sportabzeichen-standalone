@@ -83,6 +83,17 @@
                 }
             }
         </style>
+
+    {% block stylesheets %}
+        {# Dieser Tag lädt alle in app.js importierten CSS-Dateien #}
+        {{ importmap('app') }}
+    {% endblock %}
+
+    {% block javascripts %}
+        {# Dieser Tag lädt die JS-Logik #}
+        {{ importmap('app') }}
+    {% endblock %}
+    
     </head>
     <body>
 
