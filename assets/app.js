@@ -30,33 +30,25 @@ console.log('App started 🎉');
 
 // --- HIER DIE INITIALISIERUNG EINFÜGEN ---
 $(document).ready(function() {
-    // Wir nutzen hier eine eigene Klasse '.app-selectpicker', 
-    // damit das Plugin nicht automatisch (doppelt) startet.
-    
     $('.app-selectpicker').each(function() {
         var $select = $(this);
         
-        // Verhindert Doppel-Init, falls doch mal was schief geht
-        if ($select.data('selectpicker')) { return; } 
+        // 1. Initialisieren (OHNE Optionen, da diese im HTML stehen!)
+        $select.selectpicker(); 
 
-        $select.selectpicker({
-            style: 'btn-iserv',
-            size: 6,
-            liveSearch: true,
-            container: 'body',
-            noneSelectedText: 'Bitte wählen...',
-            actionsBox: true,
-            selectAllText: 'Alle',
-            deselectAllText: 'Keine'
-        });
-        // 2. WICHTIGER FIX FÜR BOOTSTRAP 5
-        // Wir suchen den Button, den das Plugin gerade gebaut hat
-        var $dropdownToggle = $select.parent().find('.dropdown-toggle');
+        // 2. Button suchen
+        // bootstrap-select erstellt einen Button direkt neben dem (versteckten) Select
+        // oder wrappt es in ein div. Wir suchen den Button im direkten Umfeld.
+        var $toggle = $select.parent().find('.dropdown-toggle');
         
-        // Wir fügen das 'bs' Attribut hinzu, damit Bootstrap 5 reagiert
-        $dropdownToggle.attr('data-bs-toggle', 'dropdown');
+        // 3. FIX: Bootstrap 5 Attribut setzen
+        // Wir entfernen das alte (falsche) und setzen das neue.
+        $toggle.removeAttr('data-toggle');
+        $toggle.attr('data-bs-toggle', 'dropdown');
         
-        // Manchmal muss man das Plugin kurz refreshen
-        $select.selectpicker('refresh');
+        // WICHTIG: KEIN .selectpicker('refresh') hiernach aufrufen!
+        // Ein Refresh würde den Button neu bauen und unser Attribut wieder löschen.
+        
+        console.log('Selectpicker gepatcht:', $select.attr('id'));
     });
 });
