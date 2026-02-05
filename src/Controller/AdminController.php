@@ -79,9 +79,14 @@ final class AdminController extends AbstractController
                 p.*, 
                 u.firstname as u_firstname, 
                 u.lastname as u_lastname, 
-                u.act AS iserv_account
-            " . $sqlBody . "
-            ORDER BY COALESCE(u.lastname, p.lastname) ASC, COALESCE(u.firstname, p.firstname) ASC
+                u.act AS iserv_account 
+            FROM sportabzeichen_participants p 
+            LEFT JOIN users u ON p.user_id = u.id 
+            WHERE 1=1 
+            " . ($searchSql ? " AND ($searchSql) " : "") . "
+            ORDER BY 
+                COALESCE(u.lastname, p.username) ASC, 
+                COALESCE(u.firstname, '') ASC
             LIMIT :limit OFFSET :offset
         ";
 

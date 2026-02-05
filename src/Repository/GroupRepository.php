@@ -15,4 +15,10 @@ class GroupRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Group::class);
     }
+
+    public function findAllSorted()
+    {
+        // Wir sortieren nach 'name' (z.B. "Klasse 5a") oder 'act' (interner ID)
+        return $this->findBy([], ['name' => 'ASC']); 
+    }
 }
