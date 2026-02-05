@@ -100,14 +100,11 @@ final class ExamController extends AbstractController
         // Gruppen laden
         $groupRepo = $em->getRepository(Group::class);
         $allGroups = $groupRepo->findBy([], ['name' => 'ASC']);
-        
+
         $groupsForDropdown = [];
         foreach ($allGroups as $g) {
-            // Getter heißt getAct() oder getAccount()? Je nach Entity. Ich nehme getAct() wie in deinem Code.
-            $acc = $g->getAct(); 
-            if ($acc) {
-                $groupsForDropdown[$g->getName()] = $acc;
-            }
+            // Wir nehmen den Namen als Anzeige und die ID als Wert für das Formular
+            $groupsForDropdown[$g->getName()] = $g->getId(); 
         }
 
         if ($request->isMethod('POST')) {
@@ -397,95 +394,83 @@ final class ExamController extends AbstractController
     }
 
     private function importParticipantsFromGroup(
-        EntityManagerInterface $em, 
-        Connection $conn, 
-        Exam $exam, 
-        string $groupAccount, 
-        array &$debugLog = []
-    ): void
-    {
-        // 1. Gruppe via ORM finden (Wichtig für ManyToMany Insert)
-        // Annahme: Deine Group Entity hat das Feld 'act' oder 'account'
-        $groupEntity = $em->getRepository(Group::class)->findOneBy(['act' => $groupAccount]); // evtl 'account' statt 'act' prüfen
+    EntityManagerInterface $em, 
+    Connection $conn, 
+    Exam $exam, 
+    string $groupId, // Wir übergeben jetzt die ID
+    array &$debugLog = []
+    ): void {
+        // 1. Gruppe finden
+        $groupEntity = $em->getRepository(Group::class)->find($groupId);
 
         if (!$groupEntity) {
-            $debugLog['errors'][] = "Gruppe '$groupAccount' nicht gefunden.";
+            $debugLog['errors'][] = "Gruppe mit ID '$groupId' nicht gefunden.";
             return;
         }
 
-        // Relation setzen (Doctrine managed die Tabelle sportabzeichen_exam_groups)
+        // Relation zwischen Prüfung und Gruppe setzen (für die Übersicht später)
         $exam->addGroup($groupEntity);
         $em->persist($exam);
         $em->flush(); 
 
-        // 2. Mitglieder laden (SQL)
-        // FIXED: members Tabelle nutzt meist actgrp als String
+        // 2. Mitglieder laden (Reines SQL für Performance)
+        // Wir joinen über die ManyToMany Tabelle von User und Group
         $sql = "
             SELECT u.id, u.firstname, u.lastname
             FROM users u
-            INNER JOIN users_groups ug ON u.id = ug.user_id
-            INNER JOIN \"groups\" g ON ug.group_id = g.id
-            WHERE g.name = ?
+            INNER JOIN user_group ug ON u.id = ug.user_id
+            WHERE ug.group_id = ?
         ";
-
-        $users = $conn->fetchAllAssociative($sql, [$groupAccount]);
+        // Hinweis: Prüfe in deiner DB, ob die Tabelle 'user_group' oder 'users_groups' heißt!
+        
+        $users = $conn->fetchAllAssociative($sql, [$groupId]);
 
         if (empty($users)) {
-            $debugLog['skipped'][] = "Gruppe '$groupAccount' leer.";
+            $debugLog['skipped'][] = "Gruppe '" . $groupEntity->getName() . "' ist leer.";
             return;
         }
 
         foreach ($users as $row) {
-            $realUserId = $row['id'];
-            $accountName = $row['act'];
-            // Logik ausgelagert in Helper-Methode für Wiederverwendbarkeit
-            $this->processParticipantByUserId($conn, $exam->getId(), $exam->getYear(), $realUserId);
-            $debugLog['added'][] = $accountName;
+            $this->processParticipantByUserId($conn, $exam->getId(), $exam->getYear(), (int)$row['id']);
+            $debugLog['added'][] = $row['firstname'] . ' ' . $row['lastname'];
         }
     }
 
     private function processParticipantByUserId(Connection $conn, int $examId, int $examYear, int $userId): void
     {
-        // 1. Check Pool
+        // 1. Participant im Pool suchen
         $poolData = $conn->fetchAssociative(
-            "SELECT id, geburtsdatum, geschlecht FROM sportabzeichen_participants WHERE user_id = ?", 
+            "SELECT id, geburtsdatum FROM sportabzeichen_participants WHERE user_id = ?", 
             [$userId]
         );
         
         if ($poolData) {
             $participantId = $poolData['id'];
             $dob = $poolData['geburtsdatum'];
-            $gender = $poolData['geschlecht'];
         } else {
-            // Participant im Pool anlegen, falls er noch nicht existiert
-            // Wir setzen Standardwerte für Notfälle
+            // Falls der User noch nie im Sport-Pool war: Minimal-Eintrag anlegen
             $conn->executeStatement("
-                INSERT INTO sportabzeichen_participants (user_id, geschlecht, updated_at) 
-                VALUES (?, 'MALE', CURRENT_TIMESTAMP)
+                INSERT INTO sportabzeichen_participants (user_id, updated_at) 
+                VALUES (?, CURRENT_TIMESTAMP)
             ", [$userId]);
-            
-            $participantId = $conn->fetchOne("SELECT id FROM sportabzeichen_participants WHERE user_id = ?", [$userId]);
+            $participantId = $conn->lastInsertId();
             $dob = null;
-            $gender = 'MALE';
         }
 
-        // 2. Alter berechnen (Sportabzeichen-Regel: Kalenderjahr - Geburtsjahr)
+        // 2. Alter berechnen (Sport-Regel: Jahr - Jahr)
         $age = 0;
         if ($dob) {
-            // $dob ist bei Doctrine/DBAL oft ein String 'YYYY-MM-DD'
             $birthYear = (int)date('Y', strtotime((string)$dob));
             $age = $examYear - $birthYear;
         }
 
-        // 3. In die Prüfung eintragen (Exam-Participants)
-        if ($participantId) {
-            $conn->executeStatement("
-                INSERT INTO sportabzeichen_exam_participants (exam_id, participant_id, age_year)
-                VALUES (?, ?, ?)
-                ON CONFLICT (exam_id, participant_id) 
-                DO UPDATE SET age_year = EXCLUDED.age_year
-            ", [$examId, $participantId, $age]);
-        }
+        // 3. In die Prüfung (Exam) eintragen
+        $conn->executeStatement("
+            INSERT INTO sportabzeichen_exam_participants (exam_id, participant_id, age_year)
+            VALUES (?, ?, ?)
+            ON CONFLICT (exam_id, participant_id) 
+            DO UPDATE SET age_year = EXCLUDED.age_year
+        ", [$examId, $participantId, $age]);
     }
 
     #[Route('/{id}/add_participant', name: 'add_participant', methods: ['GET', 'POST'])]
