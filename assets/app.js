@@ -33,25 +33,29 @@ $(document).ready(function() {
         // 1. Initialisieren
         $select.selectpicker();
 
-        // 2. Button finden
-        var $toggle = $select.parent().find('.dropdown-toggle');
+        // 2. Wrapper finden (das Div drumherum)
+        var $dropdown = $select.parent(); 
         
-        // 3. Den Crash verhindern (wie vorhin)
-        $select.parent().off('show.bs.dropdown');
+        // 3. Button finden und patchen
+        var $toggle = $dropdown.find('.dropdown-toggle');
+        $toggle.removeAttr('data-toggle');
+        $toggle.attr('data-bs-toggle', 'dropdown');
+        
+        // 4. Den Crash verhindern (alle alten Listener löschen)
+        $dropdown.off('show.bs.dropdown');
 
-        // 4. BRUTE FORCE FIX
-        // Wir hören manuell auf den Klick
-        $toggle.on('click', function(e) {
-            // Wir holen uns die "echte" Bootstrap 5 Instanz für diesen Button
-            var dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(this);
-            
-            // Wir zwingen sie zum Umschalten (Auf/Zu)
-            dropdownInstance.toggle();
-            
-            // Verhindern, dass das Plugin dazwischenfunkt
-            e.preventDefault(); 
+        // 5. WICHTIG: Klassen synchronisieren (Show <-> Open)
+        // Wir fügen eigene Listener hinzu, die das machen, was das Plugin vergessen hat.
+        $dropdown.on('show.bs.dropdown', function () {
+            $dropdown.addClass('open');
         });
+        $dropdown.on('hide.bs.dropdown', function () {
+            $dropdown.removeClass('open');
+        });
+
+        // 6. Manueller Refresh, falls Inhalte fehlen
+        $select.selectpicker('refresh');
         
-        console.log('Force-Fix aktiviert für:', $select.attr('id'));
+        console.log('Dropdown fixed:', $select.attr('id'));
     });
 });
