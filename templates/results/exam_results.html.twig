@@ -327,22 +327,34 @@
 {% endblock %}
 
 {% block javascripts %}
-    {# 1. Das lädt die Scripte aus der Hauptdatei (jQuery, Bootstrap etc.) #}
-    {{ parent() }} 
+    {{ parent() }}
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    {# 2. Jetzt kommt dein Custom Script #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
+
     <script>
+        // Wir warten, bis alles geladen ist
         $(document).ready(function() {
-            // Initialisierung
+            console.log("Starte Selectpicker..."); // Zur Kontrolle in F12
+
             $('.selectpicker').selectpicker({
-                style: 'btn-iserv',
+                style: 'btn-iserv',  // Unsere Custom CSS Klasse
                 size: 6,
+                liveSearch: true,
                 noneSelectedText: 'Bitte wählen...',
-                liveSearchPlaceholder: 'Suchen...'
+                actionsBox: true,
+                selectAllText: 'Alle',
+                deselectAllText: 'Keine'
             });
-            
-            // WICHTIG: Manuelles Refresh, falls Daten dynamisch sind
+
+            // Erzwinge ein Update
             $('.selectpicker').selectpicker('refresh');
+            console.log("Selectpicker fertig.");
         });
     </script>
 {% endblock %}
