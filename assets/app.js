@@ -8,7 +8,12 @@
 import './bootstrap.js'; // Bestehender Stimulus-Import
 import 'jquery';
 import 'bootstrap-select';
-import './results.js'; // DEIN SKRIPT
+import './exam_results_autosave.js'; // DEIN SKRIPT
+import './admin_participant.js';
+import './exam_dashboard.js';
+
 import './styles/app.css';
+import './styles/results.css';
+import './styles/dashboard_css.css';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');
