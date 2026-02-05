@@ -15,8 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/sportabzeichen/swimming', name: 'sportabzeichen_results_')]
-#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
+#[Route('/swimming', name: 'results_')]
+//#[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
 final class SwimmingProofController extends AbstractController
 {
     // Konstanten vermeiden Tippfehler
