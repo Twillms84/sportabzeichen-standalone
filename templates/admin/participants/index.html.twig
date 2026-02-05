@@ -33,35 +33,44 @@
                     <thead>
                         <tr>
                             <th>{{'Name'}}</th>
-                            <th>{{'Klasse'}}</th>
-                            <th>{{'Geburtstag'}}</th>
-                            <th>{{'Geschlecht'}}</th>
-                            <th class="text-end">{{'Aktion'}}</th>
+                            <th>{{'Klasse'}}</th> {# Spalte 2 #}
+                            <th>{{'Geburtstag'}}</th> {# Spalte 3 #}
+                            <th>{{'Geschlecht'}}</th> {# Spalte 4 #}
+                            <th class="text-end">{{'Aktion'}}</th> {# Spalte 5 #}
                         </tr>
                     </thead>
                     <tbody>
                     {% for p in participants %}
                         <tr>
+                            {# 1. Name #}
                             <td>
-                                {# 1. Priorität: Verknüpfter User (IServ/System) #}
                                 {% if p.u_lastname %}
                                     <strong>{{ p.u_lastname }}</strong>, {{ p.u_firstname }}
                                     {% if p.iserv_account %}
                                         <br><small class="text-muted">({{ p.iserv_account }})</small>
                                     {% endif %}
-
-                                {# 2. Priorität: Manueller Teilnehmer (Standalone) #}
                                 {% elseif p.username %}
                                     {{ p.username }}
-
-                                {# 3. Fallback #}
                                 {% else %}
                                     <span class="text-muted"><em>Unbekannt / Gelöscht</em></span>
                                 {% endif %}
                             </td>
-                            <td>{{ p.geburtsdatum ? p.geburtsdatum|date('d.m.Y') : '-' }}</td>
+
+                            {# 2. Klasse (Platzhalter, da DB-Spalte fehlt) #}
                             <td>
-                                {# HIER: Mapping von DB-Wert (MALE/FEMALE) zur Anzeige (M/W) #}
+                                {# Hier werden jetzt die Klassen angezeigt (z.B. "5a, InfoAG") #}
+                                {% if p.group_name %}
+                                    <span class="badge bg-secondary">{{ p.group_name }}</span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+
+                            {# 3. Geburtstag #}
+                            <td>{{ p.geburtsdatum ? p.geburtsdatum|date('d.m.Y') : '-' }}</td>
+
+                            {# 4. Geschlecht #}
+                            <td>
                                 {% if p.geschlecht == 'MALE' %}
                                     M
                                 {% elseif p.geschlecht == 'FEMALE' %}
@@ -70,6 +79,8 @@
                                     {{ p.geschlecht }}
                                 {% endif %}
                             </td>
+
+                            {# 5. Aktion #}
                             <td class="text-end">
                                 <button type="button" class="btn btn-default btn-sm"
                                         data-toggle="modal" 
@@ -79,7 +90,7 @@
                             </td>
                         </tr>
 
-                        {# --- MODAL (Server-Side rendered per Row) --- #}
+                        {# --- MODAL --- #}
                         <div class="modal fade" id="modal-{{ p.id }}" tabindex="-1" role="dialog">
                             <div class="modal-dialog" role="document">
                                 <form method="post" action="{{ path('admin_participants_update', {id: p.id}) }}">
@@ -89,13 +100,10 @@
                                             <h4 class="modal-title">
                                                 {{ 'Bearbeiten'|trans }}: 
                                                 {% if p.u_firstname %}
-                                                    {# Fall 1: IServ User (Daten kommen aus Tabelle 'users') #}
                                                     {{ p.u_firstname }} {{ p.u_lastname }}
                                                 {% elseif p.username %}
-                                                    {# Fall 2: Standalone / Manueller Name (Daten kommen aus 'participants') #}
                                                     {{ p.username }}
                                                 {% else %}
-                                                    {# Fall 3: Fallback #}
                                                     {{ 'Unbekannt'|trans }}
                                                 {% endif %}
                                             </h4>
@@ -108,7 +116,6 @@
                                             </div>
                                             <div class="form-group">
                                                 <label>{{'Geschlecht'}}</label>
-                                                {# Select sendet MALE/FEMALE an den Controller #}
                                                 <select name="gender" class="form-control">
                                                     <option value="MALE" {{ p.geschlecht == 'MALE' ? 'selected' : '' }}>
                                                         {{'Männlich'}} (M)
@@ -139,13 +146,13 @@
                     </tbody>
                 </table>
             </div>
-
+            
             {# Paginierung #}
-             {% if maxPages > 1 %}
+            {% if maxPages > 1 %}
                 <nav aria-label="Page navigation" class="text-center">
                     <ul class="pagination">
                         <li class="{{ currentPage == 1 ? 'disabled' : '' }}">
-                            <a href="{{ currentPage > 1 ? path('sportabzeichen_admin_participants_index', {page: currentPage - 1, q: searchTerm}) : '#' }}" aria-label="Previous">
+                            <a href="{{ currentPage > 1 ? path('admin_participants_index', {page: currentPage - 1, q: searchTerm}) : '#' }}" aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
