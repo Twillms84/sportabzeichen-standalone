@@ -184,7 +184,6 @@ final class AdminController extends AbstractController
         $participant->setUser($user);
         
         // Neue Felder nutzen
-        $participant->setOrigin($user->getSource() === 'csv' ? 'CSV_LINKED' : 'MANUAL');
         $participant->setUpdatedAt(new \DateTime());
         
         // Standardwerte (kann im Formular geändert werden)
@@ -278,12 +277,12 @@ final class AdminController extends AbstractController
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
         return $this->createFormBuilder($participant)
-            ->add('geburtsdatum', DateType::class, [ 
-                'label' => 'Geburtsdatum',
+            ->add('birthdate', DateType::class, [  // HIER: 'birthdate' statt 'geburtsdatum'
+                'label' => 'Geburtsdatum',         // Das Label bleibt deutsch
                 'widget' => 'single_text',
                 'required' => true,
             ])
-            ->add('geschlecht', ChoiceType::class, [
+            ->add('gender', ChoiceType::class, [   // HIER: 'gender' statt 'geschlecht'
                 'label' => 'Geschlecht',
                 'choices' => [
                     'Männlich' => 'MALE',
