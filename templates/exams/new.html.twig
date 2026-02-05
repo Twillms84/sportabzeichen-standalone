@@ -59,8 +59,8 @@
                         {# groups[] ist wichtig für PHP #}
                         <select name="groups[]" id="groups" class="form-control select2" multiple="multiple" data-placeholder="{{ 'Gruppe wählen...'|trans }}">
                             {# groups ist ein assoziatives Array: key=account, value=Name #}
-                            {% for account, name in groups %}
-                                <option value="{{ account }}">{{ name }}</option>
+                            {% for name, id in groups %}
+                                <option value="{{ id }}">{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>

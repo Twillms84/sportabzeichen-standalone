@@ -101,10 +101,11 @@ final class ExamController extends AbstractController
         $groupRepo = $em->getRepository(Group::class);
         $allGroups = $groupRepo->findBy([], ['name' => 'ASC']);
 
-        $groupsForDropdown = [];
+      $groupsForDropdown = [];
         foreach ($allGroups as $g) {
-            // Wir nehmen den Namen als Anzeige und die ID als Wert für das Formular
-            $groupsForDropdown[$g->getName()] = $g->getId(); 
+            // Der Name (z.B. "8b") ist das Label für den User, 
+            // die ID (z.B. 42) ist der Wert, der an den Server geht.
+            $groupsForDropdown[$g->getName()] = $g->getId();
         }
 
         if ($request->isMethod('POST')) {
