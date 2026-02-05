@@ -7,7 +7,6 @@
 
 
 import $ from 'jquery';
-// jQuery global verfügbar machen (für Legacy Code und Console)
 window.jQuery = window.$ = $;
 
 import * as bootstrap from 'bootstrap'; 
@@ -33,29 +32,26 @@ $(document).ready(function() {
         // 1. Initialisieren
         $select.selectpicker();
 
-        // 2. Wrapper finden (das Div drumherum)
+        // 2. Wrapper finden
         var $dropdown = $select.parent(); 
         
-        // 3. Button finden und patchen
+        // 3. Button patchen (BS4 -> BS5)
         var $toggle = $dropdown.find('.dropdown-toggle');
         $toggle.removeAttr('data-toggle');
         $toggle.attr('data-bs-toggle', 'dropdown');
         
-        // 4. Den Crash verhindern (alle alten Listener löschen)
+        // 4. Störfeuer verhindern
+        // Wir verhindern, dass das Plugin beim Öffnen in Panik gerät
         $dropdown.off('show.bs.dropdown');
-
-        // 5. WICHTIG: Klassen synchronisieren (Show <-> Open)
-        // Wir fügen eigene Listener hinzu, die das machen, was das Plugin vergessen hat.
+        
+        // 5. Klassen synchronisieren (für Styling)
         $dropdown.on('show.bs.dropdown', function () {
             $dropdown.addClass('open');
         });
         $dropdown.on('hide.bs.dropdown', function () {
             $dropdown.removeClass('open');
         });
-
-        // 6. Manueller Refresh, falls Inhalte fehlen
-        $select.selectpicker('refresh');
         
-        console.log('Dropdown fixed:', $select.attr('id'));
+        console.log('Dropdown ready:', $select.attr('id'));
     });
 });
