@@ -395,11 +395,11 @@ final class ExamController extends AbstractController
     }
 
     private function importParticipantsFromGroup(
-    EntityManagerInterface $em, 
-    Connection $conn, 
-    Exam $exam, 
-    string $groupId, // Wir übergeben jetzt die ID
-    array &$debugLog = []
+        EntityManagerInterface $em, 
+        Connection $conn, 
+        Exam $exam, 
+        string $groupId, 
+        array &$debugLog = []
     ): void {
         // 1. Gruppe finden
         $groupEntity = $em->getRepository(Group::class)->find($groupId);
@@ -409,25 +409,25 @@ final class ExamController extends AbstractController
             return;
         }
 
-        // Relation zwischen Prüfung und Gruppe setzen (für die Übersicht später)
+        // Relation zwischen Prüfung und Gruppe speichern
+        // Symfony nutzt hierfür laut deiner Liste: sportabzeichen_exam_groups
         $exam->addGroup($groupEntity);
         $em->persist($exam);
         $em->flush(); 
 
-        // 2. Mitglieder laden (Reines SQL für Performance)
-        // Wir joinen über die ManyToMany Tabelle von User und Group
+        // 2. Mitglieder der Gruppe laden
+        // Wir nutzen jetzt den Tabellennamen aus deinem Terminal: users_groups
         $sql = "
             SELECT u.id, u.firstname, u.lastname
             FROM users u
-            INNER JOIN group_user gu ON u.id = gu.user_id
-            WHERE gu.group_id = ?
+            INNER JOIN users_groups ug ON u.id = ug.user_id
+            WHERE ug.group_id = ?
         ";
-        // Hinweis: Prüfe in deiner DB, ob die Tabelle 'user_group' oder 'users_groups' heißt!
         
         $users = $conn->fetchAllAssociative($sql, [$groupId]);
 
         if (empty($users)) {
-            $debugLog['skipped'][] = "Gruppe '" . $groupEntity->getName() . "' ist leer.";
+            $debugLog['skipped'][] = "Gruppe '" . $groupEntity->getName() . "' (ID $groupId) ist leer oder hat keine verknüpften User.";
             return;
         }
 
