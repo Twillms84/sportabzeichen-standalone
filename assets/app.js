@@ -5,9 +5,12 @@
  * which should already be in your base.html.twig.
  */
 
-import 'jquery';
-import 'bootstrap-select';
 
+import $ from 'jquery';
+// WICHTIG: jQuery global verfügbar machen, BEVOR bootstrap-select geladen wird
+window.jQuery = window.$ = $;
+
+import 'bootstrap-select';
 import './controllers/exam_results_autosave.js'; // DEIN SKRIPT
 import './controllers/admin_participant.js';
 import './controllers/exam_dashboard.js';
