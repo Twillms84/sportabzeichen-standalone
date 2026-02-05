@@ -324,18 +324,25 @@
         </div>
     </form>
 </div>
-<script>
-    $(document).ready(function() {
-        // Initialisiert alle Elemente mit der Klasse .selectpicker
-        $('.selectpicker').selectpicker({
-            style: 'btn-iserv',
-            size: 6 // Maximale Anzahl sichtbarer Items
-        });
-        
-        // Erzwingt ein Neu-Zeichnen, falls es beim Laden klemmt
-        $('.selectpicker').selectpicker('refresh');
-    });
-</script>
-
 {% endblock %}
 
+{% block javascripts %}
+    {# 1. Das lädt die Scripte aus der Hauptdatei (jQuery, Bootstrap etc.) #}
+    {{ parent() }} 
+
+    {# 2. Jetzt kommt dein Custom Script #}
+    <script>
+        $(document).ready(function() {
+            // Initialisierung
+            $('.selectpicker').selectpicker({
+                style: 'btn-iserv',
+                size: 6,
+                noneSelectedText: 'Bitte wählen...',
+                liveSearchPlaceholder: 'Suchen...'
+            });
+            
+            // WICHTIG: Manuelles Refresh, falls Daten dynamisch sind
+            $('.selectpicker').selectpicker('refresh');
+        });
+    </script>
+{% endblock %}
