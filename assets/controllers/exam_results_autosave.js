@@ -172,8 +172,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- CHANGE LISTENER (SPEICHERN) ---
     form.addEventListener('change', async function(event) {
+        console.log('Change erkannt an:', event.target); // Erscheint das in der Konsole?
         const el = event.target;
-        if (!el.hasAttribute('data-save')) return;
+        if (!el.hasAttribute('data-save')) {
+        console.log('Abbruch: kein data-save Attribut');
+        return;
+    }
 
         const epId = el.getAttribute('data-ep-id');
         const type = el.getAttribute('data-type'); 
