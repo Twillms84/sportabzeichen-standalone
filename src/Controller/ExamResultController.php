@@ -59,7 +59,8 @@ final class ExamResultController extends AbstractController
         // 1. TEILNEHMER DATENBANKABFRAGE
         // ---------------------------------------------------------
         $qb = $this->em->createQueryBuilder();
-        
+
+        // Wir selektieren alles, was wir für die Anzeige brauchen (Eager Loading)
         $qb->select('ep', 'p', 'u', 'sp', 'res', 'd', 'ug') 
             ->from(ExamParticipant::class, 'ep')
             ->join('ep.participant', 'p')
@@ -71,9 +72,8 @@ final class ExamResultController extends AbstractController
             ->where('ep.exam = :exam')
             ->setParameter('exam', $exam);
 
-        // --- Filter direkt in der Datenbank ---
+        // Filter anwenden (über die ID der Join-Table)
         if (!empty($allowedGroupIds)) {
-            // Wir filtern über die ID der Gruppen, da wir diese gerade geladen haben
             $qb->andWhere('ug.id IN (:allowedGroups)')
             ->setParameter('allowedGroups', $allowedGroupIds);
         }
@@ -84,8 +84,19 @@ final class ExamResultController extends AbstractController
 
         if ($sort === 'lastname') {
             $qb->orderBy('u.lastname', $order)->addOrderBy('u.firstname', 'ASC');
-        } else {
-            $qb->orderBy('u.lastname', 'ASC'); 
+        }
+
+        // KEIN distinct() und KEIN groupBy() mehr hier!
+        $rawParticipants = $qb->getQuery()->getResult();
+
+        // ---------------------------------------------------------
+        // 1b. DUPLIKATE IN PHP ENTFERNEN
+        // ---------------------------------------------------------
+        // Da ein User in mehreren Gruppen sein kann, liefert der JOIN 
+        // denselben ExamParticipant mehrfach zurück. Wir indizieren nach ID.
+        $examParticipants = [];
+        foreach ($rawParticipants as $ep) {
+            $examParticipants[$ep->getId()] = $ep;
         }
 
        /** @var ExamParticipant[] $examParticipants */
