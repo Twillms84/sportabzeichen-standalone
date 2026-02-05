@@ -156,7 +156,39 @@
 
     {% endif %}
 
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test-Ausgabe: Muss in der Konsole erscheinen!
+            console.log('✅ INLINE-JS geladen!'); 
 
+            const deleteButtons = document.querySelectorAll('.btn-delete-exam');
+            
+            if (deleteButtons.length === 0) {
+                console.error('❌ Keine Löschen-Buttons gefunden!');
+            }
+
+            deleteButtons.forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault(); // Stoppt den Link/Button
+
+                    const examName = this.getAttribute('data-name');
+                    const formId = this.getAttribute('data-form-id');
+
+                    console.log('🗑 Löschen geklickt für:', examName);
+
+                    if (confirm('ACHTUNG: Möchten Sie die Prüfung "' + examName + '" wirklich löschen?')) {
+                        const form = document.getElementById(formId);
+                        if (form) {
+                            form.submit();
+                        } else {
+                            alert('Fehler: Das versteckte Lösch-Formular wurde nicht gefunden (ID: ' + formId + ')');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    
 {% endblock %}
 
 {% block javascripts %}
