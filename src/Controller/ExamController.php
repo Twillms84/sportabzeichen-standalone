@@ -106,10 +106,11 @@ final class ExamController extends AbstractController
         
         $groupsForDropdown = [];
         foreach ($allGroups as $g) {
-            $acc = $g->getAccount();
+            $acc = $g->getAct();
+
             if ($acc) {
                 // Key = Account (klasse.5a), Value = Name (Klasse 5a)
-                $groupsForDropdown[$acc] = $g->getName();
+                $groupsForDropdown[$g->getName()] = $acc;
             }
         }
 
