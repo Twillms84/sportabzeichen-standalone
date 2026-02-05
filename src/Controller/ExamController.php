@@ -421,11 +421,11 @@ final class ExamController extends AbstractController
         // 2. Mitglieder laden (SQL)
         // FIXED: members Tabelle nutzt meist actgrp als String
         $sql = "
-            SELECT u.id, u.act, u.firstname, u.lastname
+            SELECT u.id, u.firstname, u.lastname
             FROM users u
-            JOIN members m ON u.act = m.actuser
-            WHERE m.actgrp = ?
-            AND u.deleted IS NULL
+            INNER JOIN users_groups ug ON u.id = ug.user_id
+            INNER JOIN \"groups\" g ON ug.group_id = g.id
+            WHERE g.name = ?
         ";
 
         $users = $conn->fetchAllAssociative($sql, [$groupAccount]);
@@ -446,42 +446,38 @@ final class ExamController extends AbstractController
 
     private function processParticipantByUserId(Connection $conn, int $examId, int $examYear, int $userId): void
     {
-        // 1. Check Pool & Fetch DOB
-        $participantId = null;
-        $dob = null;
-
-        $poolData = $conn->fetchAssociative("SELECT id, geburtsdatum FROM sportabzeichen_participants WHERE user_id = ?", [$userId]);
+        // 1. Check Pool
+        $poolData = $conn->fetchAssociative(
+            "SELECT id, geburtsdatum, geschlecht FROM sportabzeichen_participants WHERE user_id = ?", 
+            [$userId]
+        );
         
         if ($poolData) {
             $participantId = $poolData['id'];
             $dob = $poolData['geburtsdatum'];
+            $gender = $poolData['geschlecht'];
         } else {
-            // Create in Pool (Minimal Data)
-            // Username holen wir hier nicht extra, wird ggf. später geupdatet
-            $conn->executeStatement("INSERT INTO sportabzeichen_participants (user_id) VALUES (?)", [$userId]);
+            // Participant im Pool anlegen, falls er noch nicht existiert
+            // Wir setzen Standardwerte für Notfälle
+            $conn->executeStatement("
+                INSERT INTO sportabzeichen_participants (user_id, geschlecht, updated_at) 
+                VALUES (?, 'MALE', CURRENT_TIMESTAMP)
+            ", [$userId]);
+            
             $participantId = $conn->fetchOne("SELECT id FROM sportabzeichen_participants WHERE user_id = ?", [$userId]);
+            $dob = null;
+            $gender = 'MALE';
         }
 
-        // 2. Fallback: System-Geburtsdatum (falls vorhanden)
-        if (!$dob) {
-            try {
-                // Prüfen ob Spalte existiert, sonst abfangen
-                $sysData = $conn->fetchAssociative("SELECT birthday FROM users WHERE id = ?", [$userId]);
-                if ($sysData && !empty($sysData['birthday'])) {
-                    $dob = $sysData['birthday'];
-                    $conn->executeStatement("UPDATE sportabzeichen_participants SET geburtsdatum = ? WHERE id = ?", [$dob, $participantId]);
-                }
-            } catch (\Throwable $e) { /* Ignore if column missing */ }
-        }
-
-        // 3. Alter berechnen
+        // 2. Alter berechnen (Sportabzeichen-Regel: Kalenderjahr - Geburtsjahr)
         $age = 0;
         if ($dob) {
-            $birthYear = (int)substr((string)$dob, 0, 4);
+            // $dob ist bei Doctrine/DBAL oft ein String 'YYYY-MM-DD'
+            $birthYear = (int)date('Y', strtotime((string)$dob));
             $age = $examYear - $birthYear;
         }
 
-        // 4. Insert into Exam (ON CONFLICT ignore/update age)
+        // 3. In die Prüfung eintragen (Exam-Participants)
         if ($participantId) {
             $conn->executeStatement("
                 INSERT INTO sportabzeichen_exam_participants (exam_id, participant_id, age_year)
