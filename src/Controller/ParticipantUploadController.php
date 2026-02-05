@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\ParameterType; // Wichtig für saubere Typen
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,157 +24,168 @@ final class ParticipantUploadController extends AbstractController
 
         if ($request->isMethod('POST')) {
             $file = $request->files->get('csvFile');
-            $strategy = $request->request->get('strategy', 'import_id');
+            // Strategie: 'iserv_match' (suche nach Login/Act) oder 'standalone' (lege User an)
+            $strategy = $request->request->get('strategy', 'iserv_match');
 
             if (!$file || strtolower($file->getClientOriginalExtension()) !== 'csv') {
                 $error = 'Bitte eine gültige CSV-Datei auswählen.';
             } else {
                 $filePath = $file->getRealPath();
                 
-                // 1. Trennzeichen automatisch erkennen (wichtig!)
+                // 1. Trennzeichen erkennen
                 $firstLine = fgets(fopen($filePath, 'r'));
                 $separator = str_contains($firstLine, ';') ? ';' : ',';
                 
                 $handle = fopen($filePath, 'r');
                 
-                // Header lesen (wir gehen davon aus, dass Zeile 1 IMMER Überschriften sind)
-                $header = fgetcsv($handle, 0, $separator); 
+                // Header überspringen
+                fgetcsv($handle, 0, $separator); 
                 $lineNumber = 1;
 
-                // Prepared Statements
-                // IServ Lookup (nur nötig, wenn NICHT Standalone)
-                $sqlLookup = "SELECT id, act, firstname, lastname FROM users WHERE import_id = :val AND deleted IS NULL LIMIT 1";
-                if ($strategy === 'act') {
-                    $sqlLookup = "SELECT id, act, firstname, lastname FROM users WHERE LOWER(act) = LOWER(:val) AND deleted IS NULL LIMIT 1";
-                }
-                $stmtLookup = $conn->prepare($sqlLookup);
+                // Caches für Performance (damit wir nicht für jede Zeile die Gruppe neu suchen)
+                $groupCache = []; // ['5b' => 12, '6a' => 14]
+                
+                // Transaktion starten für Datenintegrität
+                $conn->beginTransaction();
 
-                // Existenz-Check
-                $stmtCheckExist = $conn->prepare('
-                    SELECT id FROM sportabzeichen_participants 
-                    WHERE (user_id = :uid AND :uid IS NOT NULL) 
-                    OR (external_id = :ext_id AND :ext_id IS NOT NULL)
-                ');
+                try {
+                    while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
+                        $row = array_map(function($cell) {
+                            return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
+                        }, $row);
+                        
+                        $lineNumber++;
 
-                while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
-                    $row = array_map(function($cell) {
-                        return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
-                    }, $row);
-                    
-                    $lineNumber++;
+                        // Leere Zeilen ignorieren
+                        if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
+                            continue;
+                        }
 
-                    // Leere Zeilen ignorieren
-                    if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
-                        continue;
-                    }
+                        // Mapping (Spaltenindexe an deine CSV anpassen)
+                        // 0: ID (Import ID)
+                        // 2: Geschlecht
+                        // 3: Datum
+                        // 4: Nachname
+                        // 5: Vorname
+                        // 6: Klasse (Optional)
 
-                    try {
-                        // Mapping angepasst an deine Datei:
-                        // 0: ID (1115860)
-                        // 1: ID doppelt (1115860) -> ignorieren
-                        // 2: Geschlecht (m)
-                        // 3: Datum (06.01.2008)
-                        // 4: Nachname (Penning)
-                        // 5: Vorname (Raimo)
-                        // 6: Klasse (8b) - falls vorhanden
-
-                        if (count($row) < 3) {
+                        if (count($row) < 5) {
                             $skipped++;
                             $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten.";
                             continue;
                         }
 
-                        $identifier      = trim($row[0]); 
-                        $geschlechtRaw   = trim($row[1]); // Spalte 3 (Index 2)
-                        $geburtsdatumRaw = trim($row[2]); // Spalte 4 (Index 3)
-                        
-                        // Namen & Gruppe (Achtung: Erst Nachname, dann Vorname in deiner CSV)
-                        $csvLastname  = isset($row[3]) ? trim($row[3]) : null; 
-                        $csvFirstname = isset($row[4]) ? trim($row[4]) : null;
-                        $csvGroup     = isset($row[5]) ? trim($row[5]) : null;
+                        $importIdRaw   = trim($row[0]); 
+                        $geschlechtRaw = trim($row[2]); 
+                        $geburtsdatumRaw = trim($row[3]);
+                        $lastname      = trim($row[4]); 
+                        $firstname     = trim($row[5] ?? '');
+                        $groupName     = trim($row[6] ?? '');
 
-                        if ($identifier === '') continue;
+                        if ($importIdRaw === '') continue;
 
-                        // --- LOGIK START ---
-
+                        // --- 1. User finden oder erstellen ---
                         $userId = null;
-                        $firstname = $csvFirstname;
-                        $lastname  = $csvLastname;
-                        $groupName = $csvGroup;
-                        $origin    = 'CSV_STANDALONE';
-                        $externalId = $identifier;
-                        $username   = $csvFirstname . ' ' . $csvLastname; 
 
-                        // Fall A: Standalone Modus
                         if ($strategy === 'standalone') {
-                            if (empty($csvFirstname) || empty($csvLastname)) {
-                                $skipped++;
-                                $detailedErrors[] = "Zeile $lineNumber ($identifier): Standalone-Modus, aber Namen fehlen.";
-                                continue;
+                            // User suchen oder anlegen anhand import_id
+                            $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
+                            
+                            if (!$userId) {
+                                // Neuen User anlegen
+                                $conn->insert('users', [
+                                    'import_id' => $importIdRaw,
+                                    'firstname' => $firstname,
+                                    'lastname'  => $lastname,
+                                    'username'  => $firstname . ' ' . $lastname . '_' . substr($importIdRaw, -4), // Unique machen
+                                    'source'    => 'csv',
+                                    'roles'     => 'N;', // Serialisiertes leeres Array
+                                    'origin'    => 'CSV_IMPORT'
+                                ]);
+                                $userId = $conn->lastInsertId();
                             }
-                        } 
-                        // Fall B: IServ Integration
-                        else {
-                            // Lookup ausführen
-                            $iservUser = $stmtLookup->executeQuery(['val' => $identifier])->fetchAssociative();
+                        } else {
+                            // IServ Match Strategie: Wir suchen nach dem 'act' (Account Name) oder existierender import_id
+                            // Annahme: In der CSV Spalte 0 steht der IServ-Login ODER eine ID, die wir zuordnen wollen.
+                            
+                            // A) Suche nach Import ID
+                            $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
 
-                            if ($iservUser) {
-                                $userId    = $iservUser['id'];
-                                $username  = $iservUser['act'];
-                                $firstname = $iservUser['firstname']; 
-                                $lastname  = $iservUser['lastname'];
-                                $origin    = 'ISERV_IMPORT';
-                                $externalId = null; 
-                            } else {
-                                // Nicht im IServ -> Fallback auf CSV Namen
-                                if (empty($csvFirstname) || empty($csvLastname)) {
-                                    $skipped++;
-                                    $detailedErrors[] = "Zeile $lineNumber ($identifier): Nicht im IServ gefunden und keine Namen in CSV.";
-                                    continue;
+                            // B) Wenn nicht gefunden, Suche nach 'act' (Login Name)
+                            if (!$userId) {
+                                $userId = $conn->fetchOne("SELECT id FROM users WHERE LOWER(act) = LOWER(?)", [$importIdRaw]);
+                                
+                                // Wenn gefunden, Import ID speichern für Zukunft
+                                if ($userId) {
+                                    $conn->update('users', ['import_id' => $importIdRaw], ['id' => $userId]);
                                 }
                             }
                         }
 
-                        // --- VALIDIERUNG ---
+                        if (!$userId) {
+                            $skipped++;
+                            $detailedErrors[] = "Zeile $lineNumber ($importIdRaw): User in Datenbank nicht gefunden (IServ-Modus).";
+                            continue;
+                        }
 
+                        // --- 2. Gruppe verarbeiten (Klasse) ---
+                        if ($groupName !== '') {
+                            // Check Cache
+                            if (!isset($groupCache[$groupName])) {
+                                // Check DB
+                                $groupId = $conn->fetchOne('SELECT id FROM "groups" WHERE name = ?', [$groupName]);
+                                if (!$groupId) {
+                                    // Create Group
+                                    $conn->insert('"groups"', ['name' => $groupName]);
+                                    $groupId = $conn->lastInsertId();
+                                }
+                                $groupCache[$groupName] = $groupId;
+                            }
+                            $groupId = $groupCache[$groupName];
+
+                            // Link User <-> Group (users_groups)
+                            // "ON CONFLICT DO NOTHING" Ersatz für Postgres/MySQL ohne Exception
+                            $exists = $conn->fetchOne('SELECT 1 FROM users_groups WHERE user_id = ? AND group_id = ?', [$userId, $groupId]);
+                            if (!$exists) {
+                                $conn->insert('users_groups', ['user_id' => $userId, 'group_id' => $groupId]);
+                            }
+                        }
+
+                        // --- 3. Participant (Sportdaten) verarbeiten ---
+                        
+                        // Validierung
                         $geschlecht = match (strtolower($geschlechtRaw)) {
                             'm', 'male', 'männlich' => 'MALE',
                             'w', 'f', 'female', 'weiblich' => 'FEMALE',
+                            'd', 'diverse', 'divers' => 'DIVERSE',
                             default => null, 
                         };
 
-                        if (!$geschlecht) {
-                            $skipped++; 
-                            $detailedErrors[] = "Zeile $lineNumber: Ungültiges Geschlecht '$geschlechtRaw'";
-                            continue;
-                        }
-
                         $geburtsdatum = self::parseDate($geburtsdatumRaw);
-                        if (!$geburtsdatum) {
-                            $skipped++; 
-                            $detailedErrors[] = "Zeile $lineNumber: Ungültiges Datum '$geburtsdatumRaw'";
-                            continue;
+
+                        if (!$geschlecht || !$geburtsdatum) {
+                             $detailedErrors[] = "Zeile $lineNumber: Ungültiges Datum ($geburtsdatumRaw) oder Geschlecht ($geschlechtRaw)";
+                             // Wir brechen hier nicht ab, sondern updaten nur den Rest nicht, 
+                             // oder wir überspringen. Hier: Überspringen um Datenmüll zu vermeiden.
+                             $skipped++;
+                             continue;
                         }
 
-                        // --- DB WRITE (KORRIGIERT) ---
-                        
-                        // Wir prüfen direkt, ohne Prepared Statement Objekt, um den Fehler zu vermeiden
+                        // Prüfen ob Participant Eintrag existiert
                         $existingPartId = $conn->fetchOne(
-                            'SELECT id FROM sportabzeichen_participants WHERE user_id = :uid OR external_id = :ext_id',
-                            ['uid' => $userId, 'ext_id' => $externalId]
+                            'SELECT id FROM sportabzeichen_participants WHERE user_id = ?',
+                            [$userId]
                         );
 
                         $data = [
                             'user_id'      => $userId,
-                            'external_id'  => $externalId,
-                            'origin'       => $origin,
-                            'firstname'    => $firstname,
-                            'lastname'     => $lastname,
-                            'username'     => $username,
-                            'group_name'   => $groupName,
+                            'origin'       => ($strategy === 'standalone') ? 'CSV_STANDALONE' : 'ISERV_LINKED',
                             'geschlecht'   => $geschlecht,
                             'geburtsdatum' => $geburtsdatum,
-                            'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s')
+                            'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s'),
+                            // Legacy Felder füllen wir auch, falls alte Logik noch greift
+                            'username'     => $firstname . ' ' . $lastname, 
+                            'group_name'   => $groupName 
                         ];
 
                         if ($existingPartId) {
@@ -185,18 +195,21 @@ final class ParticipantUploadController extends AbstractController
                         }
 
                         $imported++;
-
-                    } catch (\Throwable $e) {
-                        $skipped++;
-                        $detailedErrors[] = "Zeile $lineNumber: Systemfehler: " . $e->getMessage();
                     }
+                    
+                    $conn->commit();
+                    
+                } catch (\Throwable $e) {
+                    $conn->rollBack();
+                    $error = 'Systemfehler beim Import: ' . $e->getMessage();
                 }
+
                 fclose($handle);
                 
                 if ($imported > 0) {
-                    $message = "Import: $imported erfolgreich, $skipped übersprungen.";
-                } elseif ($skipped > 0) {
-                    $error = "Import fehlgeschlagen ($skipped Zeilen übersprungen). Bitte Fehlerliste prüfen.";
+                    $message = "Import erfolgreich: $imported User aktualisiert/angelegt.";
+                } elseif ($skipped > 0 && !$error) {
+                    $error = "Import abgeschlossen mit Warnungen ($skipped übersprungen).";
                 }
             }
         }
@@ -214,19 +227,13 @@ final class ParticipantUploadController extends AbstractController
     private static function parseDate(?string $input): ?string
     {
         if (!$input) return null;
-        
         $formats = ['d.m.Y', 'Y-m-d', 'd-m-Y', 'd/m/Y', 'j.n.Y'];
-        
         foreach ($formats as $fmt) {
             $dt = \DateTime::createFromFormat($fmt, $input);
             if ($dt !== false) {
-                 // Reset auf 00:00:00 um keine Zeitverschiebungsprobleme zu haben
                  $dt->setTime(0, 0, 0);
-                 // Wichtig: Checken ob das Parsing logisch war (z.B. verhindert 32.01.2023)
                  $errors = \DateTime::getLastErrors();
-                 if ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
-                     continue;
-                 }
+                 if ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) continue;
                  return $dt->format('Y-m-d');
             }
         }
