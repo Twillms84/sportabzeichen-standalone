@@ -13,6 +13,7 @@ window.jQuery = window.$ = $;
 import 'bootstrap';
 import 'bootstrap-select'; // Lädt das JS der Library
 
+console.log('App started & Bootstrap loaded');
 // Deine Controller
 import './controllers/exam_results_autosave.js';
 import './controllers/admin_participant.js';
