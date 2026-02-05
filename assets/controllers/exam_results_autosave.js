@@ -33,9 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const parsed = JSON.parse(savedSelection);
                 if(parsed && parsed.length > 0) {
-                    $viewSelector.app-selectpicker('val', parsed);
+                    $viewSelector.selectpicker('val', parsed);
                 }
-                $viewSelector.app-selectpicker('refresh');
+                $viewSelector.selectpicker('refresh');
                 $viewSelector.trigger('changed.bs.select');
             } catch(e) { console.error('Storage Error', e); }
         }
@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Selectpicker aktualisieren (falls vorhanden)
-        if ($.fn.app-selectpicker) {
-            $classFilterSelect.app-selectpicker('refresh');
+        if ($.fn.selectpicker) {
+            $classFilterSelect.selectpicker('refresh');
         }
 
         // Die Filter-Logik

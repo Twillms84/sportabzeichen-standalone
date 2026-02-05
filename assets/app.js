@@ -27,7 +27,7 @@ import './styles/dashboard_css.css';
 console.log('App started & patched 🛠️');
 
 $(document).ready(function() {
-    $('.app-selectpicker').each(function() {
+    $('.selectpicker').each(function() {
         var $select = $(this);
         
         // 1. Initialisieren
