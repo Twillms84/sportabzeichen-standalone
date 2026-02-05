@@ -10,6 +10,7 @@ import $ from 'jquery';
 // jQuery global verfügbar machen (für Legacy Code und Console)
 window.jQuery = window.$ = $;
 
+import 'bootstrap';
 import 'bootstrap-select'; // Lädt das JS der Library
 
 // Deine Controller
