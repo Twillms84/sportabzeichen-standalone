@@ -76,11 +76,11 @@ final class ParticipantUploadController extends AbstractController
                         }
 
                         $importIdRaw   = trim($row[0]); 
-                        $geschlechtRaw = trim($row[2]); 
-                        $geburtsdatumRaw = trim($row[3]);
-                        $lastname      = trim($row[4]); 
-                        $firstname     = trim($row[5] ?? '');
-                        $groupName     = trim($row[6] ?? '');
+                        $geschlechtRaw = trim($row[1]); 
+                        $geburtsdatumRaw = trim($row[2]);
+                        $lastname      = trim($row[3]); 
+                        $firstname     = trim($row[4] ?? '');
+                        $groupName     = trim($row[5] ?? '');
 
                         if ($importIdRaw === '') continue;
 
