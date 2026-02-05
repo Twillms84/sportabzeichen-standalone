@@ -49,5 +49,14 @@ $(document).ready(function() {
             selectAllText: 'Alle',
             deselectAllText: 'Keine'
         });
+        // 2. WICHTIGER FIX FÜR BOOTSTRAP 5
+        // Wir suchen den Button, den das Plugin gerade gebaut hat
+        var $dropdownToggle = $select.parent().find('.dropdown-toggle');
+        
+        // Wir fügen das 'bs' Attribut hinzu, damit Bootstrap 5 reagiert
+        $dropdownToggle.attr('data-bs-toggle', 'dropdown');
+        
+        // Manchmal muss man das Plugin kurz refreshen
+        $select.selectpicker('refresh');
     });
 });
