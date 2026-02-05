@@ -19,7 +19,7 @@ class Requirement
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Discipline::class)]
+    #[ORM\ManyToOne(targetEntity: Discipline::class, inversedBy: 'requirements')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE', name: 'discipline_id')]
     private ?Discipline $discipline = null;
 
