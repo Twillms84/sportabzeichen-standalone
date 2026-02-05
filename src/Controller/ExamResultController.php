@@ -86,7 +86,7 @@ final class ExamResultController extends AbstractController
             $qb->orderBy('u.lastname', $order)->addOrderBy('u.firstname', 'ASC');
         }
 
-        // KEIN distinct() und KEIN groupBy() mehr hier!
+        // WICHTIG: KEIN distinct() und KEIN groupBy() hier!
         $rawParticipants = $qb->getQuery()->getResult();
 
         // ---------------------------------------------------------
@@ -94,15 +94,13 @@ final class ExamResultController extends AbstractController
         // ---------------------------------------------------------
         // Da ein User in mehreren Gruppen sein kann, liefert der JOIN 
         // denselben ExamParticipant mehrfach zurück. Wir indizieren nach ID.
-        $examParticipants = [];
+        $uniqueParticipants = [];
         foreach ($rawParticipants as $ep) {
-            $examParticipants[$ep->getId()] = $ep;
+            $uniqueParticipants[$ep->getId()] = $ep;
         }
 
-       /** @var ExamParticipant[] $examParticipants */
-        $examParticipants = $qb->groupBy('ep.id') // Wir gruppieren nach der Primär-ID des Teilnehmers
-            ->getQuery()
-            ->getResult();
+        // Wir weisen das Ergebnis wieder der Variablen zu, die im restlichen Code genutzt wird
+        $examParticipants = array_values($uniqueParticipants);
 
         // ---------------------------------------------------------
         // 2. DATEN AUFBEREITEN
