@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
-use Doctrine\ORM\Query\Expr\Join;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
 use App\Entity\Participant;
@@ -28,7 +27,7 @@ final class AdminController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function dashboard(): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         return $this->render('admin/dashboard.html.twig', [
             'activeTab' => 'dashboard',
@@ -36,7 +35,6 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/participants', name: 'participants_index')]
-    // WICHTIG: Connection $conn muss hier oben als Parameter rein!
     public function participantsIndex(Request $request, Connection $conn): Response
     {
         // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
@@ -44,53 +42,50 @@ final class AdminController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 50;
         $offset = ($page - 1) * $limit;
-        $searchTerm = trim((string)$request->query->get('q'));
+        $q = trim((string)$request->query->get('q')); // Suchbegriff
 
-        // --- SQL ZUSAMMENBAUEN ---
+        // --- 1. SQL-Fragmente vorbereiten ---
         
-        // Basis-Query: Wir joinen Users, um auch dort suchen zu können
-        $sqlBody = "
-            FROM sportabzeichen_participants p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE 1=1
-        ";
-
+        $searchSql = '';
         $params = [];
 
-        // Such-Logik (rein in SQL)
-        if ($searchTerm !== '') {
-            // Wir suchen in der User-Tabelle UND in der Participants-Tabelle (für die CSV-Importe)
-            $sqlBody .= " AND (
-                u.lastname ILIKE :q OR u.firstname ILIKE :q OR u.act ILIKE :q OR
-                p.lastname ILIKE :q OR p.firstname ILIKE :q
+        // Such-Logik: Wir suchen in User (Vor-/Nachname/Account) UND Participant (Username/ImportID)
+        if ($q !== '') {
+            $searchSql = " AND (
+                u.lastname ILIKE :search OR 
+                u.firstname ILIKE :search OR 
+                u.act ILIKE :search OR
+                p.username ILIKE :search
             )";
-            $params['q'] = '%' . $searchTerm . '%';
+            $params['search'] = '%' . $q . '%';
         }
 
-        // --- 1. ZÄHLEN (Pagination) ---
-        $countSql = "SELECT COUNT(p.id) " . $sqlBody;
+        // Basis-Join (Wird für Count und Data benötigt)
+        $joinSql = " FROM sportabzeichen_participants p LEFT JOIN users u ON p.user_id = u.id WHERE 1=1 ";
+
+        // --- 2. ZÄHLEN (Pagination) ---
+        $countSql = "SELECT COUNT(p.id)" . $joinSql . $searchSql;
         $totalCount = (int) $conn->fetchOne($countSql, $params);
         $maxPages = max(1, (int) ceil($totalCount / $limit));
 
-        // --- 2. DATEN LADEN ---
-        // COALESCE sorgt dafür, dass wir nach Nachnamen sortieren, egal ob IServ-User oder CSV-Import
+        // --- 3. DATEN LADEN ---
+        // Hybrid-Logik: 
+        // - Name kommt aus 'users' (u.lastname), falls verknüpft.
+        // - Sonst aus 'participants' (p.username).
         $dataSql = "
             SELECT 
                 p.*, 
                 u.firstname as u_firstname, 
                 u.lastname as u_lastname, 
                 u.act AS iserv_account 
-            FROM sportabzeichen_participants p 
-            LEFT JOIN users u ON p.user_id = u.id 
-            WHERE 1=1 
-            " . ($searchSql ? " AND ($searchSql) " : "") . "
+            " . $joinSql . $searchSql . "
             ORDER BY 
                 COALESCE(u.lastname, p.username) ASC, 
                 COALESCE(u.firstname, '') ASC
             LIMIT :limit OFFSET :offset
         ";
 
-        // Limit und Offset hinzufügen
+        // Limit/Offset zu Parametern hinzufügen
         $params['limit'] = $limit;
         $params['offset'] = $offset;
 
@@ -102,49 +97,49 @@ final class AdminController extends AbstractController
             'currentPage'  => $page,
             'maxPages'     => $maxPages,
             'totalCount'   => $totalCount,
-            'searchTerm'   => $searchTerm,
+            'searchTerm'   => $q,
         ]);
     }
 
     #[Route('/participants/missing', name: 'participants_missing')]
     public function participantsMissing(Request $request): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         $userRepo = $this->em->getRepository(User::class);
         $searchTerm = trim((string)$request->query->get('q'));
         
-        // --- 1. Subquery: Die "Fertigen" ---
+        // --- 1. Subquery: User IDs finden, die schon Teilnehmer sind ---
+        // Wir prüfen, ob ein Participant existiert, der mit einem User verknüpft ist.
         $completedSubQuery = $this->em->createQueryBuilder()
             ->select('IDENTITY(p.user)')
             ->from(Participant::class, 'p')
-            ->where('p.user IS NOT NULL') // <--- WICHTIG: Verhindert SQL-Fehler bei verwaisten Einträgen
-            ->andWhere('p.birthdate IS NOT NULL') 
-            ->andWhere("p.gender IS NOT NULL AND p.gender <> ''")
+            ->where('p.user IS NOT NULL')
             ->getDQL();
 
-        // --- 2. Hauptquery ---
+        // --- 2. Hauptquery: Alle User, die NICHT in der Subquery sind ---
         $qb = $userRepo->createQueryBuilder('u')
             ->where('u.deleted IS NULL') // Nur aktive User
             ->andWhere($userRepo->createQueryBuilder('u')->expr()->notIn('u.id', $completedSubQuery));
         
-        // Suchelogik verfeinert
+        // Suchelogik
         if ($searchTerm !== '') {
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->like('LOWER(u.username)', ':s'),
                     $qb->expr()->like('LOWER(u.firstname)', ':s'),
                     $qb->expr()->like('LOWER(u.lastname)', ':s'),
-                    $qb->expr()->like('LOWER(u.importId)', ':s') // Falls ImportID existiert
+                    // Falls deine User Entity 'act' als Property hat, hier suchen:
+                    $qb->expr()->like('LOWER(u.act)', ':s') 
                 )
             )
             ->setParameter('s', '%' . mb_strtolower($searchTerm) . '%');
         }
 
-        // Sortierung: Zuerst Nachname, dann Vorname, dann Username (für User ohne Namen wichtig!)
+        // Sortierung
         $qb->orderBy('u.lastname', 'ASC')
            ->addOrderBy('u.firstname', 'ASC')
-           ->addOrderBy('u.username', 'ASC') // Fallback für Testuser ohne Realnamen
+           ->addOrderBy('u.username', 'ASC')
            ->setMaxResults(51);
 
         $results = $qb->getQuery()->getResult();
@@ -166,17 +161,24 @@ final class AdminController extends AbstractController
     #[Route('/participants/add/{username}', name: 'participants_add')]
     public function participantsAdd(Request $request, string $username): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
-        // User via Entity laden statt Raw SQL
-        $user = $this->em->getRepository(User::class)->findOneBy(['username' => $username]); // 'act' heißt in der Entity meist 'username'
+        // User via Entity laden
+        // HINWEIS: Wir suchen hier nach 'username', da die URL das so vorgibt.
+        // Falls deine User-Tabelle 'act' für den Login nutzt, ggf. hier anpassen.
+        $user = $this->em->getRepository(User::class)->findOneBy(['username' => $username]);
+
+        if (!$user) {
+            // Fallback: Versuch über 'act', falls username nicht gefunden
+            $user = $this->em->getRepository(User::class)->findOneBy(['act' => $username]);
+        }
 
         if (!$user) {
             $this->addFlash('error', 'Benutzer nicht gefunden.');
             return $this->redirectToRoute('admin_participants_missing');
         }
 
-        // Check auf Existenz (über Entity Repository)
+        // Check auf Existenz
         $existing = $this->em->getRepository(Participant::class)->findOneBy(['user' => $user]);
         if ($existing) {
             $this->addFlash('warning', 'Teilnehmer existiert bereits.');
@@ -186,14 +188,19 @@ final class AdminController extends AbstractController
         // Neue Entity erstellen
         $participant = new Participant();
         $participant->setUser($user);
-        // Fallback Import ID Logik (falls das im Setter der Entity nicht passiert)
-        $importId = $user->getImportId() ?: 'MANUAL_' . $user->getUsername();
+        
+        // Import ID generieren (IServ Import ID oder manuell)
+        // Prüfen, ob die Methode getImportId() in User existiert, sonst Fallback
+        $importId = method_exists($user, 'getImportId') && $user->getImportId() 
+            ? $user->getImportId() 
+            : 'USER_' . $user->getId();
+            
         $participant->setImportId($importId);
+        
         // Defaults
         $participant->setGeburtsdatum(new \DateTime('2010-01-01'));
         $participant->setGeschlecht('MALE');
 
-        // Formular direkt an die Entity binden
         $form = $this->createParticipantForm($participant, 'Teilnehmer hinzufügen');
         $form->handleRequest($request);
 
@@ -202,7 +209,8 @@ final class AdminController extends AbstractController
                 $this->em->persist($participant);
                 $this->em->flush();
 
-                $this->addFlash('success', 'Gespeichert: ' . $user->getFirstname());
+                $name = $user->getFirstname() ?: $user->getUsername();
+                $this->addFlash('success', 'Gespeichert: ' . $name);
                 return $this->redirectToRoute('admin_participants_missing');
             } catch (\Exception $e) {
                 $this->addFlash('error', 'Fehler: ' . $e->getMessage());
@@ -211,19 +219,18 @@ final class AdminController extends AbstractController
 
         return $this->render('admin/participants/add.html.twig', [
             'form' => $form->createView(),
-            'user' => $user // Entity an View übergeben (Twig: user.firstname statt user['firstname'])
+            'user' => $user
         ]);
     }
 
     #[Route('/participants/{id}/update', name: 'participants_update', methods: ['POST'])]
     public function participantsUpdate(Request $request, Participant $participant): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
 
-        // Datum setzen
         if ($dob) {
             try {
                 $participant->setGeburtsdatum(new \DateTime($dob));
@@ -232,8 +239,7 @@ final class AdminController extends AbstractController
             }
         }
 
-        // Geschlecht setzen: Wir erwarten jetzt direkt die DB-Werte MALE oder FEMALE
-        if ($gender && in_array($gender, ['MALE', 'FEMALE'], true)) {
+        if ($gender && in_array($gender, ['MALE', 'FEMALE', 'DIVERSE'], true)) {
              $participant->setGeschlecht($gender);
         }
 
@@ -246,17 +252,14 @@ final class AdminController extends AbstractController
     #[Route('/participants/edit/{id}', name: 'participants_edit')]
     public function participantsEdit(Request $request, Participant $participant): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
 
-        // Formular an die existierende Entity binden
         $form = $this->createParticipantForm($participant, 'Änderungen speichern');
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                // persist ist bei Updates nicht zwingend nötig, schadet aber nicht
                 $this->em->flush(); 
-
                 $this->addFlash('success', 'Daten aktualisiert.');
                 return $this->redirectToRoute('admin_participants_index');
             } catch (\Exception $e) {
@@ -264,16 +267,16 @@ final class AdminController extends AbstractController
             }
         }
 
-        return $this->render('admin/add.html.twig', [
+        return $this->render('admin/participants/add.html.twig', [ // Wiederverwendung des Templates
             'form' => $form->createView(),
-            'user' => $participant->getUser() // Entity statt Array
+            'user' => $participant->getUser()
         ]);
     }
 
     #[Route('/participants_upload', name: 'participants_upload')]
     public function importIndex(): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
+        // $this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
         return $this->render('admin/upload_participants.html.twig', [
             'activeTab' => 'import',
             'message' => null, 'error' => null, 'imported' => 0, 'skipped' => 0
@@ -281,12 +284,12 @@ final class AdminController extends AbstractController
     }
 
     /**
-     * Hilfsmethode, um das Formular nicht doppelt zu definieren (DRY)
+     * Hilfsmethode
      */
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
         return $this->createFormBuilder($participant)
-            ->add('geburtsdatum', DateType::class, [ // Name muss exakt Property in Entity entsprechen
+            ->add('geburtsdatum', DateType::class, [ 
                 'label' => 'Geburtsdatum',
                 'widget' => 'single_text',
                 'required' => false,
