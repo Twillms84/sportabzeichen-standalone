@@ -95,4 +95,4 @@ class Participant
     {
         return $this->user ? (string)$this->user : ($this->username ?: 'Unbekannt');    
     }
-}
+}   

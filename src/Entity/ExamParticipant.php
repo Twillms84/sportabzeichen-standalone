@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Repository\ExamParticipantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use App\Repository\ExamParticipantRepository;
 
-#[ORM\Entity] // Ggf. hier repositoryClass hinzufügen, falls du eins hast
+#[ORM\Entity(repositoryClass: ExamParticipantRepository::class)]
 #[ORM\Table(name: 'sportabzeichen_exam_participants')]
-#[ORM\UniqueConstraint(name: 'sportabzeichen_exam_participants_exam_id_participant_id_key', columns: ['exam_id', 'participant_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_exam_participant', columns: ['exam_id', 'participant_id'])]
 class ExamParticipant
 {
     #[ORM\Id]
@@ -23,31 +23,31 @@ class ExamParticipant
     #[ORM\JoinColumn(name: 'exam_id', nullable: false, onDelete: 'CASCADE')]
     private ?Exam $exam = null;
 
-    // HIER WAR EINE LÜCKE: "inversedBy" ist nötig, damit $participant->getExamParticipants() gefüllt wird!
+    // WICHTIG: In der Entity 'Participant' muss nun stehen:
+    // #[ORM\OneToMany(mappedBy: 'examParticipant', targetEntity: ExamParticipant::class)]
+    // private Collection $examParticipants;
     #[ORM\ManyToOne(targetEntity: Participant::class, inversedBy: 'examParticipants')]
     #[ORM\JoinColumn(name: 'participant_id', nullable: false, onDelete: 'CASCADE')]
     private ?Participant $participant = null;
 
-    // DB: age_year (not null) -> PHP: $age
+    // Das Alter im Jahr der Prüfung (wichtig für die Berechnung der Anforderungen)
     #[ORM\Column(type: 'integer', name: 'age_year')]
     private ?int $age = null;
 
-    // DB: total_points (default 0)
     #[ORM\Column(type: 'integer', options: ['default' => 0], name: 'total_points')]
     private int $totalPoints = 0;
 
-    // DB: final_medal (default 'NONE')
+    // 'NONE', 'BRONZE', 'SILBER', 'GOLD'
     #[ORM\Column(type: 'string', length: 10, options: ['default' => 'NONE'], name: 'final_medal')]
     private string $finalMedal = 'NONE';
 
-    // Relation zu den Ergebnissen
+    // Relation zu den Einzelergebnissen (Laufen, Springen, etc.)
     #[ORM\OneToMany(mappedBy: 'examParticipant', targetEntity: ExamResult::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $results;
 
     public function __construct()
     {
-        // Falls das fehlt, bitte ergänzen:
-        $this->results = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->results = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -58,11 +58,14 @@ class ExamParticipant
     public function getParticipant(): ?Participant { return $this->participant; }
     public function setParticipant(?Participant $participant): self { $this->participant = $participant; return $this; }
 
+    // Hilfsmethode für Templates
     public function getExamYear(): ?int { return $this->exam?->getYear(); }
 
     public function getAge(): ?int { return $this->age; }
     public function setAge(int $age): self { $this->age = $age; return $this; }
-    public function getAgeYear(): ?int { return $this->age; } // Alias
+    
+    // Alias, falls alter Code getAgeYear aufruft
+    public function getAgeYear(): ?int { return $this->age; }
 
     public function getTotalPoints(): int { return $this->totalPoints; }
     public function setTotalPoints(int $totalPoints): self { $this->totalPoints = $totalPoints; return $this; }
@@ -81,19 +84,16 @@ class ExamParticipant
             $this->results->add($result);
             $result->setExamParticipant($this);
         }
-
         return $this;
     }
 
     public function removeResult(ExamResult $result): self
     {
         if ($this->results->removeElement($result)) {
-            // set the owning side to null (unless already changed)
             if ($result->getExamParticipant() === $this) {
                 $result->setExamParticipant(null);
             }
         }
-
         return $this;
     }
 }
