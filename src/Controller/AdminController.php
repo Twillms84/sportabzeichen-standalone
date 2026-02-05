@@ -77,11 +77,14 @@ final class AdminController extends AbstractController
                 u.firstname as u_firstname, 
                 u.lastname as u_lastname, 
                 u.act AS iserv_account,
-                (
-                    SELECT STRING_AGG(g.name, ', ')
-                    FROM \"groups\" g
-                    INNER JOIN users_groups ug ON g.id = ug.group_id
-                    WHERE ug.user_id = u.id
+                COALESCE(
+                    (
+                        SELECT STRING_AGG(g.name, ', ')
+                        FROM \"groups\" g
+                        INNER JOIN users_groups ug ON g.id = ug.group_id
+                        WHERE ug.user_id = u.id
+                    ),
+                    p.group_name -- <--- HIER: Fallback auf den importierten Text
                 ) AS group_name
             " . $joinSql . $searchSql . "
             ORDER BY 
