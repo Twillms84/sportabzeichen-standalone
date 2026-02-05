@@ -83,33 +83,6 @@
         {# Bootstrap JS Bundle #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        {# 4. Bootstrap-Select JS #}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
         
-        {# 5. SAFE INITIALISIERUNG #}
-        $(document).ready(function() {
-            // WICHTIG: Selektor anpassen auf die neue Klasse
-            $('.app-selectpicker').each(function() {
-                var $select = $(this);
-                
-                // Diese Prüfung ist jetzt eigentlich überflüssig, wenn die Klasse unique ist,
-                // aber schadet nicht als Sicherheit.
-                if ($select.parent().hasClass('bootstrap-select')) {
-                    return; 
-                }
-
-                $select.selectpicker({
-                    style: 'btn-iserv',
-                    size: 6,
-                    liveSearch: true,
-                    container: 'body',
-                    noneSelectedText: 'Bitte wählen...',
-                    actionsBox: true,
-                    selectAllText: 'Alle',
-                    deselectAllText: 'Keine'
-                });
-            });
-        });
-        </script>
     </body>
 </html>
