@@ -6,7 +6,9 @@ use App\Repository\GroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
-#[ORM\Table(name: 'app_groups')] // WICHTIG: "Group" ist ein reserviertes SQL-Wort!
+// WICHTIG: Wir nutzen Backticks `groups`, damit SQL nicht meckert, 
+// aber der Name MUSS "groups" sein, damit dein alter Code die Tabelle findet.
+#[ORM\Table(name: '`groups`')] 
 class Group
 {
     #[ORM\Id]
@@ -17,8 +19,10 @@ class Group
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    // UMBENANNT: Von 'account' zu 'act'.
+    // Der alte Code sucht nach 'act' (IServ Gruppen-ID).
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $account = null;
+    private ?string $act = null;
 
     public function getId(): ?int
     {
@@ -37,14 +41,14 @@ class Group
         return $this;
     }
 
-    public function getAccount(): ?string
+    public function getAct(): ?string
     {
-        return $this->account;
+        return $this->act;
     }
 
-    public function setAccount(?string $account): static
+    public function setAct(?string $act): static
     {
-        $this->account = $account;
+        $this->act = $act;
 
         return $this;
     }
