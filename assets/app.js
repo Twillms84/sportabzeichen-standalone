@@ -28,27 +28,3 @@ import './styles/dashboard_css.css';
 
 console.log('App started 🎉');
 
-// --- HIER DIE INITIALISIERUNG EINFÜGEN ---
-$(document).ready(function() {
-    $('.app-selectpicker').each(function() {
-        var $select = $(this);
-        
-        // 1. Initialisieren (OHNE Optionen, da diese im HTML stehen!)
-        $select.selectpicker(); 
-
-        // 2. Button suchen
-        // bootstrap-select erstellt einen Button direkt neben dem (versteckten) Select
-        // oder wrappt es in ein div. Wir suchen den Button im direkten Umfeld.
-        var $toggle = $select.parent().find('.dropdown-toggle');
-        
-        // 3. FIX: Bootstrap 5 Attribut setzen
-        // Wir entfernen das alte (falsche) und setzen das neue.
-        $toggle.removeAttr('data-toggle');
-        $toggle.attr('data-bs-toggle', 'dropdown');
-        
-        // WICHTIG: KEIN .selectpicker('refresh') hiernach aufrufen!
-        // Ein Refresh würde den Button neu bauen und unser Attribut wieder löschen.
-        
-        console.log('Selectpicker gepatcht:', $select.attr('id'));
-    });
-});
