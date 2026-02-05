@@ -99,7 +99,7 @@ final class ParticipantUploadController extends AbstractController
                                     'lastname'  => $lastname,
                                     'username'  => $firstname . ' ' . $lastname . '_' . substr($importIdRaw, -4), // Unique machen
                                     'source'    => 'csv',
-                                    'roles'     => 'N;', // Serialisiertes leeres Array
+                                    'roles'     => json_encode([]), // Serialisiertes leeres Array
                                 ]);
                                 $userId = $conn->lastInsertId();
                             }
