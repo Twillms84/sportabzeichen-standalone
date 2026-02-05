@@ -181,7 +181,7 @@ final class ExamController extends AbstractController
                      $this->addFlash('warning', $msg);
                 }
                
-                return $this->redirectToRoute('exams_dashboard');
+                return $this->redirectToRoute('app_exams_dashboard');
 
             } catch (\Throwable $e) {
                 $this->addFlash('error', 'Fehler beim Anlegen: ' . $e->getMessage());
@@ -400,7 +400,7 @@ final class ExamController extends AbstractController
         $token = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('delete' . $id, $token)) {
             $this->addFlash('error', 'Ungültiger Sicherheits-Token.');
-            return $this->redirectToRoute('exams_dashboard');
+            return $this->redirectToRoute('app_exams_dashboard');
         }
 
         $conn->beginTransaction();
@@ -428,7 +428,7 @@ final class ExamController extends AbstractController
             $this->addFlash('error', 'Fehler beim Löschen: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('exams_dashboard');
+        return $this->redirectToRoute('app_exams_dashboard');
     }
 
     private function importParticipantsFromGroup(
