@@ -419,8 +419,8 @@ final class ExamController extends AbstractController
         $sql = "
             SELECT u.id, u.firstname, u.lastname
             FROM users u
-            INNER JOIN user_group ug ON u.id = ug.user_id
-            WHERE ug.group_id = ?
+            INNER JOIN group_user gu ON u.id = gu.user_id
+            WHERE gu.group_id = ?
         ";
         // Hinweis: Prüfe in deiner DB, ob die Tabelle 'user_group' oder 'users_groups' heißt!
         
