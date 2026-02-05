@@ -28,3 +28,23 @@ import './styles/dashboard_css.css';
 
 console.log('App started 🎉');
 
+$(document).ready(function() {
+    $('.app-selectpicker').each(function() {
+        var $select = $(this);
+        
+        // 1. Initialisieren
+        $select.selectpicker(); 
+
+        // 2. Button suchen und für Bootstrap 5 patchen
+        var $toggle = $select.parent().find('.dropdown-toggle');
+        $toggle.removeAttr('data-toggle');
+        $toggle.attr('data-bs-toggle', 'dropdown');
+        
+        // 3. WICHTIG: Den Crash verhindern!
+        // Wir entfernen den Listener für 'show.bs.dropdown' vom Wrapper-Element.
+        // Das verhindert, dass bootstrap-select versucht, sich einzumischen, wenn das Menü aufgeht.
+        $select.parent().off('show.bs.dropdown');
+        
+        console.log('Selectpicker fixed & silenced:', $select.attr('id'));
+    });
+});
