@@ -15,14 +15,14 @@
     {# --- 1. ACTION BUTTONS (Oben Rechts & Klein) --- #}
     <div class="d-flex justify-content-end gap-2 mb-2">
         {# ZURÜCK #}
-        <a href="{{ path('sportabzeichen_exams_dashboard') }}" 
+        <a href="{{ path('exams_dashboard') }}" 
            class="btn btn-primary btn-sm d-flex align-items-center shadow-sm">
             {{ icon('arrow-left')|raw }} <span class="ms-2">{{ 'Zurück'|trans }}</span>
         </a>
 
         {# DRUCKEN #}
         <a id="btn-print-groupcard" 
-            href="{{ path('sportabzeichen_results_print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+            href="{{ path('results_print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
             class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
             {{ icon('print')|raw }} <span class="ms-2">{{ 'Drucken'|trans }}</span>
         </a>
@@ -78,10 +78,10 @@
 
     {# --- 3. TABELLE --- #}
     <form id="autosave-form" 
-      data-discipline-route="{{ path('sportabzeichen_results_exam_discipline_save') }}"
-      data-result-route="{{ path('sportabzeichen_results_exam_result_save') }}"
-      data-swimming-route="{{ path('sportabzeichen_results_exam_swimming_add_proof') }}"
-      data-swimming-delete-route="{{ path('sportabzeichen_results_exam_swimming_remove_proof') }}"
+      data-discipline-route="{{ path('results_exam_discipline_save') }}"
+      data-result-route="{{ path('results_exam_result_save') }}"
+      data-swimming-route="{{ path('results_exam_swimming_add_proof') }}"
+      data-swimming-delete-route="{{ path('results_exam_swimming_remove_proof') }}"
       data-global-token="{{ csrf_token('authenticate') }}">
 
         <div class="table-responsive">
