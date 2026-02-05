@@ -12,7 +12,7 @@ use App\Entity\SwimmingProof;
 use App\Service\SportabzeichenService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/sportabzeichen/swimming', name: 'sportabzeichen_results_')]
