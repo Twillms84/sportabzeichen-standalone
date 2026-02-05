@@ -88,8 +88,10 @@ final class ExamResultController extends AbstractController
             $qb->orderBy('u.lastname', 'ASC'); 
         }
 
-        /** @var ExamParticipant[] $examParticipants */
-        $examParticipants = $qb->distinct()->getQuery()->getResult();
+       /** @var ExamParticipant[] $examParticipants */
+        $examParticipants = $qb->groupBy('ep.id') // Wir gruppieren nach der Primär-ID des Teilnehmers
+            ->getQuery()
+            ->getResult();
 
         // ---------------------------------------------------------
         // 2. DATEN AUFBEREITEN
