@@ -87,38 +87,37 @@ final class ParticipantUploadController extends AbstractController
                         // --- 1. User finden oder erstellen ---
                         $userId = null;
 
-                        if ($strategy === 'standalone') {
-                            // User suchen oder anlegen anhand import_id
-                            $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
-                            
-                            if (!$userId) {
-                                // Neuen User anlegen
-                                $conn->insert('users', [
-                                    'import_id' => $importIdRaw,
-                                    'firstname' => $firstname,
-                                    'lastname'  => $lastname,
-                                    'username'  => $firstname . ' ' . $lastname . '_' . substr($importIdRaw, -4), // Unique machen
-                                    'source'    => 'csv',
-                                    'roles'     => json_encode([]), // Serialisiertes leeres Array
-                                ]);
-                                $userId = $conn->lastInsertId();
-                            }
-                        } else {
-                            // IServ Match Strategie: Wir suchen nach dem 'act' (Account Name) oder existierender import_id
-                            // Annahme: In der CSV Spalte 0 steht der IServ-Login ODER eine ID, die wir zuordnen wollen.
-                            
-                            // A) Suche nach Import ID
-                            $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
+                       $userId = null;
 
-                            // B) Wenn nicht gefunden, Suche nach 'act' (Login Name)
-                            if (!$userId) {
-                                $userId = $conn->fetchOne("SELECT id FROM users WHERE LOWER(act) = LOWER(?)", [$importIdRaw]);
-                                
-                                // Wenn gefunden, Import ID speichern für Zukunft
-                                if ($userId) {
-                                    $conn->update('users', ['import_id' => $importIdRaw], ['id' => $userId]);
-                                }
+                        // IMMER zuerst prüfen, ob der User über die import_id schon da ist (Egal welche Strategie)
+                        $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
+
+                        if (!$userId && $strategy === 'iserv_match') {
+                            // Falls nicht über ID gefunden, versuche es über den IServ-Account (act)
+                            $userId = $conn->fetchOne("SELECT id FROM users WHERE LOWER(act) = LOWER(?)", [$importIdRaw]);
+                            if ($userId) {
+                                // Gefunden! Jetzt die import_id für das nächste Mal am User speichern
+                                $conn->update('users', ['import_id' => $importIdRaw], ['id' => $userId]);
                             }
+                        }
+
+                        // Wenn er jetzt IMMER NOCH NICHT gefunden wurde -> Neu anlegen
+                        if (!$userId) {
+                            $conn->insert('users', [
+                                'import_id' => $importIdRaw,
+                                'firstname' => $firstname,
+                                'lastname'  => $lastname,
+                                'username'  => $firstname . ' ' . $lastname . '_' . substr(md5($importIdRaw), 0, 4), 
+                                'source'    => 'csv',
+                                'roles'     => json_encode([]),
+                            ]);
+                            $userId = $conn->lastInsertId();
+                        } else {
+                            // OPTIONAL: Hier könntest du bestehende User aktualisieren (z.B. Namen korrigieren)
+                            $conn->update('users', [
+                                'firstname' => $firstname,
+                                'lastname'  => $lastname,
+                            ], ['id' => $userId]);
                         }
 
                         if (!$userId) {
