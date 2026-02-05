@@ -89,11 +89,11 @@
                                             <h4 class="modal-title">
                                                 {{ 'Bearbeiten'|trans }}: 
                                                 {% if p.u_firstname %}
-                                                    {# Fall 1: IServ User #}
+                                                    {# Fall 1: IServ User (Daten kommen aus Tabelle 'users') #}
                                                     {{ p.u_firstname }} {{ p.u_lastname }}
-                                                {% elseif p.firstname %}
-                                                    {# Fall 2: CSV Import / Extern #}
-                                                    {{ p.firstname }} {{ p.lastname }}
+                                                {% elseif p.username %}
+                                                    {# Fall 2: Standalone / Manueller Name (Daten kommen aus 'participants') #}
+                                                    {{ p.username }}
                                                 {% else %}
                                                     {# Fall 3: Fallback #}
                                                     {{ 'Unbekannt'|trans }}
