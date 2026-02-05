@@ -1,3 +1,21 @@
 body {
     background-color: skyblue;
 }
+
+
+.bootstrap-select .dropdown-menu.show {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 2. Verhindert, dass das Plugin die Höhe auf 0 setzt */
+.bootstrap-select .dropdown-menu.inner {
+    display: block !important;
+    min-height: 80px; /* Mindesthöhe, damit man immer was sieht */
+}
+
+/* 3. Notfall-Fix, falls Popper.js die Position falsch berechnet */
+.bootstrap-select .dropdown-toggle::after {
+    display: inline-block; /* Behält den Pfeil */
+}
