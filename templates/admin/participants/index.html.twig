@@ -43,22 +43,20 @@
                     {% for p in participants %}
                         <tr>
                             <td>
-                                {# 1. Check: Haben wir User-Daten aus dem Join (u_lastname)? #}
+                                {# 1. Priorität: Verknüpfter User (IServ/System) #}
                                 {% if p.u_lastname %}
-                                    {{ p.u_lastname }}, {{ p.u_firstname }}
-                                    
-                                    {# Optional: IServ-Account anzeigen #}
+                                    <strong>{{ p.u_lastname }}</strong>, {{ p.u_firstname }}
                                     {% if p.iserv_account %}
-                                        <br><small class="text-muted">{{ p.iserv_account }}</small>
+                                        <br><small class="text-muted">({{ p.iserv_account }})</small>
                                     {% endif %}
 
-                                {# 2. Check: Haben wir lokale Participant-Daten (CSV Import)? #}
-                                {% elseif p.lastname %}
-                                    {{ p.lastname }}, {{ p.firstname }}
+                                {# 2. Priorität: Manueller Teilnehmer (Standalone) #}
+                                {% elseif p.username %}
+                                    {{ p.username }}
 
-                                {# 3. Fallback: Wenn beides fehlt, ist der User wohl gelöscht #}
+                                {# 3. Fallback #}
                                 {% else %}
-                                    <span class="text-muted"><em>{{ 'Gelöschter Nutzer'|trans }}</em></span>
+                                    <span class="text-muted"><em>Unbekannt / Gelöscht</em></span>
                                 {% endif %}
                             </td>
                             <td>{{ p.geburtsdatum ? p.geburtsdatum|date('d.m.Y') : '-' }}</td>
