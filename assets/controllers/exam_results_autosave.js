@@ -1,607 +1,543 @@
 import $ from 'jquery';
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    const $ = jQuery; 
+/**
+ * Sportabzeichen Manager
+ * Modularer Aufbau für bessere Wartbarkeit und Performance.
+ */
+const SportabzeichenApp = {
+    csrfToken: null,
+    routes: {},
 
-    // =========================================================
-    // 1. ANSICHT & FILTER
-    // =========================================================
-    const $viewSelector = $('#viewSelector'); 
-    
-    if ($viewSelector.length) {
-        $viewSelector.on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
-            const selectedCategories = $(this).val() || [];
-            
-            $('#viewSelector option').each(function() {
-                const category = $(this).val(); 
-                const cells = document.querySelectorAll('.col-cat-' + category);
-                const showAll = selectedCategories.length === 0;
-                
-                if (showAll || selectedCategories.includes(category)) {
-                    cells.forEach(cell => cell.classList.remove('col-hidden'));
-                } else {
-                    cells.forEach(cell => cell.classList.add('col-hidden'));
-                }
-            });
-            localStorage.setItem('sportabzeichen_view_selection', JSON.stringify(selectedCategories));
-        });
+    init() {
+        const form = document.getElementById('autosave-form');
+        if (!form) return;
 
-        // Restore Selection
-        const savedSelection = localStorage.getItem('sportabzeichen_view_selection');
-        if (savedSelection) {
-            try {
-                const parsed = JSON.parse(savedSelection);
-                if(parsed && parsed.length > 0) {
-                    $viewSelector.selectpicker('val', parsed);
-                }
-                $viewSelector.selectpicker('refresh');
-                $viewSelector.trigger('changed.bs.select');
-            } catch(e) { console.error('Storage Error', e); }
-        }
-    }
-
-    // =========================================================
-    // 1b. TEILNEHMER FILTER
-    // =========================================================
-    const $classFilterSelect = $('#client-class-filter');
-    const searchInput = document.getElementById('client-search-input');
-    
-    if ($classFilterSelect.length && searchInput) {
-        // Wir holen die Rows einmalig, um das Dropdown zu füllen
-        const allRows = document.querySelectorAll('.participant-row');
-        const groups = new Set(); // Umbenannt von 'classes' zu 'groups', da logischer
-
-        // Dropdown füllen: Wir suchen nach Klasse ODER Gruppe
-        allRows.forEach(row => {
-            // HIER IST DER FIX: Fallback auf data-group
-            const rawVal = row.getAttribute('data-class') || row.getAttribute('data-group');
-            
-            if (rawVal) {
-                const val = rawVal.trim();
-                if (val !== '') groups.add(val);
-            }
-        });
-
-        // Optionen alphabetisch sortiert einfügen
-        Array.from(groups).sort().forEach(val => {
-            $classFilterSelect.append(`<option value="${val}">${val}</option>`);
-        });
-        
-        // Selectpicker aktualisieren (falls vorhanden)
-        if ($.fn.selectpicker) {
-            $classFilterSelect.selectpicker('refresh');
-        }
-
-        // Die Filter-Logik
-        const filterRows = () => {
-            // 1. Hole die ausgewählten Werte sicher als Array
-            let selectedValues = $classFilterSelect.val();
-
-            // Fix: Sicherstellen, dass es immer ein Array ist
-            if (!selectedValues) {
-                selectedValues = [];
-            } else if (!Array.isArray(selectedValues)) {
-                selectedValues = [selectedValues];
-            }
-
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            
-            // Rows neu abfragen (falls dynamisch geladen)
-            const currentRows = document.querySelectorAll('.participant-row');
-
-            currentRows.forEach(row => {
-                // HIER AUCH DER FIX: Wir vergleichen gegen Klasse ODER Gruppe
-                const rawRowVal = row.getAttribute('data-class') || row.getAttribute('data-group') || '';
-                const rowGroup = rawRowVal.trim();
-                
-                const nameEl = row.querySelector('.name-main');
-                const nameText = nameEl ? nameEl.textContent.toLowerCase() : ''; 
-
-                // Logik Prüfung
-                const matchGroup = (selectedValues.length === 0 || selectedValues.includes(rowGroup));
-                const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
-
-                // Sichtbarkeit setzen
-                if (matchGroup && matchSearch) {
-                    row.style.display = ''; 
-                } else {
-                    row.style.display = 'none'; 
-                }
-            });
-
-            // ---------------------------------------------------------
-            // UPDATE: GROUPCARD BUTTON URL
-            // ---------------------------------------------------------
-            const $printBtn = $('#btn-print-groupcard'); 
-
-            if ($printBtn.length) {
-                // Basis-URL holen
-                if (!$printBtn.data('base-href')) {
-                    $printBtn.data('base-href', $printBtn.attr('href'));
-                }
-                const baseUrl = $printBtn.data('base-href');
-
-                // A. Klasse/Gruppe ermitteln (nimmt die erste gewählte oder leer)
-                const selectedGroup = (Array.isArray(selectedValues) && selectedValues.length > 0) 
-                                      ? selectedValues[0] 
-                                      : '';
-
-                // B. Suchbegriff ermitteln
-                const rawSearchTerm = searchInput.value.trim();
-
-                // URL zusammenbauen
-                const separator = baseUrl.includes('?') ? '&' : '?';
-                
-                // Wir nennen den Parameter trotzdem 'class_filter', damit der Controller nicht verwirrt ist
-                // Oder du passt den Controller an, dass er auch groups versteht.
-                let newUrl = baseUrl + separator + 'class_filter=' + encodeURIComponent(selectedGroup);
-                
-                if (rawSearchTerm) {
-                    newUrl += '&search_query=' + encodeURIComponent(rawSearchTerm);
-                }
-
-                $printBtn.attr('href', newUrl);
-            }
+        // Globale Konfiguration laden
+        this.csrfToken = form.dataset.globalToken;
+        this.routes = {
+            discipline: form.dataset.disciplineRoute,
+            result: form.dataset.resultRoute,
+            swimming: form.dataset.swimmingRoute,
+            swimmingDelete: form.dataset.swimmingDeleteRoute
         };
 
-        // Event Listener
-        $classFilterSelect.on('change changed.bs.select', filterRows);
-        searchInput.addEventListener('keyup', filterRows);
-        searchInput.addEventListener('input', filterRows);
-    }
+        // Module initialisieren
+        this.Filters.init();
+        this.FormHandler.init(form);
+        this.UI.init();
+    },
 
     // =========================================================
-    // 2. AUTOSAVE FORMULAR LOGIK
+    // MODUL: API & NETZWERK
     // =========================================================
-    const form = document.getElementById('autosave-form');
-    
-    if (!form) return; 
-
-    const disciplineRoute = form.getAttribute('data-discipline-route'); 
-    const resultRoute = form.getAttribute('data-result-route');
-    const swimmingRoute = form.getAttribute('data-swimming-route'); 
-    const swimmingDeleteRoute = form.getAttribute('data-swimming-delete-route');
-    const csrfToken = form.getAttribute('data-global-token');
-
-    // Initiale UI Checks
-    document.querySelectorAll('.js-discipline-select').forEach(select => {
-        updateRequirementHints(select);
-        checkVerbandInput(select);
-    });
-
-    // --- CHANGE LISTENER (SPEICHERN) ---
-    form.addEventListener('change', async function(event) {
-        console.log('Change erkannt an:', event.target); // Erscheint das in der Konsole?
-        const el = event.target;
-        if (!el.hasAttribute('data-save')) {
-        console.log('Abbruch: kein data-save Attribut');
-        return;
-    }
-
-        const epId = el.getAttribute('data-ep-id');
-        const type = el.getAttribute('data-type'); 
-        const kat = el.getAttribute('data-kategorie');
-        const cell = el.closest('td');
-        const row = el.closest('tr');
-        
-        let targetRoute = '';
-        let payload = { ep_id: epId, _token: csrfToken };
-
-        const selectEl = cell ? cell.querySelector('select') : null;
-        const inputEl = cell ? cell.querySelector('input[type="text"]') : null;
-
-        if (type === 'swimming_select') {        
-            targetRoute = swimmingRoute;
-            payload.discipline_id = el.value;
-        } else {
-            if (!selectEl || !selectEl.value || !epId) return;
-            targetRoute = (el.tagName === 'SELECT') ? disciplineRoute : resultRoute;
-
-            if (el.tagName === 'SELECT') {
-                updateRequirementHints(el);
-                checkVerbandInput(el);
-            }
-
-            payload.discipline_id = selectEl.value;
-            payload.leistung = inputEl ? inputEl.value : '';
-
-            // Input sperren während Request
-            if (inputEl && !inputEl.disabled && type === 'leistung') {
-                inputEl.setAttribute('data-temp-disabled', 'true');
-                inputEl.disabled = true;
-                inputEl.style.opacity = '0.6';
+    API: {
+        async post(url, data) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw new Error('Kommunikationsfehler mit dem Server.');
             }
         }
+    },
 
-        try {
-            const response = await fetch(targetRoute, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(payload)
+    // =========================================================
+    // MODUL: FILTER & ANSICHT
+    // =========================================================
+    Filters: {
+        $viewSelector: null,
+        $classFilter: null,
+        searchInput: null,
+        printBtn: null,
+        debounceTimer: null,
+
+        init() {
+            this.$viewSelector = $('#viewSelector');
+            this.$classFilter = $('#client-class-filter');
+            this.searchInput = document.getElementById('client-search-input');
+            this.printBtn = document.getElementById('btn-print-groupcard');
+
+            this.initViewSelector();
+            this.initParticipantFilter();
+        },
+
+        initViewSelector() {
+            if (!this.$viewSelector.length) return;
+
+            // Event Handler
+            this.$viewSelector.on('changed.bs.select', (e) => {
+                const selectedCategories = this.$viewSelector.val() || [];
+                const showAll = selectedCategories.length === 0;
+
+                // Performance: Nutzung von CSS Klassen statt Loop über alle Zellen
+                const allCells = document.querySelectorAll('[class*="col-cat-"]');
+                allCells.forEach(cell => cell.classList.add('col-hidden'));
+
+                if (showAll) {
+                    allCells.forEach(cell => cell.classList.remove('col-hidden'));
+                } else {
+                    selectedCategories.forEach(cat => {
+                        const cells = document.querySelectorAll('.col-cat-' + cat);
+                        cells.forEach(cell => cell.classList.remove('col-hidden'));
+                    });
+                }
+                localStorage.setItem('sportabzeichen_view_selection', JSON.stringify(selectedCategories));
             });
 
-            const data = await response.json();
+            // Restore State
+            const saved = localStorage.getItem('sportabzeichen_view_selection');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.length) {
+                        this.$viewSelector.selectpicker('val', parsed);
+                        this.$viewSelector.trigger('changed.bs.select');
+                    }
+                } catch (e) { console.error('Storage Error', e); }
+            }
+        },
+
+        initParticipantFilter() {
+            if (!this.$classFilter.length || !this.searchInput) return;
+
+            const allRows = document.querySelectorAll('.participant-row');
+            const groups = new Set();
+
+            // Gruppen extrahieren und Dropdown füllen
+            allRows.forEach(row => {
+                const val = (row.dataset.class || row.dataset.group || '').trim();
+                if (val) groups.add(val);
+            });
+
+            [...groups].sort().forEach(val => {
+                this.$classFilter.append(`<option value="${val}">${val}</option>`);
+            });
+
+            if ($.fn.selectpicker) this.$classFilter.selectpicker('refresh');
+
+            // Event Listeners (mit Debounce für Performance)
+            this.$classFilter.on('change changed.bs.select', () => this.applyFilters());
             
-            // Input entsperren
-            if (inputEl && inputEl.hasAttribute('data-temp-disabled')) {
-                inputEl.disabled = false;
-                inputEl.removeAttribute('data-temp-disabled');
-                inputEl.style.opacity = '1';
-                inputEl.focus();
+            this.searchInput.addEventListener('input', () => {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => this.applyFilters(), 300); // 300ms warten
+            });
+        },
+
+        applyFilters() {
+            let selectedGroups = this.$classFilter.val() || [];
+            if (!Array.isArray(selectedGroups)) selectedGroups = [selectedGroups];
+            
+            const searchTerm = this.searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.participant-row');
+
+            rows.forEach(row => {
+                const rowGroup = (row.dataset.class || row.dataset.group || '').trim();
+                const nameText = (row.querySelector('.name-main')?.textContent || '').toLowerCase();
+
+                const matchGroup = selectedGroups.length === 0 || selectedGroups.includes(rowGroup);
+                const matchSearch = searchTerm === '' || nameText.includes(searchTerm);
+
+                row.style.display = (matchGroup && matchSearch) ? '' : 'none';
+            });
+
+            this.updatePrintButtonUrl(selectedGroups[0] || '', searchTerm);
+        },
+
+        updatePrintButtonUrl(group, search) {
+            if (!this.printBtn) return;
+            
+            // Basis URL cachen
+            if (!this.printBtn.dataset.baseHref) {
+                this.printBtn.dataset.baseHref = this.printBtn.getAttribute('href');
             }
 
-            if (data.status === 'ok' || data.success) {
-                // UI Updates vom Try/Catch entkoppeln, damit Fehler hier nicht als "Netzwerkfehler" gelten
-                try {
-                    // 1. Zelle aktualisieren
-                    if (type !== 'swimming_select' && cell) {
-                        handleDisciplineColors(data, cell, row, kat, el);
-                        if (data.new_requirements) updateRequirementsBadges(cell, data.new_requirements);
-                    }
-                    // 2. Live Update Widgets
-                    updateUIWidgets(epId, row, data);
-                } catch (uiErr) {
-                    console.error('UI Update Warning:', uiErr);
+            const url = new URL(this.printBtn.dataset.baseHref, window.location.origin);
+            if (group) url.searchParams.set('class_filter', group);
+            if (search) url.searchParams.set('search_query', search);
+
+            this.printBtn.href = url.toString();
+        }
+    },
+
+    // =========================================================
+    // MODUL: FORMULAR LOGIK (AUTOSAVE)
+    // =========================================================
+    FormHandler: {
+        init(form) {
+            // Change Listener (Delegation)
+            form.addEventListener('change', (e) => this.handleChange(e));
+            
+            // Delete Click Listener (Delegation)
+            document.addEventListener('click', (e) => this.handleDelete(e));
+
+            // Initiale UI Checks für Selects
+            document.querySelectorAll('.js-discipline-select').forEach(select => {
+                SportabzeichenApp.UI.updateRequirementHints(select);
+                SportabzeichenApp.UI.checkVerbandInput(select);
+            });
+        },
+
+        async handleChange(event) {
+            const el = event.target;
+            // Nur Elemente mit data-save verarbeiten
+            if (!el.dataset.save) return;
+
+            const { epId, type, kategorie: kat } = el.dataset;
+            const cell = el.closest('td');
+            const row = el.closest('tr');
+            
+            // Input sperren (UX Feedback)
+            const inputEl = cell?.querySelector('input[type="text"]');
+            if (inputEl && type === 'leistung') {
+                this.toggleInputLock(inputEl, true);
+            }
+
+            // Payload vorbereiten
+            const payload = { 
+                ep_id: epId, 
+                _token: SportabzeichenApp.csrfToken 
+            };
+            
+            let route = '';
+
+            if (type === 'swimming_select') {
+                route = SportabzeichenApp.routes.swimming;
+                payload.discipline_id = el.value;
+            } else {
+                const selectEl = cell?.querySelector('select');
+                if (!selectEl?.value || !epId) {
+                    if(inputEl) this.toggleInputLock(inputEl, false);
+                    return;
                 }
 
-            } else {
-                throw new Error(data.message || 'Fehler beim Speichern');
-            }
-        } catch (e) {
-            console.error('Save Error:', e);
-            if (inputEl) {
-                inputEl.disabled = false;
-                inputEl.classList.add('bg-danger', 'bg-opacity-25');
-                setTimeout(() => inputEl.classList.remove('bg-danger', 'bg-opacity-25'), 3000);
-            }
-        }
-    });
-
-    // --- CLICK LISTENER (Schwimmen LÖSCHEN) ---
-    document.addEventListener('click', async function(event) {
-        const btn = event.target.closest('.btn-delete-swimming');
-        if (!btn) return;
-
-        event.preventDefault();
-        
-        const epId = btn.getAttribute('data-ep-id');
-        const proofYear = String(btn.getAttribute('data-year') || '');
-        const currentYear = String(btn.getAttribute('data-current-year') || '');
-        const sourceRaw = btn.getAttribute('data-source') || '';
-        const sourceUpper = sourceRaw.toUpperCase();
-
-        if (proofYear && currentYear && proofYear !== currentYear) {
-            alert(`Jahr ${proofYear} kann hier nicht gelöscht werden.`);
-            return;
-        }
-
-        const forbiddenSources = ['AUSDAUER', 'SCHNELLIGKEIT', 'ENDURANCE', 'SPEED'];
-        if (forbiddenSources.some(s => sourceUpper.includes(s))) {
-            alert(`Automatisch durch "${sourceRaw}" erbracht. Bitte dort löschen.`);
-            return;
-        }
-
-        if (!confirm('Wirklich löschen?')) return;
-
-        const originalContent = btn.innerHTML;
-        btn.style.opacity = '0.5';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch(swimmingDeleteRoute, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ ep_id: epId, _token: csrfToken })
-            });
-
-            const data = await response.json();
-
-            // Erfolgsfall prüfen (egal ob data.status oder data.success)
-            if (data.status === 'ok' || data.success === true) {
+                route = (el.tagName === 'SELECT') ? SportabzeichenApp.routes.discipline : SportabzeichenApp.routes.result;
                 
-                // UI Logik in eigenen Block, damit Fehler hier nicht in den Catch rutschen
-                try {
-                    const row = btn.closest('tr');
-                    updateUIWidgets(epId, row, data);
-
-                    const wrapper = document.getElementById('swimming-wrapper-' + epId);
-                    if (wrapper) {
-                        // Reset UI manuell erzwingen, falls updateUIWidgets es übersehen hat
-                        const badgeCont = wrapper.querySelector('.swim-badge-container');
-                        const dropCont = wrapper.querySelector('.swim-dropdown-container');
-                        
-                        if(badgeCont) badgeCont.classList.add('d-none');
-                        if(dropCont) dropCont.classList.remove('d-none');
-                        
-                        // Select zurücksetzen
-                        const select = wrapper.querySelector('select');
-                        if (select) select.value = "";
-                        
-                        // Text leeren
-                        const textEl = wrapper.querySelector('.swim-info-text');
-                        if(textEl) textEl.textContent = '';
-                    }
-                } catch(uiError) {
-                    console.error('Löschen UI Update Error:', uiError);
+                // UI sofort aktualisieren bei Select-Wechsel
+                if (el.tagName === 'SELECT') {
+                    SportabzeichenApp.UI.updateRequirementHints(el);
+                    SportabzeichenApp.UI.checkVerbandInput(el);
                 }
 
-            } else {
-                alert('Fehler: ' + (data.message || 'Fehler beim Löschen.'));
+                payload.discipline_id = selectEl.value;
+                payload.leistung = inputEl ? inputEl.value : '';
             }
-        } catch (e) {
-            console.error('Delete Request Error:', e);
-            alert('Kommunikationsfehler: Der Server konnte nicht erreicht werden.');
-        } finally {
-            if(btn) {
-                btn.style.opacity = '1';
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
+
+            try {
+                const data = await SportabzeichenApp.API.post(route, payload);
+
+                if (data.status === 'ok' || data.success) {
+                    if (inputEl) this.toggleInputLock(inputEl, false);
+                    
+                    // UI Updates
+                    if (type !== 'swimming_select' && cell) {
+                        SportabzeichenApp.UI.handleDisciplineColors(data, cell, row, kat, el);
+                        if (data.new_requirements) {
+                            SportabzeichenApp.UI.updateRequirementsBadges(cell, data.new_requirements);
+                        }
+                    }
+                    SportabzeichenApp.UI.updateWidgets(epId, row, data);
+                } else {
+                    throw new Error(data.message || 'Serverfehler');
+                }
+            } catch (error) {
+                if (inputEl) {
+                    this.toggleInputLock(inputEl, false);
+                    this.showError(inputEl);
+                }
+                console.error(error);
             }
-        }
-    });
+        },
 
-    // =========================================================
-    // 3. UI HELFER
-    // =========================================================
+        async handleDelete(event) {
+            const btn = event.target.closest('.btn-delete-swimming');
+            if (!btn) return;
 
-    function updateUIWidgets(epId, row, data) {
-        // A. GESAMTPUNKTE
-        const pointsValue = (data.total !== undefined) ? data.total : data.total_points;
-        const totalBadge = document.getElementById('total-points-' + epId);
-        
-        if (totalBadge && pointsValue !== undefined) {
-            totalBadge.textContent = pointsValue;
-            triggerPulse(totalBadge);
-        }
+            event.preventDefault();
 
-        // B. FINAL MEDAILLE (Live Update)
-        const medalBadge = document.getElementById('final-medal-' + epId);
-        let medalValue = data.final_medal || data.medal || 'none';
-        medalValue = String(medalValue).toLowerCase();
-
-        if (medalBadge) {
-            const labelSpan = medalBadge.querySelector('.js-medal-label');
+            // Validierung
+            const { epId, year: proofYear, currentYear, source } = btn.dataset;
             
-            // 1. RESET
-            medalBadge.className = 'result-badge-box'; 
+            if (proofYear && currentYear && proofYear !== currentYear) {
+                alert(`Jahr ${proofYear} kann hier nicht gelöscht werden.`);
+                return;
+            }
+            if (source && /AUSDAUER|SCHNELLIGKEIT|ENDURANCE|SPEED/i.test(source)) {
+                alert(`Automatisch durch "${source}" erbracht. Bitte dort löschen.`);
+                return;
+            }
+            if (!confirm('Wirklich löschen?')) return;
 
-            // 2. Deine Farb-Klassen anwenden
-            let labelText = '-';
-            let colorClass = 'bg-light text-muted'; 
+            // UI Feedback: Button deaktivieren
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
 
-            switch (medalValue) {
-                case 'gold':
-                    colorClass = 'medal-gold'; 
-                    labelText = 'Gold';
-                    break;
-                case 'silver':
-                case 'silber':
-                    colorClass = 'medal-silber'; 
-                    labelText = 'Silber';
-                    break;
-                case 'bronze':
-                    colorClass = 'medal-bronze'; 
-                    labelText = 'Bronze';
-                    break;
-                default:
-                    colorClass = ''; 
-                    labelText = '-';
+            try {
+                const data = await SportabzeichenApp.API.post(SportabzeichenApp.routes.swimmingDelete, {
+                    ep_id: epId,
+                    _token: SportabzeichenApp.csrfToken
+                });
+
+                if (data.status === 'ok' || data.success) {
+                    const row = btn.closest('tr');
+                    SportabzeichenApp.UI.updateWidgets(epId, row, data);
+                    SportabzeichenApp.UI.resetSwimmingWrapper(epId);
+                } else {
+                    alert('Fehler: ' + (data.message || 'Konnte nicht gelöscht werden.'));
+                }
+            } catch (e) {
+                alert('Kommunikationsfehler.');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        },
+
+        toggleInputLock(input, lock) {
+            if(!input) return;
+            input.disabled = lock;
+            input.style.opacity = lock ? '0.6' : '1';
+            if (!lock) input.focus();
+        },
+
+        showError(input) {
+            input.classList.add('bg-danger', 'bg-opacity-25');
+            setTimeout(() => input.classList.remove('bg-danger', 'bg-opacity-25'), 3000);
+        }
+    },
+
+    // =========================================================
+    // MODUL: UI HELFER (Badges, Colors, Widgets)
+    // =========================================================
+    UI: {
+        init() {
+            // Optional: Tooltips o.ä. hier initialisieren
+        },
+
+        updateWidgets(epId, row, data) {
+            // 1. Gesamtpunkte
+            const points = data.total ?? data.total_points;
+            const totalBadge = document.getElementById(`total-points-${epId}`);
+            if (totalBadge && points !== undefined) {
+                totalBadge.textContent = points;
+                this.triggerPulse(totalBadge);
             }
 
-            if(colorClass) medalBadge.classList.add(colorClass);
+            // 2. Medaille
+            const medalBadge = document.getElementById(`final-medal-${epId}`);
+            if (medalBadge) {
+                const medal = (data.final_medal || data.medal || 'none').toLowerCase();
+                const labelMap = { 'gold': 'Gold', 'silver': 'Silber', 'silber': 'Silber', 'bronze': 'Bronze' };
+                const colorClass = labelMap[medal] ? `medal-${medal === 'silver' ? 'silber' : medal}` : 'bg-light text-muted';
+                
+                medalBadge.className = `result-badge-box ${colorClass}`;
+                
+                const labelSpan = medalBadge.querySelector('.js-medal-label');
+                const text = labelMap[medal] || '-';
+                
+                if (labelSpan) labelSpan.textContent = text;
+                else medalBadge.textContent = text;
+                
+                this.triggerPulse(medalBadge);
+            }
 
-            if (labelSpan) labelSpan.textContent = labelText;
-            else medalBadge.textContent = labelText;
+            // 3. Schwimmen (Wrapper Logik)
+            const hasSwimming = !!(data.has_swimming);
+            const wrapper = document.getElementById(`swimming-wrapper-${epId}`);
+            
+            if (wrapper) {
+                const badgeCont = wrapper.querySelector('.swim-badge-container');
+                const dropCont = wrapper.querySelector('.swim-dropdown-container');
+                const textEl = wrapper.querySelector('.swim-info-text');
 
-            triggerPulse(medalBadge);
-        }
+                if (hasSwimming) {
+                    if (textEl) {
+                        let txt = data.swimming_name;
+                        // Fallback auf Select Text
+                        if (!txt || txt.includes('DISCIPLINE')) {
+                            const sel = wrapper.querySelector('select');
+                            if (sel && sel.selectedIndex > -1 && sel.value) txt = sel.options[sel.selectedIndex].text;
+                        }
+                        textEl.textContent = txt || 'Nachweis erbracht';
+                    }
+                    badgeCont?.classList.remove('d-none');
+                    dropCont?.classList.add('d-none');
+                } else {
+                    this.resetSwimmingWrapper(epId);
+                }
+            }
+        },
 
-        // C. SCHWIMMEN (Nur noch Wrapper Umschaltung: Badge vs. Dropdown)
-        const hasSwimming = (data.has_swimming === true || data.has_swimming === 1 || String(data.has_swimming) === '1');
-        
-        // --- HIER WURDE DER ICON-CODE ENTFERNT ---
-        
-        // Wrapper Bereiche umschalten
-        const wrapper = document.getElementById('swimming-wrapper-' + epId);
-        if (wrapper) {
+        resetSwimmingWrapper(epId) {
+            const wrapper = document.getElementById(`swimming-wrapper-${epId}`);
+            if (!wrapper) return;
+
             const badgeCont = wrapper.querySelector('.swim-badge-container');
             const dropCont = wrapper.querySelector('.swim-dropdown-container');
             const textEl = wrapper.querySelector('.swim-info-text');
+            const select = wrapper.querySelector('select');
 
-            if (hasSwimming) {
-                // TEXT UPDATE LOGIK
-                if (textEl) {
-                    let displayName = '';
+            badgeCont?.classList.add('d-none');
+            dropCont?.classList.remove('d-none');
+            if(textEl) textEl.textContent = '';
+            if(select) select.value = "";
+        },
 
-                    // 1. Priorität: Server Antwort (außer es enthält "DISCIPLINE")
-                    if (data.swimming_name && !String(data.swimming_name).includes('DISCIPLINE')) {
-                         displayName = data.swimming_name;
-                    }
+        updateRequirementsBadges(cell, req) {
+            const setTxt = (sel, txt) => {
+                const el = cell.querySelector(sel);
+                if(el) el.textContent = txt;
+            };
+            setTxt('.req-val-b', req.bronze);
+            setTxt('.req-val-s', req.silber);
+            setTxt('.req-val-g', req.gold);
+        },
 
-                    // 2. Fallback: Dropdown Text
-                    if (!displayName) {
-                        const select = wrapper.querySelector('select');
-                        if (select && select.selectedIndex > -1) {
-                            const selectedOption = select.options[select.selectedIndex];
-                            if (selectedOption.value) displayName = selectedOption.text;
-                        }
-                    }
+        updateRequirementHints(select) {
+            const cell = select.closest('td');
+            if (!cell) return;
 
-                    // 3. Notlösung
-                    if (!displayName) displayName = 'Nachweis erbracht';
+            const opt = select.selectedOptions[0];
+            const hasValue = opt && opt.value;
+            const input = cell.querySelector('input[data-type="leistung"]');
 
-                    textEl.textContent = displayName;
-                }
+            const setText = (cls, txt) => {
+                const el = cell.querySelector(cls);
+                if (el) el.textContent = txt;
+            };
 
-                if(badgeCont) badgeCont.classList.remove('d-none');
-                if(dropCont) dropCont.classList.add('d-none');
+            if (!hasValue) {
+                ['.req-val-b', '.req-val-s', '.req-val-g', '.req-unit'].forEach(c => setText(c, ''));
+                if (input) input.disabled = true;
+                return;
+            }
+
+            const unitRaw = opt.dataset.unit;
+            const implicitPoints = parseInt(opt.dataset.implicitPoints || 0);
+            const isVerband = (unitRaw === 'NONE' || unitRaw === 'UNIT_NONE' || implicitPoints > 0);
+
+            if (isVerband) {
+                ['.req-val-b', '.req-val-s', '.req-val-g', '.req-unit'].forEach(c => setText(c, ''));
             } else {
-                // RESET
-                if(badgeCont) badgeCont.classList.add('d-none');
-                if(dropCont) dropCont.classList.remove('d-none');
-                if (textEl) textEl.textContent = '';
+                setText('.req-val-b', opt.dataset.bronze || '-');
+                setText('.req-val-s', opt.dataset.silber || '-');
+                setText('.req-val-g', opt.dataset.gold || '-');
+                setText('.req-unit', opt.dataset.unitLabel || '');
+            }
+        },
+
+        checkVerbandInput(select) {
+            const cell = select.closest('td');
+            const input = cell?.querySelector('input[type="text"]');
+            if (!input) return;
+
+            const opt = select.selectedOptions[0];
+            if (!opt || !opt.value) {
+                input.disabled = true;
+                input.value = '';
+                this.removeMedalClasses(input);
+                this.removeMedalClasses(select);
+                return;
+            }
+
+            const unit = opt.dataset.unit;
+            const implicitPoints = parseInt(opt.dataset.implicitPoints || 0);
+            const isVerband = (unit === 'NONE' || unit === 'UNIT_NONE' || implicitPoints > 0);
+
+            if (isVerband) {
+                input.value = '';
+                input.placeholder = '✓';
+                input.disabled = true;
+                input.classList.add('bg-light', 'medal-gold');
+                this.removeMedalClasses(input, ['medal-gold']); // Alle außer Gold entfernen
+                select.classList.add('medal-gold');
+            } else {
+                input.disabled = false;
+                input.placeholder = '';
+                input.classList.remove('bg-light');
                 
-                const select = wrapper.querySelector('select');
-                if (select) select.value = "";
-            }
-        }
-    }
-
-    // --- KLEINE HELFER ---
-
-    function triggerPulse(element) {
-        if(!element) return;
-        element.style.transition = "transform 0.2s ease-in-out";
-        element.style.transform = "scale(1.1)";
-        setTimeout(() => element.style.transform = "scale(1)", 200);
-    }
-
-    function removeMedalClasses(el) {
-        el.classList.remove('medal-gold', 'medal-silber', 'medal-bronze', 'medal-none');
-    }
-
-    function updateRequirementsBadges(cell, req) {
-        const badgeB = cell.querySelector('.req-val-b');
-        const badgeS = cell.querySelector('.req-val-s');
-        const badgeG = cell.querySelector('.req-val-g');
-        if(badgeB) badgeB.textContent = req.bronze;
-        if(badgeS) badgeS.textContent = req.silber;
-        if(badgeG) badgeG.textContent = req.gold;
-    }
-
-    function checkVerbandInput(selectEl) {
-        const cell = selectEl.closest('td');
-        const inputEl = cell.querySelector('input[type="text"]');
-        if (!inputEl) return;
-
-        const selectedOption = selectEl.options[selectEl.selectedIndex];
-        if (!selectedOption || !selectedOption.value) {
-            inputEl.disabled = true;
-            inputEl.value = '';
-            removeMedalClasses(inputEl);
-            removeMedalClasses(selectEl);
-            return;
-        }
-        
-        const unit = selectedOption.getAttribute('data-unit'); 
-        const implicitPoints = parseInt(selectedOption.getAttribute('data-implicit-points') || 0);
-        const isVerband = (unit === 'NONE' || unit === 'UNIT_NONE' || implicitPoints > 0);
-
-        if (isVerband) {
-            inputEl.value = ''; 
-            inputEl.setAttribute('placeholder', '✓');
-            inputEl.disabled = true; 
-            inputEl.classList.add('bg-light');
-            
-            removeMedalClasses(inputEl);
-            removeMedalClasses(selectEl);
-            inputEl.classList.add('medal-gold');
-            selectEl.classList.add('medal-gold');
-        } else {
-            inputEl.disabled = false;
-            inputEl.setAttribute('placeholder', '');
-            inputEl.classList.remove('bg-light');
-            
-            if(inputEl.value === '') {
-                removeMedalClasses(inputEl);
-                removeMedalClasses(selectEl);
-                inputEl.classList.add('medal-none');
-                selectEl.classList.add('medal-none');
-            }
-        }
-    }
-
-    function handleDisciplineColors(data, cell, row, kat, el) {
-        const selectEl = cell.querySelector('select');
-        const inputEl = cell.querySelector('input[type="text"]');
-        const isSelect = (el.tagName === 'SELECT');
-
-        const resultColor = data.stufe ? data.stufe.toLowerCase() : 'none'; 
-        let cssClass = 'medal-' + resultColor;
-        if(resultColor === 'silver') cssClass = 'medal-silber';
-
-        [selectEl, inputEl].forEach(element => {
-            if(element) {
-                removeMedalClasses(element);
-                element.classList.add(cssClass);
-            }
-        });
-
-        if (data.discipline_unit === 'NONE' || data.discipline_unit === 'UNIT_NONE') {
-            if (inputEl) {
-                inputEl.value = ''; 
-                inputEl.disabled = true; 
-                inputEl.setAttribute('placeholder', '✓');
-                inputEl.classList.add('bg-light');
-                removeMedalClasses(inputEl);
-                inputEl.classList.add('medal-gold');
-            }
-            if (selectEl) {
-                removeMedalClasses(selectEl);
-                selectEl.classList.add('medal-gold');
-            }
-        } else if (isSelect) {
-            checkVerbandInput(selectEl);
-        }
-
-        if (isSelect && kat) {
-            row.querySelectorAll(`[data-kategorie="${kat}"]`).forEach(otherEl => {
-                if (otherEl.closest('td') === cell) return;
-                if (otherEl.tagName === 'INPUT') {
-                    otherEl.value = '';
-                    otherEl.disabled = true;
-                    otherEl.classList.remove('bg-light');
-                    removeMedalClasses(otherEl);
-                    otherEl.classList.add('medal-none');
+                if (input.value === '') {
+                    this.removeMedalClasses(input);
+                    input.classList.add('medal-none');
+                    select.classList.add('medal-none');
                 }
-                if (otherEl.tagName === 'SELECT') {
-                    otherEl.value = ''; 
-                    removeMedalClasses(otherEl);
-                    otherEl.classList.add('medal-none');
-                    updateRequirementHints(otherEl);
-                }
+            }
+        },
+
+        handleDisciplineColors(data, cell, row, kat, triggeredElement) {
+            const select = cell.querySelector('select');
+            const input = cell.querySelector('input[type="text"]');
+            const isSelect = triggeredElement.tagName === 'SELECT';
+
+            const resultColor = (data.stufe || 'none').toLowerCase();
+            const cssClass = `medal-${resultColor === 'silver' ? 'silber' : resultColor}`;
+
+            [select, input].forEach(el => {
+                if (!el) return;
+                this.removeMedalClasses(el);
+                el.classList.add(cssClass);
             });
+
+            // Sonderfall: Verbandsabzeichen (Unit None)
+            if (data.discipline_unit === 'NONE' || data.discipline_unit === 'UNIT_NONE') {
+                if (input) {
+                    input.value = '';
+                    input.disabled = true;
+                    input.placeholder = '✓';
+                    input.classList.add('bg-light');
+                }
+                // Bei Verband immer Gold anzeigen
+                if(input) { this.removeMedalClasses(input); input.classList.add('medal-gold'); }
+                if(select) { this.removeMedalClasses(select); select.classList.add('medal-gold'); }
+            } else if (isSelect) {
+                this.checkVerbandInput(select);
+            }
+
+            // Exklusive Auswahl in der Kategorie (Radio-Verhalten für Zeilen)
+            if (isSelect && kat) {
+                row.querySelectorAll(`[data-kategorie="${kat}"]`).forEach(other => {
+                    if (other.closest('td') === cell) return; // Mich selbst ignorieren
+                    
+                    if (other.tagName === 'INPUT') {
+                        other.value = '';
+                        other.disabled = true;
+                        other.classList.remove('bg-light');
+                        this.removeMedalClasses(other);
+                        other.classList.add('medal-none');
+                    }
+                    if (other.tagName === 'SELECT') {
+                        other.value = '';
+                        this.removeMedalClasses(other);
+                        other.classList.add('medal-none');
+                        this.updateRequirementHints(other);
+                    }
+                });
+            }
+        },
+
+        removeMedalClasses(el, exceptions = []) {
+            ['medal-gold', 'medal-silber', 'medal-bronze', 'medal-none'].forEach(cls => {
+                if (!exceptions.includes(cls)) el.classList.remove(cls);
+            });
+        },
+
+        triggerPulse(el) {
+            el.style.transition = "transform 0.2s ease-in-out";
+            el.style.transform = "scale(1.1)";
+            setTimeout(() => el.style.transform = "scale(1)", 200);
         }
     }
+};
 
-    function updateRequirementHints(select) {
-        const parentTd = select.closest('td');
-        if (!parentTd) return;
-        const opt = select.options[select.selectedIndex];
-        
-        const labels = {
-            b: parentTd.querySelector('.req-val-b'),
-            s: parentTd.querySelector('.req-val-s'),
-            g: parentTd.querySelector('.req-val-g'),
-            unit: parentTd.querySelector('.req-unit')
-        };
-        const input = parentTd.querySelector('input[data-type="leistung"]');
-
-        if (!opt || !opt.value) {
-            Object.values(labels).forEach(l => l && (l.textContent = ''));
-            if(input) input.disabled = true;
-            return;
-        }
-
-        const prettyUnit = opt.getAttribute('data-unit-label') || '';
-        const implicitPoints = parseInt(opt.getAttribute('data-implicit-points') || 0);
-        const unitRaw = opt.getAttribute('data-unit');
-        const isVerband = (unitRaw === 'NONE' || unitRaw === 'UNIT_NONE' || implicitPoints > 0);
-
-        if (isVerband) {
-            Object.values(labels).forEach(l => l && (l.textContent = ''));
-        } else {
-            if(labels.b) labels.b.textContent = opt.getAttribute('data-bronze') || '-';
-            if(labels.s) labels.s.textContent = opt.getAttribute('data-silber') || '-';
-            if(labels.g) labels.g.textContent = opt.getAttribute('data-gold') || '-';
-            if(labels.unit) labels.unit.textContent = prettyUnit;
-        }
-    }
-});
+// Start
+document.addEventListener('DOMContentLoaded', () => SportabzeichenApp.init());
