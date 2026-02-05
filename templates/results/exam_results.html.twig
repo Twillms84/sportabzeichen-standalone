@@ -330,29 +330,21 @@
     {{ parent() }}
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
 
     <script>
-        // Wir warten, bis alles geladen ist
         $(document).ready(function() {
-            console.log("Starte Selectpicker..."); // Zur Kontrolle in F12
-
             $('.selectpicker').selectpicker({
-                style: 'btn-iserv',  // Unsere Custom CSS Klasse
+                style: 'btn-iserv',
                 size: 6,
                 liveSearch: true,
-                noneSelectedText: 'Bitte wählen...',
-                actionsBox: true,
-                selectAllText: 'Alle',
-                deselectAllText: 'Keine'
+                // Container Body hilft oft bei "abgeschnittenen" Menüs, 
+                // kann aber manchmal auch Probleme machen. Testweise mal drin lassen.
+                container: 'body' 
             });
-
-            // Erzwinge ein Update
             $('.selectpicker').selectpicker('refresh');
-            console.log("Selectpicker fertig.");
         });
     </script>
 {% endblock %}
