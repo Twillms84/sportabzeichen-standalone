@@ -25,71 +25,64 @@
     </div>
 
     {# --- 2. FILTER LEISTE (Card Design) --- #}
-    Hier ist der angepasste HTML/Twig-Code.
 
-Ich habe die klobige card-Struktur entfernt und durch die schlanke filter-toolbar ersetzt. Die Logik (Twig-Schleifen für die Disziplinen) habe ich 1:1 aus deinem Code übernommen, aber in das neue Design integriert.
+    <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
 
-HTML
+        {# A) ANSICHT / DISZIPLINEN FILTER #}
+        <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
+            <span class="filter-label d-none d-md-inline">Ansicht:</span>
+            <select id="viewSelector" 
+                    class="selectpicker" 
+                    multiple 
+                    data-style="btn-iserv" 
+                    data-selected-text-format="count > 2"
+                    data-actions-box="true"
+                    data-select-all-text="Alle"
+                    data-deselect-all-text="Keine"
+                    data-width="auto"
+                    title="Ansicht wählen...">
+                
+                <option value="SWIMMING" selected>Schwimmen</option>
 
-{# FILTER TOOLBAR (ISERV STYLE) #}
-{# Ersetzt die alte .card Struktur #}
-<div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
-
-    {# A) ANSICHT / DISZIPLINEN FILTER #}
-    <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
-        <span class="filter-label d-none d-md-inline">Ansicht:</span>
-        <select id="viewSelector" 
-                class="selectpicker" 
-                multiple 
-                data-style="btn-iserv" 
-                data-selected-text-format="count > 2"
-                data-actions-box="true"
-                data-select-all-text="Alle"
-                data-deselect-all-text="Keine"
-                data-width="auto"
-                title="Ansicht wählen...">
-            
-            <option value="SWIMMING" selected>Schwimmen</option>
-
-            {% for category in disciplines|keys %}
-                {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
-                    <option value="{{ category }}" selected>{{ category }}</option>
-                {% endif %}
-            {% endfor %}
-        </select>
-    </div>
-
-    {# B) KLASSEN FILTER #}
-    <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
-        <span class="filter-label d-none d-md-inline">Gruppe:</span>
-        <select id="client-class-filter" 
-                class="selectpicker" 
-                multiple 
-                data-style="btn-iserv" 
-                data-live-search="true" 
-                data-actions-box="true"
-                data-select-all-text="Alle"
-                data-deselect-all-text="Keine"
-                data-none-selected-text="Wählen..."
-                data-width="150px">
-            {# Optionen werden per JS befüllt #}
-        </select>
-    </div>
-
-    {# C) SUCHLEISTE (Nimmt den restlichen Platz ein) #}
-    <div class="d-flex align-items-center flex-grow-1" style="min-width: 200px;">
-        <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white border-secondary text-secondary" style="border-color: #ccc !important;">
-                <i class="fas fa-search"></i>
-            </span>
-            <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
+                {% for category in disciplines|keys %}
+                    {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                        <option value="{{ category }}" selected>{{ category }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
         </div>
-    </div>
-    
-    {# Optional: Platzhalter für Aktionen rechts (z.B. Drucken) #}
-    {# <div class="ms-2">...</div> #}
 
-</div>
+        {# B) KLASSEN FILTER #}
+        <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
+            <span class="filter-label d-none d-md-inline">Gruppe:</span>
+            <select id="client-class-filter" 
+                    class="selectpicker" 
+                    multiple 
+                    data-style="btn-iserv" 
+                    data-live-search="true" 
+                    data-actions-box="true"
+                    data-select-all-text="Alle"
+                    data-deselect-all-text="Keine"
+                    data-none-selected-text="Wählen..."
+                    data-width="150px">
+                {# Optionen werden per JS befüllt #}
+            </select>
+        </div>
+
+        {# C) SUCHLEISTE (Nimmt den restlichen Platz ein) #}
+        <div class="d-flex align-items-center flex-grow-1" style="min-width: 200px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-secondary text-secondary" style="border-color: #ccc !important;">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
+            </div>
+        </div>
+        
+        {# Optional: Platzhalter für Aktionen rechts (z.B. Drucken) #}
+        {# <div class="ms-2">...</div> #}
+
+    </div>
 
     {# --- 3. TABELLE --- #}
     <form id="autosave-form" 
@@ -330,3 +323,16 @@ HTML
     </form>
 </div>
 {% endblock %}
+
+<script>
+    $(document).ready(function() {
+        // Initialisiert alle Elemente mit der Klasse .selectpicker
+        $('.selectpicker').selectpicker({
+            style: 'btn-iserv',
+            size: 6 // Maximale Anzahl sichtbarer Items
+        });
+        
+        // Erzwingt ein Neu-Zeichnen, falls es beim Laden klemmt
+        $('.selectpicker').selectpicker('refresh');
+    });
+</script>
