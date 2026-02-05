@@ -19,11 +19,9 @@ class Participant
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private ?string $username = null;
-    
-    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'LAZY')] // Wichtig: LAZY
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    // Verknüpfung zum User (Hier holen wir uns Name, Klasse etc.)
+    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')] 
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?User $user = null;
 
     #[ORM\Column(type: 'date', nullable: true, name: 'geburtsdatum')]
@@ -32,11 +30,23 @@ class Participant
     #[ORM\Column(type: 'string', length: 10, nullable: true, name: 'geschlecht')]
     private ?string $gender = null; 
 
-    // Relation zu Schwimmnachweisen
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $origin = 'MANUAL'; // CSV_LINKED, ISERV_IMPORT etc.
+
+    #[ORM\Column(type: 'datetime', nullable: true, name: 'updated_at')]
+    private ?\DateTimeInterface $updatedAt = null;
+
+    // Legacy Felder (falls noch benötigt, sonst ignorieren wir sie)
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $username = null; // Veraltet -> User entity nutzen
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'group_name')]
+    private ?string $legacyGroupName = null; // Veraltet -> User->Groups nutzen
+
+    // Relationen
     #[ORM\OneToMany(mappedBy: 'participant', targetEntity: SwimmingProof::class, cascade: ['persist', 'remove'])]
     private Collection $swimmingProofs;
 
-    // Relation zu Prüfungen (Hier fehlte oft die korrekte Verknüpfung)
     #[ORM\OneToMany(mappedBy: 'participant', targetEntity: ExamParticipant::class, cascade: ['persist', 'remove'])]
     private Collection $examParticipants;
 
@@ -48,18 +58,6 @@ class Participant
 
     public function getId(): ?int { return $this->id; }
 
-    // --- Getter/Setter für das fehlende Feld ---
-        public function getUsername(): ?string
-    {
-        return $this->username;
-    }
-
-    public function setUsername(?string $username): self
-    {
-        $this->username = $username;
-        return $this;
-    }
-    
     public function getUser(): ?User { return $this->user; }
     public function setUser(?User $user): self { $this->user = $user; return $this; }
 
@@ -73,6 +71,12 @@ class Participant
     // Alias für alten Code
     public function getGeschlecht(): ?string { return $this->gender; }
 
+    public function getOrigin(): ?string { return $this->origin; }
+    public function setOrigin(?string $origin): self { $this->origin = $origin; return $this; }
+
+    public function getUpdatedAt(): ?\DateTimeInterface { return $this->updatedAt; }
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): self { $this->updatedAt = $updatedAt; return $this; }
+
     /**
      * @return Collection<int, SwimmingProof>
      */
@@ -82,6 +86,10 @@ class Participant
      * @return Collection<int, ExamParticipant>
      */
     public function getExamParticipants(): Collection { return $this->examParticipants; }
+
+    // Legacy Getter/Setter
+    public function getUsername(): ?string { return $this->username; }
+    public function setUsername(?string $username): self { $this->username = $username; return $this; }
 
     public function __toString(): string
     {

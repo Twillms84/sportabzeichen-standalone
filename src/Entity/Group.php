@@ -3,11 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\GroupRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
-// WICHTIG: Wir nutzen Backticks `groups`, damit SQL nicht meckert, 
-// aber der Name MUSS "groups" sein, damit dein alter Code die Tabelle findet.
 #[ORM\Table(name: '`groups`')] 
 class Group
 {
@@ -19,10 +19,17 @@ class Group
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    // UMBENANNT: Von 'account' zu 'act'.
-    // Der alte Code sucht nach 'act' (IServ Gruppen-ID).
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $act = null;
+
+    // Hier die Rückbeziehung zu den Usern
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'groups')]
+    private Collection $users;
+
+    public function __construct()
+    {
+        $this->users = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -51,5 +58,36 @@ class Group
         $this->act = $act;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeGroup($this);
+        }
+
+        return $this;
+    }
+    
+    public function __toString(): string {
+        return $this->name;
     }
 }
