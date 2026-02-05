@@ -29,28 +29,35 @@
     <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
 
         {# A) ANSICHT / DISZIPLINEN FILTER #}
-        <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
-            <span class="filter-label d-none d-md-inline">Ansicht:</span>
-            <select id="viewSelector" 
-                    class="app-selectpicker"
-                    multiple 
-                    data-style="btn-iserv" 
-                    data-selected-text-format="count > 2"
-                    data-actions-box="true"
-                    data-select-all-text="Alle"
-                    data-deselect-all-text="Keine"
-                    data-width="auto"
-                    title="Ansicht wählen...">
-                
-                <option value="SWIMMING" selected>Schwimmen</option>
+        <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
 
-                {% for category in disciplines|keys %}
-                    {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
-                        <option value="{{ category }}" selected>{{ category }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
+    {# A) ANSICHT / DISZIPLINEN FILTER #}
+    <div class="dropdown me-3 mb-2 mb-md-0 d-inline-block">
+        <button class="btn btn-iserv dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            Ansicht wählen...
+        </button>
+        <div class="dropdown-menu p-3" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+            
+            <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-filter-all" data-target="view">Alle</button>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-filter-none" data-target="view">Keine</button>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input view-checkbox" type="checkbox" value="SWIMMING" id="chk_swim" checked>
+                <label class="form-check-label w-100 stretched-link" for="chk_swim">Schwimmen</label>
+            </div>
+
+            {% for category in disciplines|keys %}
+                {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                <div class="form-check">
+                    <input class="form-check-input view-checkbox" type="checkbox" value="{{ category }}" id="chk_{{ category }}" checked>
+                    <label class="form-check-label w-100 stretched-link" for="chk_{{ category }}">{{ category }}</label>
+                </div>
+                {% endif %}
+            {% endfor %}
         </div>
+    </div>
 
         {# B) KLASSEN FILTER #}
         <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
