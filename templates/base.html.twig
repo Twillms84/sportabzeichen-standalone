@@ -167,12 +167,26 @@
         {# 5. Initialisierungsskript (Optional hier, oder in der Unterseite) #}
         <script>
             $(document).ready(function() {
-                // Falls du auf der Seite Elemente mit class="selectpicker" hast:
+                // Sicherstellen, dass wir Elemente haben
                 if($('.selectpicker').length > 0) {
+                    
+                    // 1. Erst aufräumen (verhindert doppelte Anzeige)
+                    $('.selectpicker').selectpicker('destroy');
+                    
+                    // 2. Sauber neu bauen
                     $('.selectpicker').selectpicker({
-                        style: 'btn-iserv', // Deine Custom Klasse
-                        size: 6
+                        style: 'btn-iserv',
+                        size: 6,
+                        liveSearch: true,     // Falls du Suche willst
+                        container: 'body',    // WICHTIG: Damit es nicht abgeschnitten wird!
+                        noneSelectedText: 'Bitte wählen...',
+                        actionsBox: true,      // Zeigt "Alle auswählen / Keine"
+                        selectAllText: 'Alle',
+                        deselectAllText: 'Keine'
                     });
+                    
+                    // 3. Zur Sicherheit das Original nochmal per JS verstecken
+                    $('.selectpicker').css('display', 'none');
                 }
             });
         </script>
