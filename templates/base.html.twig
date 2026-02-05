@@ -87,26 +87,29 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
         
         {# 5. SAFE INITIALISIERUNG #}
-        <script>
-            $(document).ready(function() {
-                // Initialisiert alle Dropdowns, die noch NICHT initialisiert sind
-                $('.selectpicker').each(function() {
-                    var $select = $(this);
-                    if ($select.parent().hasClass('bootstrap-select')) {
-                        return; // Schon fertig -> abbrechen
-                    }
-                    $select.selectpicker({
-                        style: 'btn-iserv',
-                        size: 6,
-                        liveSearch: true,
-                        container: 'body',
-                        noneSelectedText: 'Bitte wählen...',
-                        actionsBox: true,
-                        selectAllText: 'Alle',
-                        deselectAllText: 'Keine'
-                    });
+        $(document).ready(function() {
+            // WICHTIG: Selektor anpassen auf die neue Klasse
+            $('.app-selectpicker').each(function() {
+                var $select = $(this);
+                
+                // Diese Prüfung ist jetzt eigentlich überflüssig, wenn die Klasse unique ist,
+                // aber schadet nicht als Sicherheit.
+                if ($select.parent().hasClass('bootstrap-select')) {
+                    return; 
+                }
+
+                $select.selectpicker({
+                    style: 'btn-iserv',
+                    size: 6,
+                    liveSearch: true,
+                    container: 'body',
+                    noneSelectedText: 'Bitte wählen...',
+                    actionsBox: true,
+                    selectAllText: 'Alle',
+                    deselectAllText: 'Keine'
                 });
             });
+        });
         </script>
     </body>
 </html>
