@@ -15,6 +15,8 @@ import 'bootstrap-select';
 console.log('App started & Bootstrap loaded');
 // Deine Controller
 import './controllers/exam_results_autosave.js';
+import './controllers/exam_results_filter.js';
+
 import './controllers/admin_participant.js';
 import './controllers/exam_dashboard.js';
 

@@ -26,41 +26,53 @@
 
     {# --- 2. FILTER LEISTE (Card Design) --- #}
 
+    {# --- 2. FILTER LEISTE (Card Design) --- #}
     <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
 
         {# A) ANSICHT / DISZIPLINEN FILTER #}
-        <div class="filter-toolbar sticky-top" style="z-index: 1040; top: 0;">
-
-    {# A) ANSICHT / DISZIPLINEN FILTER #}
-    <div class="dropdown me-3 mb-2 mb-md-0 d-inline-block">
-        <button class="btn btn-iserv dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
-            Ansicht wählen...
-        </button>
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                 Ansicht: Alle
             </button>
-
-            <div class="dropdown-menu p-3" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+            <div class="dropdown-menu p-3 shadow" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-view-all">Alle</button>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-view-none">Keine</button>
+                </div>
+                {# Checkboxen werden hier per JS eingefügt #}
+                <div id="view-checkbox-container"></div>
             </div>
         </div>
 
-        {# B) KLASSEN FILTER #}
-        <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
-            <span class="filter-label d-none d-md-inline">Gruppe:</span>
-            <select id="client-class-filter" 
-                    class="app-selectpicker" 
-                    multiple 
-                    data-style="btn-iserv" 
-                    data-live-search="true" 
-                    data-actions-box="true"
-                    data-select-all-text="Alle"
-                    data-deselect-all-text="Keine"
-                    data-none-selected-text="Wählen..."
-                    data-width="150px">
-                {# Optionen werden per JS befüllt #}
-            </select>
+        {# B) KLASSEN / GRUPPEN FILTER #}
+        <div class="d-flex align-items-center me-3 mb-2 mb-md-0 ms-2">
+            <span class="filter-label d-none d-md-inline me-2">Gruppe:</span>
+            
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="groupFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    Alle Gruppen
+                </button>
+                <div class="dropdown-menu p-3 shadow" aria-labelledby="groupFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
+                    </div>
+                    {# Checkboxen werden hier per JS eingefügt #}
+                    <div id="group-checkbox-container"></div>
+                </div>
+            </div>
         </div>
+
+        {# C) SUCHLEISTE #}
+        <div class="d-flex align-items-center flex-grow-1" style="min-width: 200px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-secondary text-secondary" style="border-color: #ccc !important;">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
+            </div>
+        </div>
+    </div>
 
         {# C) SUCHLEISTE (Nimmt den restlichen Platz ein) #}
         <div class="d-flex align-items-center flex-grow-1" style="min-width: 200px;">

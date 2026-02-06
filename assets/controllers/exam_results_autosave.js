@@ -2,160 +2,10 @@ import $ from 'jquery';
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    const $ = jQuery; 
-
     // =========================================================
-    // 1. ANSICHT & FILTER
-    // =========================================================
-    const $viewSelector = $('#viewSelector'); 
-    
-    if ($viewSelector.length) {
-        $viewSelector.on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
-            const selectedCategories = $(this).val() || [];
-            
-            $('#viewSelector option').each(function() {
-                const category = $(this).val(); 
-                const cells = document.querySelectorAll('.col-cat-' + category);
-                const showAll = selectedCategories.length === 0;
-                
-                if (showAll || selectedCategories.includes(category)) {
-                    cells.forEach(cell => cell.classList.remove('col-hidden'));
-                } else {
-                    cells.forEach(cell => cell.classList.add('col-hidden'));
-                }
-            });
-            localStorage.setItem('sportabzeichen_view_selection', JSON.stringify(selectedCategories));
-        });
-
-        // Restore Selection
-        const savedSelection = localStorage.getItem('sportabzeichen_view_selection');
-        if (savedSelection) {
-            try {
-                const parsed = JSON.parse(savedSelection);
-                if(parsed && parsed.length > 0) {
-                    $viewSelector.selectpicker('val', parsed);
-                }
-                $viewSelector.selectpicker('refresh');
-                $viewSelector.trigger('changed.bs.select');
-            } catch(e) { console.error('Storage Error', e); }
-        }
-    }
-
-    // =========================================================
-    // 1b. TEILNEHMER FILTER
-    // =========================================================
-    const $classFilterSelect = $('#client-class-filter');
-    const searchInput = document.getElementById('client-search-input');
-    
-    if ($classFilterSelect.length && searchInput) {
-        // Wir holen die Rows einmalig, um das Dropdown zu füllen
-        const allRows = document.querySelectorAll('.participant-row');
-        const groups = new Set(); // Umbenannt von 'classes' zu 'groups', da logischer
-
-        // Dropdown füllen: Wir suchen nach Klasse ODER Gruppe
-        allRows.forEach(row => {
-            // HIER IST DER FIX: Fallback auf data-group
-            const rawVal = row.getAttribute('data-class') || row.getAttribute('data-group');
-            
-            if (rawVal) {
-                const val = rawVal.trim();
-                if (val !== '') groups.add(val);
-            }
-        });
-
-        // Optionen alphabetisch sortiert einfügen
-        Array.from(groups).sort().forEach(val => {
-            $classFilterSelect.append(`<option value="${val}">${val}</option>`);
-        });
-        
-        // Selectpicker aktualisieren (falls vorhanden)
-        if ($.fn.selectpicker) {
-            $classFilterSelect.selectpicker('refresh');
-        }
-
-        // Die Filter-Logik
-        const filterRows = () => {
-            // 1. Hole die ausgewählten Werte sicher als Array
-            let selectedValues = $classFilterSelect.val();
-
-            // Fix: Sicherstellen, dass es immer ein Array ist
-            if (!selectedValues) {
-                selectedValues = [];
-            } else if (!Array.isArray(selectedValues)) {
-                selectedValues = [selectedValues];
-            }
-
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            
-            // Rows neu abfragen (falls dynamisch geladen)
-            const currentRows = document.querySelectorAll('.participant-row');
-
-            currentRows.forEach(row => {
-                // HIER AUCH DER FIX: Wir vergleichen gegen Klasse ODER Gruppe
-                const rawRowVal = row.getAttribute('data-class') || row.getAttribute('data-group') || '';
-                const rowGroup = rawRowVal.trim();
-                
-                const nameEl = row.querySelector('.name-main');
-                const nameText = nameEl ? nameEl.textContent.toLowerCase() : ''; 
-
-                // Logik Prüfung
-                const matchGroup = (selectedValues.length === 0 || selectedValues.includes(rowGroup));
-                const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
-
-                // Sichtbarkeit setzen
-                if (matchGroup && matchSearch) {
-                    row.style.display = ''; 
-                } else {
-                    row.style.display = 'none'; 
-                }
-            });
-
-            // ---------------------------------------------------------
-            // UPDATE: GROUPCARD BUTTON URL
-            // ---------------------------------------------------------
-            const $printBtn = $('#btn-print-groupcard'); 
-
-            if ($printBtn.length) {
-                // Basis-URL holen
-                if (!$printBtn.data('base-href')) {
-                    $printBtn.data('base-href', $printBtn.attr('href'));
-                }
-                const baseUrl = $printBtn.data('base-href');
-
-                // A. Klasse/Gruppe ermitteln (nimmt die erste gewählte oder leer)
-                const selectedGroup = (Array.isArray(selectedValues) && selectedValues.length > 0) 
-                                      ? selectedValues[0] 
-                                      : '';
-
-                // B. Suchbegriff ermitteln
-                const rawSearchTerm = searchInput.value.trim();
-
-                // URL zusammenbauen
-                const separator = baseUrl.includes('?') ? '&' : '?';
-                
-                // Wir nennen den Parameter trotzdem 'class_filter', damit der Controller nicht verwirrt ist
-                // Oder du passt den Controller an, dass er auch groups versteht.
-                let newUrl = baseUrl + separator + 'class_filter=' + encodeURIComponent(selectedGroup);
-                
-                if (rawSearchTerm) {
-                    newUrl += '&search_query=' + encodeURIComponent(rawSearchTerm);
-                }
-
-                $printBtn.attr('href', newUrl);
-            }
-        };
-
-        // Event Listener
-        $classFilterSelect.on('change changed.bs.select', filterRows);
-        searchInput.addEventListener('keyup', filterRows);
-        searchInput.addEventListener('input', filterRows);
-    }
-
-    // =========================================================
-    // 2. AUTOSAVE FORMULAR LOGIK
+    // KONFIGURATION & INIT
     // =========================================================
     const form = document.getElementById('autosave-form');
-    
     if (!form) return; 
 
     const disciplineRoute = form.getAttribute('data-discipline-route'); 
@@ -164,20 +14,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const swimmingDeleteRoute = form.getAttribute('data-swimming-delete-route');
     const csrfToken = form.getAttribute('data-global-token');
 
-    // Initiale UI Checks
+    // Initiale UI Checks beim Laden der Seite
     document.querySelectorAll('.js-discipline-select').forEach(select => {
         updateRequirementHints(select);
         checkVerbandInput(select);
     });
 
-    // --- CHANGE LISTENER (SPEICHERN) ---
+    // =========================================================
+    // EVENT LISTENERS
+    // =========================================================
+
+    // 1. CHANGE LISTENER (SPEICHERN)
     form.addEventListener('change', async function(event) {
-        console.log('Change erkannt an:', event.target); // Erscheint das in der Konsole?
         const el = event.target;
-        if (!el.hasAttribute('data-save')) {
-        console.log('Abbruch: kein data-save Attribut');
-        return;
-    }
+        if (!el.hasAttribute('data-save')) return;
+
+        console.log('Autosave triggered for:', el);
 
         const epId = el.getAttribute('data-ep-id');
         const type = el.getAttribute('data-type'); 
@@ -235,19 +87,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (data.status === 'ok' || data.success) {
-                // UI Updates vom Try/Catch entkoppeln, damit Fehler hier nicht als "Netzwerkfehler" gelten
                 try {
                     // 1. Zelle aktualisieren
                     if (type !== 'swimming_select' && cell) {
                         handleDisciplineColors(data, cell, row, kat, el);
                         if (data.new_requirements) updateRequirementsBadges(cell, data.new_requirements);
                     }
-                    // 2. Live Update Widgets
+                    // 2. Live Update Widgets (Punkte, Medaille, Schwimmen)
                     updateUIWidgets(epId, row, data);
                 } catch (uiErr) {
                     console.error('UI Update Warning:', uiErr);
                 }
-
             } else {
                 throw new Error(data.message || 'Fehler beim Speichern');
             }
@@ -261,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- CLICK LISTENER (Schwimmen LÖSCHEN) ---
+    // 2. CLICK LISTENER (Schwimmen LÖSCHEN)
     document.addEventListener('click', async function(event) {
         const btn = event.target.closest('.btn-delete-swimming');
         if (!btn) return;
@@ -303,35 +153,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
-            // Erfolgsfall prüfen (egal ob data.status oder data.success)
             if (data.status === 'ok' || data.success === true) {
-                
-                // UI Logik in eigenen Block, damit Fehler hier nicht in den Catch rutschen
                 try {
                     const row = btn.closest('tr');
                     updateUIWidgets(epId, row, data);
 
                     const wrapper = document.getElementById('swimming-wrapper-' + epId);
                     if (wrapper) {
-                        // Reset UI manuell erzwingen, falls updateUIWidgets es übersehen hat
                         const badgeCont = wrapper.querySelector('.swim-badge-container');
                         const dropCont = wrapper.querySelector('.swim-dropdown-container');
                         
                         if(badgeCont) badgeCont.classList.add('d-none');
                         if(dropCont) dropCont.classList.remove('d-none');
                         
-                        // Select zurücksetzen
                         const select = wrapper.querySelector('select');
                         if (select) select.value = "";
                         
-                        // Text leeren
                         const textEl = wrapper.querySelector('.swim-info-text');
                         if(textEl) textEl.textContent = '';
                     }
                 } catch(uiError) {
                     console.error('Löschen UI Update Error:', uiError);
                 }
-
             } else {
                 alert('Fehler: ' + (data.message || 'Fehler beim Löschen.'));
             }
@@ -348,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // =========================================================
-    // 3. UI HELFER
+    // HELPER FUNCTIONS (UI Logic for Results)
     // =========================================================
 
     function updateUIWidgets(epId, row, data) {
@@ -361,18 +204,15 @@ document.addEventListener('DOMContentLoaded', function() {
             triggerPulse(totalBadge);
         }
 
-        // B. FINAL MEDAILLE (Live Update)
+        // B. FINAL MEDAILLE
         const medalBadge = document.getElementById('final-medal-' + epId);
         let medalValue = data.final_medal || data.medal || 'none';
         medalValue = String(medalValue).toLowerCase();
 
         if (medalBadge) {
             const labelSpan = medalBadge.querySelector('.js-medal-label');
-            
-            // 1. RESET
-            medalBadge.className = 'result-badge-box'; 
+            medalBadge.className = 'result-badge-box'; // Reset
 
-            // 2. Deine Farb-Klassen anwenden
             let labelText = '-';
             let colorClass = 'bg-light text-muted'; 
 
@@ -403,29 +243,21 @@ document.addEventListener('DOMContentLoaded', function() {
             triggerPulse(medalBadge);
         }
 
-        // C. SCHWIMMEN (Nur noch Wrapper Umschaltung: Badge vs. Dropdown)
+        // C. SCHWIMMEN
         const hasSwimming = (data.has_swimming === true || data.has_swimming === 1 || String(data.has_swimming) === '1');
-        
-        // --- HIER WURDE DER ICON-CODE ENTFERNT ---
-        
-        // Wrapper Bereiche umschalten
         const wrapper = document.getElementById('swimming-wrapper-' + epId);
+        
         if (wrapper) {
             const badgeCont = wrapper.querySelector('.swim-badge-container');
             const dropCont = wrapper.querySelector('.swim-dropdown-container');
             const textEl = wrapper.querySelector('.swim-info-text');
 
             if (hasSwimming) {
-                // TEXT UPDATE LOGIK
                 if (textEl) {
                     let displayName = '';
-
-                    // 1. Priorität: Server Antwort (außer es enthält "DISCIPLINE")
                     if (data.swimming_name && !String(data.swimming_name).includes('DISCIPLINE')) {
                          displayName = data.swimming_name;
                     }
-
-                    // 2. Fallback: Dropdown Text
                     if (!displayName) {
                         const select = wrapper.querySelector('select');
                         if (select && select.selectedIndex > -1) {
@@ -433,17 +265,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (selectedOption.value) displayName = selectedOption.text;
                         }
                     }
-
-                    // 3. Notlösung
                     if (!displayName) displayName = 'Nachweis erbracht';
-
                     textEl.textContent = displayName;
                 }
-
                 if(badgeCont) badgeCont.classList.remove('d-none');
                 if(dropCont) dropCont.classList.add('d-none');
             } else {
-                // RESET
                 if(badgeCont) badgeCont.classList.add('d-none');
                 if(dropCont) dropCont.classList.remove('d-none');
                 if (textEl) textEl.textContent = '';
@@ -453,8 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-
-    // --- KLEINE HELFER ---
 
     function triggerPulse(element) {
         if(!element) return;
