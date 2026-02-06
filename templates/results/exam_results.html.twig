@@ -36,28 +36,14 @@
         <button class="btn btn-iserv dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
             Ansicht wählen...
         </button>
-        <div class="dropdown-menu p-3" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
-            
-            <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-filter-all" data-target="view">Alle</button>
-                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-filter-none" data-target="view">Keine</button>
-            </div>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                Ansicht: Alle
+            </button>
 
-            <div class="form-check">
-                <input class="form-check-input view-checkbox" type="checkbox" value="SWIMMING" id="chk_swim" checked>
-                <label class="form-check-label w-100 stretched-link" for="chk_swim">Schwimmen</label>
+            <div class="dropdown-menu p-3" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
             </div>
-
-            {% for category in disciplines|keys %}
-                {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
-                <div class="form-check">
-                    <input class="form-check-input view-checkbox" type="checkbox" value="{{ category }}" id="chk_{{ category }}" checked>
-                    <label class="form-check-label w-100 stretched-link" for="chk_{{ category }}">{{ category }}</label>
-                </div>
-                {% endif %}
-            {% endfor %}
         </div>
-    </div>
 
         {# B) KLASSEN FILTER #}
         <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
