@@ -18,6 +18,76 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
         <style>
+
+        /* --- IServ-Style Dropdown --- */
+        .dropdown-menu-iserv {
+            /* Dunkelblau mit 90% Deckkraft für Transparenz */
+            background-color: rgba(44, 62, 80, 0.95); 
+            /* Der Blur-Effekt (Milchglas) - funktioniert in modernen Browsern */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            /* Weißer Text */
+            color: #ecf0f1;
+            
+            /* Feiner heller Rand für Kontrast */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Links (Alle / Keine) anpassen */
+        .dropdown-menu-iserv .btn-link {
+            color: #bdc3c7 !important; /* Helles Grau */
+            transition: color 0.2s;
+        }
+        .dropdown-menu-iserv .btn-link:hover {
+            color: #ffffff !important; /* Weiß beim Drüberfahren */
+            text-decoration: underline;
+        }
+
+        /* Trennlinien heller machen */
+        .dropdown-menu-iserv .border-bottom {
+            border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Checkbox-Zeilen Hover-Effekt */
+        .dropdown-menu-iserv .form-check {
+            padding: 8px 12px 8px 2.5rem; /* Etwas mehr Platz */
+            margin-bottom: 0;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-menu-iserv .form-check:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* Helles Aufleuchten */
+        }
+
+        /* Checkbox Input selbst */
+        .dropdown-menu-iserv .form-check-input {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            margin-left: -1.8rem; /* Position korrigieren wegen Padding oben */
+        }
+        .dropdown-menu-iserv .form-check-input:checked {
+            background-color: #3498db; /* Helles IServ Blau für den Haken */
+            border-color: #3498db;
+        }
+
+        /* Scrollbar hübsch machen (für Chrome/Safari/Edge) */
+        .dropdown-menu-iserv::-webkit-scrollbar {
+            width: 8px;
+        }
+        .dropdown-menu-iserv::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .dropdown-menu-iserv::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        .dropdown-menu-iserv::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
             body { min-height: 100vh; overflow-x: hidden; }
 
             /* --- IServ Style für Dropdowns --- */
