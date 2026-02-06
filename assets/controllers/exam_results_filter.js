@@ -31,9 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const isChecked = savedViewSelection.length === 0 || savedViewSelection.includes(cat);
 
             const html = `
-                <div class="form-check">
-                    <input class="form-check-input view-checkbox" type="checkbox" value="${cat}" id="chk_view_${cat}" ${isChecked ? 'checked' : ''}>
-                    <label class="form-check-label w-100 stretched-link" for="chk_view_${cat}">
+                <div class="form-check py-1"> <input class="form-check-input view-checkbox" type="checkbox" value="${cat}" id="chk_view_${cat}" ${isChecked ? 'checked' : ''}>
+                    <label class="form-check-label w-100" for="chk_view_${cat}" style="cursor: pointer;">
                         ${label}
                     </label>
                 </div>
@@ -73,7 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Event Listener
         viewContainer.addEventListener('change', updateViewFilter);
-
+   
+        viewContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
         // "Alle" / "Keine" Buttons
         document.querySelector('.js-view-all')?.addEventListener('click', () => {
             viewContainer.querySelectorAll('input').forEach(el => el.checked = true);
