@@ -1,117 +1,63 @@
 /* =========================================
-   1. ALLGEMEINES
+   3. SIDEBAR (DASHBOARD MENÜ) - GRÜN & SCHMAL
    ========================================= */
-body {
-    min-height: 100vh;
-    overflow-x: hidden;
-    /* background-color: skyblue; <-- Kannst du aktivieren, wenn gewünscht */
+
+/* --- KONFIGURATION --- */
+:root {
+    /* HIER DIE FARBE DEINES LOGOS EINTRAGEN! */
+    /* Aktuell: Ein tiefes Vereins-Grün */
+    --sidebar-bg-color: #144018; 
+    
+    /* HIER DIE BREITE ÄNDERN */
+    /* Vorher: 260px -> Jetzt: 210px */
+    --sidebar-width: 210px;     
 }
-
-/* =========================================
-   2. ISERV DROPDOWN STYLING
-   ========================================= */
-.dropdown-menu-iserv {
-    background-color: rgba(44, 62, 80, 0.95); 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #ecf0f1;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-
-.dropdown-menu-iserv .btn-link {
-    color: #bdc3c7 !important;
-    transition: color 0.2s;
-}
-
-.dropdown-menu-iserv .btn-link:hover {
-    color: #ffffff !important;
-    text-decoration: underline;
-}
-
-.dropdown-menu-iserv .border-bottom {
-    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-.dropdown-menu-iserv .form-check {
-    padding: 8px 12px 8px 2.5rem;
-    margin-bottom: 0;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.dropdown-menu-iserv .form-check:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.dropdown-menu-iserv .form-check-input {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-    margin-left: -1.8rem;
-}
-
-.dropdown-menu-iserv .form-check-input:checked {
-    background-color: #3498db;
-    border-color: #3498db;
-}
-
-/* Scrollbar für Dropdown */
-.dropdown-menu-iserv::-webkit-scrollbar { width: 8px; }
-.dropdown-menu-iserv::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-.dropdown-menu-iserv::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
-.dropdown-menu-iserv::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
-
-/* =========================================
-   3. SIDEBAR (DASHBOARD MENÜ) - DER FIX
-   ========================================= */
 
 /* Basis-Design der Sidebar */
 .sidebar {
-    background-color: #2c3e50;
+    background-color: var(--sidebar-bg-color); /* Nutzt das Grün von oben */
     color: #ecf0f1;
     min-height: 100vh;
 }
 
 /* Links in der Sidebar */
 .sidebar .nav-link {
-    color: #bdc3c7;
-    padding: 12px 20px;
-    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.7); /* Leicht transparentes Weiß */
+    padding: 10px 15px; /* Etwas weniger Polsterung, da schmaler */
+    font-size: 0.95rem; /* Schrift minimal kleiner */
     border-left: 4px solid transparent;
 }
 
 .sidebar .nav-link:hover, 
 .sidebar .nav-link.active {
     color: #fff;
-    background-color: #34495e;
-    border-left-color: #3498db;
+    /* Ein etwas helleres Grün für den Hover-Effekt (automatisch berechnet) */
+    background-color: rgba(255, 255, 255, 0.1); 
+    border-left-color: #2ecc71; /* Hellgrüner Akzent-Strich */
 }
 
 .sidebar .nav-link i {
     width: 25px;
     text-align: center;
-    margin-right: 10px;
+    margin-right: 8px;
 }
 
 .sidebar-brand {
-    padding: 20px;
-    font-size: 1.3rem;
+    padding: 15px;
+    font-size: 1.2rem;
     font-weight: bold;
     color: white;
-    background-color: #1a252f;
+    /* Macht den Header noch einen Tick dunkler als den Rest */
+    background-color: rgba(0, 0, 0, 0.2); 
     text-decoration: none;
     display: block;
 }
 
 /* --- LOGIK FÜR RESPONSIVE SIDEBAR --- */
 
-/* Mobile Ansicht (Standard): 
-   Wir setzen keine Breite und kein 'display:none', 
-   damit Bootstrap die Animation (Offcanvas) übernehmen kann. */
-
 .sidebar-wrapper {
-    background-color: #2c3e50;
-    width: 260px; /* Breite, wenn offen */
+    background-color: var(--sidebar-bg-color);
+    width: var(--sidebar-width); /* Greift auf die 210px zu */
 }
 
 /* WICHTIG: Damit das Menü ÜBER dem dunklen Hintergrund liegt */
@@ -122,7 +68,6 @@ body {
 /* Desktop Ansicht (ab 992px) */
 @media (min-width: 992px) {
     .sidebar-wrapper {
-        /* Hier schalten wir Offcanvas aus und fixieren die Leiste */
         transform: none !important;
         visibility: visible !important;
         display: block !important;
@@ -130,17 +75,16 @@ body {
         top: 0;
         left: 0;
         bottom: 0;
-        width: 260px;
-        z-index: 100; /* Tief genug, um unter Modals zu liegen */
+        width: var(--sidebar-width); /* 210px */
+        z-index: 100;
         overflow-y: auto;
     }
 
-    /* Inhalt nach rechts schieben */
+    /* Inhalt entsprechend weniger nach rechts schieben */
     .main-content {
-        margin-left: 260px;
+        margin-left: var(--sidebar-width); /* 210px */
     }
 
-    /* Mobile Header und Close-Button ausblenden */
     .mobile-header, 
     .offcanvas-header {
         display: none !important;
