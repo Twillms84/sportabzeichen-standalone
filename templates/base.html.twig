@@ -128,16 +128,34 @@
         </nav>
 
         <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
-             {# Dein Sidebar Inhalt hier... #}
-             <div class="sidebar d-flex flex-column">
+            <div class="sidebar d-flex flex-column">
+                
                 <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand">
                     <i class="fas fa-medal me-2"></i> Sportabzeichen
                 </a>
-                {# ... Rest der Sidebar ... #}
-                <ul class="nav flex-column mb-auto mt-2">
-                     <li class="nav-item"><a href="#" class="nav-link active">Demo Link</a></li>
-                </ul>
-             </div>
+
+                <hr class="my-0" style="border-top: 1px solid rgba(255,255,255,0.15);">
+
+                <ul class="nav flex-column mb-auto mt-3">
+                    
+                    <li class="nav-item">
+                        {# Prüfung auf 'active', damit der Link leuchtet, wenn man drauf ist #}
+                        <a href="{{ path('app_exams_dashboard') }}" 
+                        class="nav-link {% if app.request.get('_route') == 'app_exams_dashboard' %}active{% endif %}">
+                            <i class="fas fa-clipboard-list"></i> Verwaltung
+                        </a>
+                    </li>
+
+                    </ul>
+
+                <div class="p-3 mt-auto border-top border-secondary" style="background-color: rgba(0,0,0,0.2);">
+                    <div class="d-flex align-items-center text-white-50 small">
+                        <i class="fas fa-user-circle fa-lg me-2"></i>
+                        <span>Angemeldet</span>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         <main class="main-content p-4">
