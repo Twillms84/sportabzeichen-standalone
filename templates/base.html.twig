@@ -164,7 +164,7 @@ HTML
             {# --- MENÜPUNKT 2: VERWALTUNG --- #}
             <li class="nav-item">
                 {# WICHTIG: Ersetze 'app_exams_index' mit dem Routen-Namen, wo deine _tabs.html.twig eingebunden sind #}
-                <a href="{{ path('app_exams_index') }}" 
+                <a href="{{ path('admin_dashboard') }}" 
                    class="nav-link {% if app.request.attributes.get('_route') != 'app_exams_dashboard' %}active{% endif %}">
                     <i class="fas fa-tools"></i> {# Werkzeug Icon für Verwaltung #}
                     Verwaltung
