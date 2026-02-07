@@ -127,36 +127,59 @@
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
-        <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
-            <div class="sidebar d-flex flex-column">
-                
-                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand">
-                    <i class="fas fa-medal me-2"></i> Sportabzeichen
-                </a>
+        Verstehe! Das trennen wir sauber auf.
 
-                <hr class="my-0" style="border-top: 1px solid rgba(255,255,255,0.15);">
+Das _tabs.html.twig ist vermutlich nur ein Schnipsel (Partial), das in deine Verwaltungs-Seite eingebunden wird. Du brauchst im Menü aber den Link zur Route, die diese Seite (inklusive der Tabs) aufruft.
 
-                <ul class="nav flex-column mb-auto mt-3">
-                    
-                    <li class="nav-item">
-                        {# Prüfung auf 'active', damit der Link leuchtet, wenn man drauf ist #}
-                        <a href="{{ path('app_exams_dashboard') }}" 
-                        class="nav-link {% if app.request.get('_route') == 'app_exams_dashboard' %}active{% endif %}">
-                            <i class="fas fa-clipboard-list"></i> Verwaltung
-                        </a>
-                    </li>
+Ich gehe mal davon aus, dass deine Verwaltungs-Route so etwas wie app_exams_index oder ähnlich heißt.
 
-                    </ul>
+Hier ist der korrigierte Sidebar-Code mit getrenntem Dashboard und Verwaltung:
 
-                <div class="p-3 mt-auto border-top border-secondary" style="background-color: rgba(0,0,0,0.2);">
-                    <div class="d-flex align-items-center text-white-50 small">
-                        <i class="fas fa-user-circle fa-lg me-2"></i>
-                        <span>Angemeldet</span>
-                    </div>
-                </div>
+HTML
 
-            </div>
+<div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
+    <div class="sidebar d-flex flex-column">
+        
+        {# 1. BRAND / HEADER #}
+        {# Hier kein Link, oder Link zur Startseite #}
+        <div class="sidebar-brand">
+            <i class="fas fa-medal me-2"></i> Sportabzeichen
         </div>
+
+        {# 2. TRENNSTRICH #}
+        <hr class="my-0" style="border-top: 1px solid rgba(255,255,255,0.15);">
+
+        {# 3. MENÜPUNKTE #}
+        <ul class="nav flex-column mb-auto mt-3">
+            
+            {# --- MENÜPUNKT 1: DASHBOARD --- #}
+            <li class="nav-item">
+                <a href="{{ path('app_exams_dashboard') }}" 
+                   class="nav-link {% if app.request.attributes.get('_route') == 'app_exams_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i> {# Tacho Icon für Dashboard #}
+                    Dashboard
+                </a>
+            </li>
+
+            {# --- MENÜPUNKT 2: VERWALTUNG --- #}
+            <li class="nav-item">
+                {# WICHTIG: Ersetze 'app_exams_index' mit dem Routen-Namen, wo deine _tabs.html.twig eingebunden sind #}
+                <a href="{{ path('app_exams_index') }}" 
+                   class="nav-link {% if app.request.attributes.get('_route') != 'app_exams_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tools"></i> {# Werkzeug Icon für Verwaltung #}
+                    Verwaltung
+                </a>
+            </li>
+
+        </ul>
+        
+        {# OPTIONAL: User Info unten #}
+        <div class="mt-auto p-3 text-white-50 small border-top border-secondary">
+            <i class="fas fa-user-circle me-1"></i> Angemeldet
+        </div>
+
+    </div>
+</div>
 
         <main class="main-content p-4">
             {# Flash Messages ... #}
