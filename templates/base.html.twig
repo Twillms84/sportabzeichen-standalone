@@ -105,11 +105,27 @@
             .sidebar-brand { padding: 20px; font-size: 1.3rem; font-weight: bold; color: white; background-color: #1a252f; text-decoration: none; display: block; }
             
             .sidebar-wrapper { display: none; }
-            @media (min-width: 992px) {
-                .sidebar-wrapper { display: block; position: fixed; top: 0; left: 0; bottom: 0; width: 260px; z-index: 100; overflow-y: auto; }
-                .main-content { margin-left: 260px; }
-                .mobile-header { display: none !important; }
+            .sidebar-wrapper {
+    /* Optional: Breite auf Mobile definieren, falls abweichend */
+    width: 260px; 
+}
+
+        /* Desktop Einstellungen */
+        @media (min-width: 992px) {
+            .sidebar-wrapper { 
+                /* Hier zwingen wir es permanent sichtbar und fixiert */
+                display: block; 
+                position: fixed; 
+                top: 0; 
+                left: 0; 
+                bottom: 0; 
+                width: 260px; 
+                z-index: 100; 
+                overflow-y: auto; 
             }
+            .main-content { margin-left: 260px; }
+            .mobile-header { display: none !important; }
+        }
         </style>
 
     {% block javascripts %}
@@ -126,17 +142,6 @@
             </button>
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
-
-        Verstehe! Das trennen wir sauber auf.
-
-Das _tabs.html.twig ist vermutlich nur ein Schnipsel (Partial), das in deine Verwaltungs-Seite eingebunden wird. Du brauchst im Menü aber den Link zur Route, die diese Seite (inklusive der Tabs) aufruft.
-
-Ich gehe mal davon aus, dass deine Verwaltungs-Route so etwas wie app_exams_index oder ähnlich heißt.
-
-Hier ist der korrigierte Sidebar-Code mit getrenntem Dashboard und Verwaltung:
-
-HTML
-
 <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
     <div class="sidebar d-flex flex-column">
         
@@ -163,7 +168,6 @@ HTML
 
             {# --- MENÜPUNKT 2: VERWALTUNG --- #}
             <li class="nav-item">
-                {# WICHTIG: Ersetze 'app_exams_index' mit dem Routen-Namen, wo deine _tabs.html.twig eingebunden sind #}
                 <a href="{{ path('admin_dashboard') }}" 
                    class="nav-link {% if app.request.attributes.get('_route') != 'app_exams_dashboard' %}active{% endif %}">
                     <i class="fas fa-tools"></i> {# Werkzeug Icon für Verwaltung #}
@@ -185,5 +189,6 @@ HTML
             {# Flash Messages ... #}
             {% block body %}{% endblock %}
         </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>
