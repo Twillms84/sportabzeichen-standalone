@@ -498,13 +498,7 @@ public function printGroupcard(int $examId, Request $request): Response
         JOIN sportabzeichen_participants p ON p.id = ep.participant_id
         JOIN users u ON u.id = p.user_id  
         WHERE ep.exam_id = :examId 
-        /* =========================================================================
-           ÄNDERUNG 2: 'final_medal' Prüfung entfernt!
-           =========================================================================
-           Wir wollen auch Schüler auf der Karte sehen, die noch keine Medaille haben.
-           Deshalb ist die folgende Zeile auskommentiert:
-        */
-        -- AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
+        AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
     ";
     
     $params = ['examId' => $examId, 'year' => $examYear, 'yearEnd' => $examYearEnd];
