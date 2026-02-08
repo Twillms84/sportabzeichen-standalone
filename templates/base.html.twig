@@ -5,31 +5,26 @@
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    {# 1. jQuery #}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    {# 2. Bootstrap 5 CSS #}
+    {# --- CSS --- #}
+    {# Bootstrap 5 CSS (Lassen wir drin, falls du kein SCSS kompilierst) #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    {# 3. Bootstrap-Select CSS #}
+    {# Bootstrap-Select CSS #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
-
-    {# 4. FontAwesome Icons #}
+    
+    {# FontAwesome #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    {# HIER KEIN <style> MEHR! Das kommt alles über importmap/app.css #}
+    {# WICHTIG: Deine eigenen Styles und JS Logik #}
+    {% block stylesheets %}{% endblock %}
 
     {% block javascripts %}
-        {# 
-           WICHTIG: Stelle sicher, dass in deiner assets/app.js 
-           die Zeile "import './styles/app.css';" steht!
-        #}
         {{ importmap('app') }}
     {% endblock %}
 </head>
 <body>
 
-    {# --- MOBILE HEADER (Nur sichtbar auf kleinen Screens) --- #}
+    {# --- MOBILE HEADER --- #}
     <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top">
         <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
             <i class="fas fa-bars"></i> Menü
@@ -37,7 +32,8 @@
         <span class="navbar-brand ms-2">Sportabzeichen</span>
     </nav>
 
-    {# --- SIDEBAR (Offcanvas auf Mobile / Fixed auf Desktop) --- #}
+    {# --- SIDEBAR WRAPPER --- #}
+    {# Beachte: class="sidebar-wrapper" ist wichtig für dein CSS #}
     <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
         
         <div class="offcanvas-header d-lg-none border-bottom border-secondary">
@@ -45,17 +41,16 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
         </div>
 
-        <div class="sidebar d-flex flex-column">
+        {# Hier beginnt dein eigentliches Menü-Design aus dem CSS #}
+        <div class="sidebar d-flex flex-column h-100">
             
-            {# 1. Brand #}
-            <div class="sidebar-brand">
-                <i class="fas fa-medal me-2"></i> Sportabzeichen
-            </div>
+            <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand">
+                 {# Dein Logo Bild oder Icon #}
+                 <i class="fas fa-medal me-2"></i> Sportabzeichen
+            </a>
 
-            {# 2. Trennstrich #}
             <hr class="my-0" style="border-top: 1px solid rgba(255,255,255,0.15);">
 
-            {# 3. Menüpunkte #}
             <ul class="nav flex-column mb-auto mt-3">
                 <li class="nav-item">
                     <a href="{{ path('app_exams_dashboard') }}" 
@@ -71,9 +66,15 @@
                 </li>
             </ul>
             
-            {# 4. Footer #}
             <div class="mt-auto p-3 text-white-50 small border-top border-secondary">
-                <i class="fas fa-user-circle me-1"></i> Angemeldet
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-user-circle fs-4 me-2"></i>
+                    <div>
+                        <div>Angemeldet</div>
+                        {# Optional: User Name anzeigen #}
+                        {# <div class="fw-bold">{{ app.user.firstname|default('User') }}</div> #}
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -84,7 +85,6 @@
         {% block body %}{% endblock %}
     </main>
 
-    {# --- WICHTIG: Bootstrap Bundle JS (inkl. Popper) am Ende --- #}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {# WICHTIG: HIER KEINE SCRIPT TAGS MEHR! Das macht alles app.js #}
 </body>
 </html>
