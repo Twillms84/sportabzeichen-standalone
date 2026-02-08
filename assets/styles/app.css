@@ -65,6 +65,71 @@
     z-index: 1055 !important;
 }
 
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu-iserv .form-check-input {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    margin-left: -1.8rem;
+}
+
+.dropdown-menu-iserv .form-check-input:checked {
+    background-color: #3498db;
+    border-color: #3498db;
+
+
+}
+
+/* =========================================
+   2. ISERV DROPDOWN STYLING
+   ========================================= */
+.dropdown-menu-iserv {
+    background-color: rgba(44, 62, 80, 0.95); 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #ecf0f1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-menu-iserv .btn-link {
+    color: #bdc3c7 !important;
+    transition: color 0.2s;
+}
+
+.dropdown-menu-iserv .btn-link:hover {
+    color: #ffffff !important;
+    text-decoration: underline;
+}
+
+.dropdown-menu-iserv .border-bottom {
+    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dropdown-menu-iserv .form-check {
+    padding: 8px 12px 8px 2.5rem;
+    margin-bottom: 0;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.dropdown-menu-iserv .form-check:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu-iserv .form-check-input {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    margin-left: -1.8rem;
+}
+
+.dropdown-menu-iserv .form-check-input:checked {
+    background-color: #3498db;
+    border-color: #3498db;
+
+
+}
 /* Desktop Ansicht (ab 992px) */
 @media (min-width: 992px) {
     .sidebar-wrapper {
