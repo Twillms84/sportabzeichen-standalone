@@ -426,193 +426,227 @@ final class ExamResultController extends AbstractController
      * PDF/Druckansicht der Prüfkarte
      */
     #[Route('/exam/{examId}/print_groupcard', name: 'print_groupcard', methods: ['GET'])]
-    public function printGroupcard(int $examId, Request $request): Response
-    {
-        // 1. Parameter auslesen
-        $selectedClass = $request->query->get('class_filter') ?? $request->query->get('class');
-        $searchQuery   = $request->query->get('search_query');
-        $selectedIds   = $request->query->get('ids'); 
-        
-        $sort = $request->query->get('sort', 'lastname');
-        $order = strtoupper($request->query->get('order', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
+public function printGroupcard(int $examId, Request $request): Response
+{
+    // 1. Parameter auslesen
+    $selectedClass = $request->query->get('class_filter') ?? $request->query->get('class');
+    $searchQuery   = $request->query->get('search_query');
+    $selectedIds   = $request->query->get('ids'); 
+    
+    $sort = $request->query->get('sort', 'lastname');
+    $order = strtoupper($request->query->get('order', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $conn = $this->em->getConnection();
+    $conn = $this->em->getConnection();
 
-        // 2. Prüfungsdaten
-        $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = ?", [$examId]);
-        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden.');
+    // 2. Prüfungsdaten
+    $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = ?", [$examId]);
+    if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden.');
 
-        $examYear = (int)$exam['exam_year'];
-        $examYearEnd = $examYear . '-12-31';
+    $examYear = (int)$exam['exam_year'];
+    $examYearEnd = $examYear . '-12-31';
 
-        // 3. Basis-SQL vorbereiten
-        $groupNameSql = "
-            (SELECT g.name FROM \"groups\" g 
-            JOIN users_groups ug ON g.id = ug.group_id 
-            WHERE ug.user_id = u.id 
-            " . ($selectedClass ? "AND g.name = :selectedClass" : "") . "
-            ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name 
-            LIMIT 1
-            )
-        ";
+    // =========================================================================
+    // ÄNDERUNG 1: Verfügbare Gruppen laden (für das Dropdown-Menü)
+    // =========================================================================
+    // Ohne das ist das Dropdown im Template leer. Wir holen alle Gruppen,
+    // die Teilnehmer in DIESER Prüfung haben.
+    $groupsSql = "
+        SELECT DISTINCT g.name 
+        FROM sportabzeichen_exam_participants ep
+        JOIN sportabzeichen_participants p ON p.id = ep.participant_id
+        JOIN users u ON u.id = p.user_id
+        JOIN users_groups ug ON ug.user_id = u.id
+        JOIN \"groups\" g ON g.id = ug.group_id
+        WHERE ep.exam_id = :examId
+        ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name
+    ";
+    $availableGroupsRaw = $conn->fetchAllAssociative($groupsSql, ['examId' => $examId]);
+    // Wir machen daraus ein flaches Array: ['5a', '5b', '6a' ...]
+    $availableGroups = array_column($availableGroupsRaw, 'name');
 
-        $sql = "
-            SELECT 
-                ep.id as ep_id, 
-                u.firstname, u.lastname, 
-                p.geburtsdatum, p.geschlecht, 
-                ep.age_year, ep.total_points, ep.final_medal, ep.participant_id,
-                $groupNameSql as group_name,
-                (SELECT sp.exam_year 
-                FROM sportabzeichen_swimming_proofs sp 
-                WHERE sp.participant_id = ep.participant_id 
-                AND (sp.exam_year = :year OR sp.valid_until >= :yearEnd)
-                ORDER BY sp.confirmed_at DESC LIMIT 1
-                ) as swimming_proof_year
-            FROM sportabzeichen_exam_participants ep
-            JOIN sportabzeichen_participants p ON p.id = ep.participant_id
-            JOIN users u ON u.id = p.user_id  
-            WHERE ep.exam_id = :examId 
-            AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
-        ";
-        
-        $params = ['examId' => $examId, 'year' => $examYear, 'yearEnd' => $examYearEnd];
-        
-        if ($selectedClass) {
-            $params['selectedClass'] = $selectedClass;
-        }
 
-        // --- FILTER LOGIK ---
+    // 3. Basis-SQL vorbereiten
+    // Hier holen wir den Gruppennamen für die Anzeige in der Tabelle
+    $groupNameSql = "
+        (SELECT g.name FROM \"groups\" g 
+        JOIN users_groups ug ON g.id = ug.group_id 
+        WHERE ug.user_id = u.id 
+        " . ($selectedClass ? "AND g.name = :selectedClass" : "") . "
+        ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name 
+        LIMIT 1
+        )
+    ";
 
-        // A) Explizite IDs
-        if (!empty($selectedIds)) {
-            $idArray = array_map('intval', explode(',', $selectedIds));
-            if (count($idArray) > 0) {
-                $sql .= " AND ep.id IN (" . implode(',', $idArray) . ")";
-            }
-        } 
-        else {
-            // B) Filterung via Gruppe und/oder Suche
-            
-            // 1. Gruppe filtern
-            if ($selectedClass) {
-                $sql .= " AND EXISTS (
-                            SELECT 1 FROM members m 
-                            JOIN groups g ON m.actgrp = g.act 
-                            WHERE m.actuser = u.act AND g.name = :cls
-                          )";
-                $params['cls'] = $selectedClass;
-            }
-
-            // 2. Suchbegriff filtern
-            if ($searchQuery) {
-                $sql .= " AND (u.firstname LIKE :search OR u.lastname LIKE :search)";
-                $params['search'] = '%' . $searchQuery . '%';
-            }
-        }
-
-        // --- SORTIERUNG ---
-        switch ($sort) {
-            case 'firstname': $orderBy = "u.firstname $order, u.lastname ASC"; break;
-            case 'points':    $orderBy = "ep.total_points $order, u.lastname ASC"; break;
-            case 'age':       $orderBy = "ep.age_year $order, u.lastname ASC"; break;
-            case 'lastname':
-            default:          $orderBy = "u.lastname $order, u.firstname ASC"; break;
-        }
-
-        $participants = $conn->fetchAllAssociative($sql . " ORDER BY " . $orderBy, $params);
-
-        // Mappings
-        $unitMap = [
-            'UNIT_MINUTES' => 'min', 'UNIT_SECONDS' => 's', 
-            'UNIT_METERS' => 'm', 'UNIT_CENTIMETERS' => 'cm', 
-            'UNIT_HOURS' => 'h', 'UNIT_NUMBER' => 'x', 'NONE' => ''
-        ];
-        $catMap = ['Ausdauer' => 1, 'Kraft' => 2, 'Schnelligkeit' => 3, 'Koordination' => 4];
-
-        $enrichedParticipants = [];
-        
-        foreach ($participants as $p) {
-            $p['geschlecht_kurz'] = ($p['geschlecht'] === 'FEMALE') ? 'w' : 'm';
-            $p['birthday_fmt'] = $p['geburtsdatum'] ? (new \DateTime($p['geburtsdatum']))->format('d.m.Y') : '';
-            $p['has_swimming'] = !empty($p['swimming_proof_year']);
-            $p['swimming_year'] = $p['swimming_proof_year'] ? substr((string)$p['swimming_proof_year'], -2) : '';
-
-            if (empty($p['group_name'])) {
-                $p['group_name'] = '-';
-            }
-
-            // Ergebnisse laden
-            $resultsRaw = $conn->fetchAllAssociative("
-                SELECT r.auswahlnummer, res.leistung, res.points, res.stufe, 
-                       d.kategorie, d.einheit, d.name as d_name, d.verband
-                FROM sportabzeichen_exam_results res
-                JOIN sportabzeichen_disciplines d ON d.id = res.discipline_id
-                LEFT JOIN sportabzeichen_requirements r ON r.discipline_id = d.id 
-                    AND r.jahr = :year
-                    AND r.geschlecht = (CASE WHEN :gender = 'MALE' THEN 'MALE' ELSE 'FEMALE' END)
-                    AND :age BETWEEN r.age_min AND r.age_max
-                WHERE res.ep_id = :epId
-                ORDER BY d.kategorie ASC
-            ", [
-                'epId' => $p['ep_id'],
-                'year' => $examYear,
-                'gender' => $p['geschlecht'],
-                'age' => $p['age_year']
-            ]);
-
-            $p['disciplines'] = array_fill(1, 4, ['nr' => '', 'res' => '', 'pts' => '']);
-            
-            foreach ($resultsRaw as $res) {
-                if (isset($catMap[$res['kategorie']])) {
-                    $idx = $catMap[$res['kategorie']];
-                    
-                    $unit = $res['einheit'];
-                    $isUnitNone = ($unit === 'NONE' || $unit === 'UNIT_NONE' || empty($unit));
-
-                    if (!empty($res['verband']) && $isUnitNone) {
-                        $displayNr = 'A';
-                        $displayRes = $res['verband'];
-                    } else {
-                        $einheit = $unitMap[$res['einheit']] ?? '';
-                        $displayNr = $res['auswahlnummer'] ?? '-';
-                        $valStr = str_replace('.', ',', (string)$res['leistung']);
-                        
-                        if ((empty($valStr) || $valStr === '0') && $res['points'] > 0) {
-                             $displayRes = ucfirst($res['stufe'] ?? 'Ok');
-                        } else {
-                             $displayRes = $valStr . ' ' . $einheit;
-                        }
-                    }
-
-                    $p['disciplines'][$idx] = [
-                        'nr'  => $displayNr,
-                        'res' => $displayRes,
-                        'pts' => $res['points']
-                    ];
-                }
-            }
-            $enrichedParticipants[] = $p;
-        }
-
-        // Batches für Seitenumbruch (je 10)
-        $batches = array_chunk($enrichedParticipants, 10);
-        
-        if (count($batches) > 0) {
-            $lastIndex = count($batches) - 1;
-            while (count($batches[$lastIndex]) < 10) {
-                $batches[$lastIndex][] = null;
-            }
-        }
-
-        return $this->render('exams/print_groupcard.html.twig', [
-            'batches' => $batches,
-            'exam' => $exam,
-            'exam_year_short' => substr((string)$examYear, -2),
-            'selectedClass' => $selectedClass,
-            'today' => new \DateTime(),
-        ]);
+    $sql = "
+        SELECT 
+            ep.id as ep_id, 
+            u.firstname, u.lastname, 
+            p.geburtsdatum, p.geschlecht, 
+            ep.age_year, ep.total_points, ep.final_medal, ep.participant_id,
+            $groupNameSql as group_name,
+            (SELECT sp.exam_year 
+            FROM sportabzeichen_swimming_proofs sp 
+            WHERE sp.participant_id = ep.participant_id 
+            AND (sp.exam_year = :year OR sp.valid_until >= :yearEnd)
+            ORDER BY sp.confirmed_at DESC LIMIT 1
+            ) as swimming_proof_year
+        FROM sportabzeichen_exam_participants ep
+        JOIN sportabzeichen_participants p ON p.id = ep.participant_id
+        JOIN users u ON u.id = p.user_id  
+        WHERE ep.exam_id = :examId 
+        /* =========================================================================
+           ÄNDERUNG 2: 'final_medal' Prüfung entfernt!
+           =========================================================================
+           Wir wollen auch Schüler auf der Karte sehen, die noch keine Medaille haben.
+           Deshalb ist die folgende Zeile auskommentiert:
+        */
+        -- AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
+    ";
+    
+    $params = ['examId' => $examId, 'year' => $examYear, 'yearEnd' => $examYearEnd];
+    
+    if ($selectedClass) {
+        $params['selectedClass'] = $selectedClass;
     }
+
+    // --- FILTER LOGIK ---
+
+    // A) Explizite IDs
+    if (!empty($selectedIds)) {
+        $idArray = array_map('intval', explode(',', $selectedIds));
+        if (count($idArray) > 0) {
+            $sql .= " AND ep.id IN (" . implode(',', $idArray) . ")";
+        }
+    } 
+    else {
+        // B) Filterung via Gruppe und/oder Suche
+        
+        // 1. Gruppe filtern
+        if ($selectedClass) {
+            // =====================================================================
+            // ÄNDERUNG 3: Konsistente Filterung über users_groups
+            // =====================================================================
+            // Vorher war hier ein Join über 'members'. Das ist oft eine andere Tabelle.
+            // Wir nutzen jetzt 'users_groups', genau wie oben beim Namen.
+            $sql .= " AND EXISTS (
+                        SELECT 1 FROM users_groups ug_filter
+                        JOIN \"groups\" g_filter ON ug_filter.group_id = g_filter.id
+                        WHERE ug_filter.user_id = u.id 
+                        AND g_filter.name = :cls
+                      )";
+            $params['cls'] = $selectedClass;
+        }
+
+        // 2. Suchbegriff filtern
+        if ($searchQuery) {
+            $sql .= " AND (u.firstname LIKE :search OR u.lastname LIKE :search)";
+            $params['search'] = '%' . $searchQuery . '%';
+        }
+    }
+
+    // --- SORTIERUNG ---
+    switch ($sort) {
+        case 'firstname': $orderBy = "u.firstname $order, u.lastname ASC"; break;
+        case 'points':    $orderBy = "ep.total_points $order, u.lastname ASC"; break;
+        case 'age':       $orderBy = "ep.age_year $order, u.lastname ASC"; break;
+        case 'lastname':
+        default:          $orderBy = "u.lastname $order, u.firstname ASC"; break;
+    }
+
+    $participants = $conn->fetchAllAssociative($sql . " ORDER BY " . $orderBy, $params);
+
+    // Mappings
+    $unitMap = [
+        'UNIT_MINUTES' => 'min', 'UNIT_SECONDS' => 's', 
+        'UNIT_METERS' => 'm', 'UNIT_CENTIMETERS' => 'cm', 
+        'UNIT_HOURS' => 'h', 'UNIT_NUMBER' => 'x', 'NONE' => ''
+    ];
+    $catMap = ['Ausdauer' => 1, 'Kraft' => 2, 'Schnelligkeit' => 3, 'Koordination' => 4];
+
+    $enrichedParticipants = [];
+    
+    foreach ($participants as $p) {
+        $p['geschlecht_kurz'] = ($p['geschlecht'] === 'FEMALE') ? 'w' : 'm';
+        $p['birthday_fmt'] = $p['geburtsdatum'] ? (new \DateTime($p['geburtsdatum']))->format('d.m.Y') : '';
+        $p['has_swimming'] = !empty($p['swimming_proof_year']);
+        $p['swimming_year'] = $p['swimming_proof_year'] ? substr((string)$p['swimming_proof_year'], -2) : '';
+
+        if (empty($p['group_name'])) {
+            $p['group_name'] = '-';
+        }
+
+        // Ergebnisse laden
+        $resultsRaw = $conn->fetchAllAssociative("
+            SELECT r.auswahlnummer, res.leistung, res.points, res.stufe, 
+                   d.kategorie, d.einheit, d.name as d_name, d.verband
+            FROM sportabzeichen_exam_results res
+            JOIN sportabzeichen_disciplines d ON d.id = res.discipline_id
+            LEFT JOIN sportabzeichen_requirements r ON r.discipline_id = d.id 
+                AND r.jahr = :year
+                AND r.geschlecht = (CASE WHEN :gender = 'MALE' THEN 'MALE' ELSE 'FEMALE' END)
+                AND :age BETWEEN r.age_min AND r.age_max
+            WHERE res.ep_id = :epId
+            ORDER BY d.kategorie ASC
+        ", [
+            'epId' => $p['ep_id'],
+            'year' => $examYear,
+            'gender' => $p['geschlecht'],
+            'age' => $p['age_year']
+        ]);
+
+        $p['disciplines'] = array_fill(1, 4, ['nr' => '', 'res' => '', 'pts' => '']);
+        
+        foreach ($resultsRaw as $res) {
+            if (isset($catMap[$res['kategorie']])) {
+                $idx = $catMap[$res['kategorie']];
+                
+                $unit = $res['einheit'];
+                $isUnitNone = ($unit === 'NONE' || $unit === 'UNIT_NONE' || empty($unit));
+
+                if (!empty($res['verband']) && $isUnitNone) {
+                    $displayNr = 'A';
+                    $displayRes = $res['verband'];
+                } else {
+                    $einheit = $unitMap[$res['einheit']] ?? '';
+                    $displayNr = $res['auswahlnummer'] ?? '-';
+                    $valStr = str_replace('.', ',', (string)$res['leistung']);
+                    
+                    if ((empty($valStr) || $valStr === '0') && $res['points'] > 0) {
+                         $displayRes = ucfirst($res['stufe'] ?? 'Ok');
+                    } else {
+                         $displayRes = $valStr . ' ' . $einheit;
+                    }
+                }
+
+                $p['disciplines'][$idx] = [
+                    'nr'  => $displayNr,
+                    'res' => $displayRes,
+                    'pts' => $res['points']
+                ];
+            }
+        }
+        $enrichedParticipants[] = $p;
+    }
+
+    // Batches für Seitenumbruch (je 10)
+    $batches = array_chunk($enrichedParticipants, 10);
+    
+    if (count($batches) > 0) {
+        $lastIndex = count($batches) - 1;
+        while (count($batches[$lastIndex]) < 10) {
+            $batches[$lastIndex][] = null;
+        }
+    }
+
+    return $this->render('exams/print_groupcard.html.twig', [
+        'batches' => $batches,
+        'exam' => $exam,
+        'exam_year_short' => substr((string)$examYear, -2),
+        'selectedClass' => $selectedClass,
+        'groups' => $availableGroups, // <--- ÄNDERUNG: WICHTIG FÜR DAS DROPDOWN IM TWIG
+        'today' => new \DateTime(),
+    ]);
+}
 
     // --- HELPER ---
 
