@@ -211,12 +211,12 @@ final class ExamController extends AbstractController
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
-            // 3. GRUPPE ENTFERNEN (FIXED: ID Lookup nötig!)
+            // 3. GRUPPE ENTFERNEN
             if ($request->request->has('remove_group')) {
                 $groupAct = $request->request->get('remove_group');
                 
-                // Wir müssen die ID der Gruppe finden, da die Relationstabelle nur IDs hat
-                $groupId = $conn->fetchOne("SELECT id FROM app_groups WHERE act = ?", [$groupAct]);
+                // FIX: "app_groups" -> "groups"
+                $groupId = $conn->fetchOne("SELECT id FROM groups WHERE act = ?", [$groupAct]);
                 
                 if ($groupId) {
                     $conn->executeStatement(
@@ -232,7 +232,6 @@ final class ExamController extends AbstractController
 
             // 4. EINZELNEN TEILNEHMER HINZUFÜGEN
             if ($request->request->has('account')) {
-                // ... (Code wie gehabt, hier gekürzt der Übersicht halber) ...
                 $account = trim($request->request->get('account', ''));
                 $gender  = $request->request->get('gender');
                 $dobStr  = $request->request->get('dob');
@@ -265,11 +264,12 @@ final class ExamController extends AbstractController
 
         // --- GET DATEN ---
 
-        // A) Zugeordnete Gruppen (SQL Update: Joins über IDs)
+        // A) Zugeordnete Gruppen
+        // FIX: "app_groups" -> "groups"
         $sqlGroups = "
             SELECT g.act, g.name 
             FROM sportabzeichen_exam_groups seg 
-            JOIN app_groups g ON seg.group_id = g.id
+            JOIN groups g ON seg.group_id = g.id
             WHERE seg.exam_id = ? 
             ORDER BY g.name ASC
         ";
@@ -281,13 +281,12 @@ final class ExamController extends AbstractController
         $allGroupsObj = $em->getRepository(Group::class)->findBy([], ['name' => 'ASC']);
         $availableGroups = [];
         
-        // Lookup Map für schnellere Prüfung
         $assignedMap = array_flip($assignedActs);
 
         foreach ($allGroupsObj as $g) {
-            $gAct = $g->getAct(); // String Account
+            $gAct = $g->getAct(); 
             if (!isset($assignedMap[$gAct])) {
-                $availableGroups[$gAct] = $g->getName(); // Value für Dropdown
+                $availableGroups[$gAct] = $g->getName(); 
             }
         }
 
@@ -295,7 +294,7 @@ final class ExamController extends AbstractController
         $searchTerm = trim($request->query->get('q', ''));
         $missingStudents = [];
 
-        // FIXED SQL: Saubere Joins über app_groups als Brücke
+        // FIX: "app_groups" -> "groups"
         $sql = "
             SELECT DISTINCT
                 u.id, u.act, u.firstname, u.lastname,
@@ -305,8 +304,8 @@ final class ExamController extends AbstractController
             FROM users u
             INNER JOIN members m ON u.act = m.actuser
             
-            -- Brücke: members (String) -> app_groups (ID) -> exam_groups (ID)
-            INNER JOIN app_groups g ON m.actgrp = g.act 
+            -- Brücke: members (String) -> groups (ID) -> exam_groups (ID)
+            INNER JOIN groups g ON m.actgrp = g.act 
             INNER JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id
             
             LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
@@ -348,7 +347,7 @@ final class ExamController extends AbstractController
 
         return $this->render('exams/edit.html.twig', [
             'exam' => $exam,
-            'assigned_groups' => $groupResults, // Enthält jetzt 'act' und 'name'
+            'assigned_groups' => $groupResults, 
             'available_groups' => $availableGroups,
             'missing_students' => $missingStudents,
             'search_term' => $searchTerm
