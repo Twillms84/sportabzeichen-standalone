@@ -473,10 +473,9 @@ final class ExamResultController extends AbstractController
             JOIN sportabzeichen_participants p ON p.id = ep.participant_id
             JOIN users u ON u.id = p.user_id  
             WHERE ep.exam_id = :examId 
+            AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
         ";
-
-       //AND ep.final_medal IN ('bronze', 'silber', 'silver', 'gold')
-
+        
         $params = ['examId' => $examId, 'year' => $examYear, 'yearEnd' => $examYearEnd];
         
         if ($selectedClass) {
