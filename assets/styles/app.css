@@ -1,39 +1,43 @@
 /* =========================================
-   3. SIDEBAR (DASHBOARD MENÜ) - GRÜN & SCHMAL
+   1. KONFIGURATION & BASIS
    ========================================= */
-
-/* --- KONFIGURATION --- */
 :root {
-    /* HIER DIE FARBE DEINES LOGOS EINTRAGEN! */
-    /* Aktuell: Ein tiefes Vereins-Grün */
-    --sidebar-bg-color: #144018; 
+    /* Farben */
+    --sidebar-bg-color: #144018; /* Dunkelgrün */
+    --sidebar-accent: #2ecc71;   /* Hellgrüner Akzent */
     
-    /* HIER DIE BREITE ÄNDERN */
-    /* Vorher: 260px -> Jetzt: 210px */
-    --sidebar-width: 180px;     
+    /* Maße */
+    --sidebar-width: 180px;      /* Schmale Sidebar */
 }
 
-/* Basis-Design der Sidebar */
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* background-color: skyblue; */
+}
+
+/* =========================================
+   2. SIDEBAR (DASHBOARD MENÜ)
+   ========================================= */
 .sidebar {
-    background-color: var(--sidebar-bg-color); /* Nutzt das Grün von oben */
+    background-color: var(--sidebar-bg-color);
     color: #ecf0f1;
     min-height: 100vh;
 }
 
 /* Links in der Sidebar */
 .sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.7); /* Leicht transparentes Weiß */
-    padding: 10px 15px; /* Etwas weniger Polsterung, da schmaler */
-    font-size: 0.95rem; /* Schrift minimal kleiner */
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 15px;
+    font-size: 0.95rem;
     border-left: 4px solid transparent;
 }
 
 .sidebar .nav-link:hover, 
 .sidebar .nav-link.active {
     color: #fff;
-    /* Ein etwas helleres Grün für den Hover-Effekt (automatisch berechnet) */
-    background-color: rgba(255, 255, 255, 0.1); 
-    border-left-color: #2ecc71; /* Hellgrüner Akzent-Strich */
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left-color: var(--sidebar-accent);
 }
 
 .sidebar .nav-link i {
@@ -47,41 +51,32 @@
     font-size: 1.2rem;
     font-weight: bold;
     color: white;
-    /* Macht den Header noch einen Tick dunkler als den Rest */
-    background-color: rgba(0, 0, 0, 0.2); 
+    background-color: rgba(0, 0, 0, 0.2);
     text-decoration: none;
     display: block;
 }
 
-/* --- LOGIK FÜR RESPONSIVE SIDEBAR --- */
-
+/* Wrapper Logik */
 .sidebar-wrapper {
     background-color: var(--sidebar-bg-color);
-    width: var(--sidebar-width); /* Greift auf die 210px zu */
+    width: var(--sidebar-width);
 }
 
-/* WICHTIG: Damit das Menü ÜBER dem dunklen Hintergrund liegt */
+/* Mobile: Menü muss ÜBER den Backdrop (1040) */
 .offcanvas.show {
     z-index: 1055 !important;
 }
 
-
-.dropdown-menu-iserv .form-check-input {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-    margin-left: -1.8rem;
-}
-
-.dropdown-menu-iserv .form-check-input:checked {
-    background-color: #3498db;
-    border-color: #3498db;
-
-
-}
-
 /* =========================================
-   2. ISERV DROPDOWN STYLING
+   3. ISERV DROPDOWN STYLING
    ========================================= */
+
+/* WICHTIG: Der Fix für dein Problem! 
+   Dropdowns müssen einen höheren Z-Index haben als die Sticky-Leiste (1040) */
+.dropdown-menu {
+    z-index: 2000 !important; 
+}
+
 .dropdown-menu-iserv {
     background-color: rgba(44, 62, 80, 0.95); 
     backdrop-filter: blur(10px);
@@ -105,6 +100,7 @@
     border-bottom-color: rgba(255, 255, 255, 0.2) !important;
 }
 
+/* Checkbox Styling */
 .dropdown-menu-iserv .form-check {
     padding: 8px 12px 8px 2.5rem;
     margin-bottom: 0;
@@ -125,10 +121,11 @@
 .dropdown-menu-iserv .form-check-input:checked {
     background-color: #3498db;
     border-color: #3498db;
-
-
 }
-/* Desktop Ansicht (ab 992px) */
+
+/* =========================================
+   4. MEDIA QUERIES (DESKTOP)
+   ========================================= */
 @media (min-width: 992px) {
     .sidebar-wrapper {
         transform: none !important;
@@ -138,14 +135,14 @@
         top: 0;
         left: 0;
         bottom: 0;
-        width: var(--sidebar-width); /* 210px */
-        z-index: 100;
+        width: var(--sidebar-width);
+        z-index: 100; /* Sidebar unter Modals/Dropdowns */
         overflow-y: auto;
     }
 
-    /* Inhalt entsprechend weniger nach rechts schieben */
+    /* Inhalt nach rechts schieben */
     .main-content {
-        margin-left: var(--sidebar-width); /* 210px */
+        margin-left: var(--sidebar-width);
     }
 
     .mobile-header, 
