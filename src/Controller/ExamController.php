@@ -483,7 +483,6 @@ final class ExamController extends AbstractController
 
         // --- POST: Manuell hinzufügen ---
         if ($request->isMethod('POST')) {
-            // (Identisch zur Edit Logik, hier nur Aufruf)
             $account = trim($request->request->get('account', ''));
             $gender  = $request->request->get('gender');
             $dobStr  = $request->request->get('dob');
@@ -508,7 +507,7 @@ final class ExamController extends AbstractController
         $searchTerm = trim($request->query->get('q', ''));
         $missingStudents = [];
 
-        // FIXED SQL: Konsistente Spaltennamen (actuser/actgrp) und Join über app_groups
+        // FIX: "app_groups" -> "groups"
         $sql = "
             SELECT DISTINCT
                 u.id, u.act, u.firstname, u.lastname,
@@ -516,8 +515,8 @@ final class ExamController extends AbstractController
             FROM users u
             JOIN members m ON u.act = m.actuser
             
-            -- Brücke: members(String) -> app_groups(ID) -> exam_groups(ID)
-            JOIN app_groups g ON m.actgrp = g.act
+            -- Brücke: members(String) -> groups(ID) -> exam_groups(ID)
+            JOIN groups g ON m.actgrp = g.act
             JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id
             
             LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
