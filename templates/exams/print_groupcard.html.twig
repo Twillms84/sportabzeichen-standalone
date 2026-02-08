@@ -4,28 +4,39 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <img src="{{ asset('images/groupcard.svg') }}">
+    {# Hinweis: Ein <img> gehört eigentlich nicht in den head/stylesheets block, 
+       sondern in den body. Ich habe es hier mal drin gelassen, falls du es für 
+       ein spezielles Print-CSS-Overlay nutzt. #}
+    <style>
+        /* Optional: Falls noch nicht im CSS, hier ein paar Basics für den Druck */
+        .print-container { width: 100%; }
+        .sheet { position: relative; page-break-after: always; height: 100vh; width: 100%; }
+        .bg-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .data-layer { position: relative; z-index: 1; padding-top: 50px; /* Anpassen an SVG */ }
+        .participant-table { width: 100%; border-collapse: collapse; }
+        .participant-table td { height: 30px; /* Fixe Höhe für das Raster */ vertical-align: middle; text-align: center; }
+        .text-nowrap { white-space: nowrap; }
+        .col-name { text-align: left; padding-left: 5px; }
+    </style>
 {% endblock %}
 
 {% block body %}
 <div class="print-container">
     {% for batch in batches %}
         <div class="sheet">
-            {# Hintergrundbild über das Asset-System von IServ #}
-            <img src="{{ asset('img/dsa_groupcard.svg') }}" class="bg-svg" alt="Hintergrund">
+            {# Hintergrundbild #}
+            <img src="{{ asset('images/dsa_groupcard.svg') }}" class="bg-svg" alt="Hintergrund">
 
             <div class="data-layer">
                 
-                {# 1. HEADER-INFOS (Stadt, Schule, etc.) #}
+                {# 1. HEADER-INFOS #}
                 <div class="header-info">
                     {# Das X für "Schule" #}
-                    <div class="mark-institution-type">X</div>
+                    <div class="mark-institution-type" style="position:absolute; top:10px; left:200px;">X</div>
 
-                    <div class="header-item w-club"></div>
                     <div class="header-item w-school">
                         {% if selectedClass %}Schule: {{ selectedClass }}{% endif %}
                     </div>
-                    <div class="header-item w-org"></div>
                     
                     {# Stadt / Institution #}
                     <div class="header-item w-city">
@@ -33,11 +44,12 @@
                     </div>
                 </div>
 
-                {# 2. JAHR (Oben links, einzeln in Kästchen) #}
+                {# 2. JAHR (Oben links) #}
                 <div class="header-year">
-                    {% set yearArr = exam_year_short|split('') %}
-                    {% for digit in yearArr %}
-                        <span>{{ digit }}</span>
+                    {# Wir erzwingen String-Konvertierung, damit split sicher funktioniert #}
+                    {% set yearStr = exam_year_short|default('')|split('') %}
+                    {% for digit in yearStr %}
+                        <span class="year-digit">{{ digit }}</span>
                     {% endfor %}
                 </div>
 
@@ -45,45 +57,44 @@
                 <div class="table-container">
                     <table class="participant-table">
                         <colgroup>
-                            <col class="col-name">
-                            <col class="col-gender">
-                            <col class="col-birth">
-                            {# 4 Kategorien à 3 Spalten (Nr, Ergebnis, Pkt) #}
+                            <col class="col-name" style="width: 20%">
+                            <col class="col-gender" style="width: 3%">
+                            <col class="col-birth" style="width: 8%">
+                            {# 4 Kategorien à 3 Spalten #}
                             {% for i in 1..4 %}
-                                <col class="col-dis-nr">
-                                <col class="col-dis-res">
-                                <col class="col-dis-pts">
+                                <col class="col-dis-nr" style="width: 3%">
+                                <col class="col-dis-res" style="width: 8%">
+                                <col class="col-dis-pts" style="width: 3%">
                             {% endfor %}
-                            <col class="col-swim">
-                            <col class="col-sum">
+                            <col class="col-swim" style="width: 5%">
+                            <col class="col-sum" style="width: 5%">
                         </colgroup>
                         <tbody>
                             {% for p in batch %}
                                 <tr class="participant-row">
-                                    {% if p %}
+                                    {# WICHTIG: Hier prüfen wir, ob p existiert (wegen Auffüllung mit NULL im Controller) #}
+                                    {% if p is not null %}
+                                        {# --- ECHTE DATEN --- #}
+                                        
                                         {# Name #}
                                         <td class="col-name text-nowrap">
                                             {{ p.lastname }}, {{ p.firstname }}
                                         </td>
                                         
-                                        {# Geschlecht (m/w) #}
-                                        <td class="col-gender">
-                                            {{ p.geschlecht_kurz }}
-                                        </td>
+                                        {# Geschlecht #}
+                                        <td class="col-gender">{{ p.geschlecht_kurz }}</td>
                                         
-                                        {# Geburtsjahr #}
-                                        <td class="col-birth">
-                                            {{ p.birthday_fmt }}
-                                        </td>
+                                        {# Geburtsdatum #}
+                                        <td class="col-birth">{{ p.birthday_fmt }}</td>
 
-                                        {# Die 4 Disziplin-Slots #}
+                                        {# Die 4 Disziplinen #}
                                         {% for i in 1..4 %}
                                             <td class="col-dis-nr">{{ p.disciplines[i].nr }}</td>
                                             <td class="col-dis-res">{{ p.disciplines[i].res }}</td>
                                             <td class="col-dis-pts">{{ p.disciplines[i].pts }}</td>
                                         {% endfor %}
 
-                                        {# Schwimmnachweis #}
+                                        {# Schwimmen #}
                                         <td class="col-swim">
                                             {% if p.has_swimming %}
                                                 {{ p.swimming_year }}    
@@ -91,11 +102,11 @@
                                         </td>
                                         
                                         {# Gesamtpunkte #}
-                                        <td class="col-sum fw-bold">
-                                            {{ p.total_points }}
-                                        </td>
+                                        <td class="col-sum fw-bold">{{ p.total_points }}</td>
+
                                     {% else %}
-                                        {# Leere Zeile zum Auffüllen auf 10 Zeilen #}
+                                        {# --- LEERE ZEILE (Platzhalter) --- #}
+                                        {# Auffüllen auf 17 Spalten (nachgezählt: 1+1+1 + 4*3 + 1+1 = 17) #}
                                         {% for i in 1..17 %}<td>&nbsp;</td>{% endfor %}
                                     {% endif %}
                                 </tr>
@@ -104,10 +115,11 @@
                     </table>
                 </div>
 
-                {# 4. FOOTER (Prüfer & Datum) #}
+                {# 4. FOOTER #}
                 <div class="footer-verifier">
-                    {{ app.user.firstname }} {{ app.user.lastname }} 
-                    {# Prüft, ob die Variable existiert und nicht leer ist #}
+                    {% if app.user %}
+                        {{ app.user.firstname }} {{ app.user.lastname }}
+                    {% endif %}
                     {% if userNumber is defined and userNumber is not empty %}
                         ({{ userNumber }})
                     {% endif %}
