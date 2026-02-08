@@ -451,17 +451,21 @@ public function printGroupcard(int $examId, Request $request): Response
     // Ohne das ist das Dropdown im Template leer. Wir holen alle Gruppen,
     // die Teilnehmer in DIESER Prüfung haben.
     $groupsSql = "
-        SELECT DISTINCT g.name 
+        SELECT DISTINCT 
+            g.name,
+            (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END) as sort_order
         FROM sportabzeichen_exam_participants ep
         JOIN sportabzeichen_participants p ON p.id = ep.participant_id
         JOIN users u ON u.id = p.user_id
         JOIN users_groups ug ON ug.user_id = u.id
         JOIN \"groups\" g ON g.id = ug.group_id
         WHERE ep.exam_id = :examId
-        ORDER BY (CASE WHEN g.name ~ '^[0-9]' THEN 0 ELSE 1 END), g.name
+        ORDER BY sort_order, g.name
     ";
+    
     $availableGroupsRaw = $conn->fetchAllAssociative($groupsSql, ['examId' => $examId]);
-    // Wir machen daraus ein flaches Array: ['5a', '5b', '6a' ...]
+    
+    // array_column nimmt sich nur den 'name' und ignoriert 'sort_order'
     $availableGroups = array_column($availableGroupsRaw, 'name');
 
 
