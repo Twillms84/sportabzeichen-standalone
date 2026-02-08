@@ -1,113 +1,122 @@
-{% extends 'base.html.twig' %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Gruppenprüfkarte - {{ exam.exam_name }}</title>
+    
+    {# Hier laden wir deine existierende CSS-Datei #}
+    <link rel="stylesheet" href="{{ asset('css/print_groupcard.css') }}">
 
-{% block title %}Drucken: Gruppenprüfkarte – {{ exam.exam_name }}{% endblock %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    {# Hinweis: Ein <img> gehört eigentlich nicht in den head/stylesheets block, 
-       sondern in den body. Ich habe es hier mal drin gelassen, falls du es für 
-       ein spezielles Print-CSS-Overlay nutzt. #}
+    {# Kleines Inline-CSS NUR für den Druck-Button (damit der nicht in der Druck-CSS stehen muss) #}
     <style>
-        /* Optional: Falls noch nicht im CSS, hier ein paar Basics für den Druck */
-        .print-container { width: 100%; }
-        .sheet { position: relative; page-break-after: always; height: 100vh; width: 100%; }
-        .bg-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        .data-layer { position: relative; z-index: 1; padding-top: 50px; /* Anpassen an SVG */ }
-        .participant-table { width: 100%; border-collapse: collapse; }
-        .participant-table td { height: 30px; /* Fixe Höhe für das Raster */ vertical-align: middle; text-align: center; }
-        .text-nowrap { white-space: nowrap; }
-        .col-name { text-align: left; padding-left: 5px; }
+        .ui-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+        }
+        @media print {
+            .ui-controls { display: none !important; }
+        }
     </style>
-{% endblock %}
+</head>
+<body>
 
-{% block body %}
-<div class="print-container">
+    <div class="ui-controls">
+        <button onclick="window.print();" style="font-size: 16px; padding: 5px 15px; cursor: pointer; font-weight: bold;">
+            🖨️ Drucken
+        </button>
+        <div style="margin-top:5px; font-size: 12px; color: #555;">
+            Format: A4 Querformat<br>
+            Ränder: Keine / Minimum
+        </div>
+    </div>
+
     {% for batch in batches %}
         <div class="sheet">
-            {# Hintergrundbild #}
-            <img src="{{ asset('images/dsa_groupcard.svg') }}" class="bg-svg" alt="Hintergrund">
+            
+            {# 1. Hintergrundbild #}
+            <img src="{{ asset('img/dsa_groupcard.svg') }}" class="bg-svg" alt="Hintergrund">
 
             <div class="data-layer">
                 
-                {# 1. HEADER-INFOS #}
-                <div class="header-info">
-                    {# Das X für "Schule" #}
-                    <div class="mark-institution-type" style="position:absolute; top:10px; left:200px;">X</div>
+                {# 2. Header-Informationen #}
+                
+                {# JAHR (Das CSS regelt das letter-spacing) #}
+                <div class="header-year">
+                    {{ exam_year_short|default('') }}
+                </div>
 
-                    <div class="header-item w-school">
+                <div class="header-info">
+                    {# Das X für den Schultyp #}
+                    <div class="mark-institution-type">X</div>
+
+                    {# Name der Schule #}
+                    <div class="w-school">
                         {% if selectedClass %}Schule: {{ selectedClass }}{% endif %}
                     </div>
                     
-                    {# Stadt / Institution #}
-                    <div class="header-item w-city">
+                    {# Stadt #}
+                    <div class="w-city">
                         {{ institutionCity|default('Barßel') }}
                     </div>
                 </div>
 
-                {# 2. JAHR (Oben links) #}
-                <div class="header-year">
-                    {# Wir erzwingen String-Konvertierung, damit split sicher funktioniert #}
-                    {% set yearStr = exam_year_short|default('')|split('') %}
-                    {% for digit in yearStr %}
-                        <span class="year-digit">{{ digit }}</span>
-                    {% endfor %}
-                </div>
-
-                {# 3. HAUPTTABELLE DER TEILNEHMER #}
+                {# 3. Haupttabelle #}
                 <div class="table-container">
-                    <table class="participant-table">
+                    <table>
+                        {# Colgroup hilft dem Browser, die Spaltenbreiten aus dem CSS korrekt anzuwenden #}
                         <colgroup>
-                            <col class="col-name" style="width: 20%">
-                            <col class="col-gender" style="width: 3%">
-                            <col class="col-birth" style="width: 8%">
-                            {# 4 Kategorien à 3 Spalten #}
+                            <col class="col-name">
+                            <col class="col-gender">
+                            <col class="col-birth">
+                            {# 4 Disziplinen à 3 Spalten #}
                             {% for i in 1..4 %}
-                                <col class="col-dis-nr" style="width: 3%">
-                                <col class="col-dis-res" style="width: 8%">
-                                <col class="col-dis-pts" style="width: 3%">
+                                <col class="col-dis-nr">
+                                <col class="col-dis-res">
+                                <col class="col-dis-pts">
                             {% endfor %}
-                            <col class="col-swim" style="width: 5%">
-                            <col class="col-sum" style="width: 5%">
+                            <col class="col-swim">
+                            <col class="col-sum">
                         </colgroup>
                         <tbody>
                             {% for p in batch %}
-                                <tr class="participant-row">
-                                    {# WICHTIG: Hier prüfen wir, ob p existiert (wegen Auffüllung mit NULL im Controller) #}
+                                <tr>
                                     {% if p is not null %}
                                         {# --- ECHTE DATEN --- #}
-                                        
-                                        {# Name #}
-                                        <td class="col-name text-nowrap">
-                                            {{ p.lastname }}, {{ p.firstname }}
-                                        </td>
-                                        
-                                        {# Geschlecht #}
+                                        <td class="col-name">{{ p.lastname }}, {{ p.firstname }}</td>
                                         <td class="col-gender">{{ p.geschlecht_kurz }}</td>
-                                        
-                                        {# Geburtsdatum #}
                                         <td class="col-birth">{{ p.birthday_fmt }}</td>
 
-                                        {# Die 4 Disziplinen #}
                                         {% for i in 1..4 %}
                                             <td class="col-dis-nr">{{ p.disciplines[i].nr }}</td>
                                             <td class="col-dis-res">{{ p.disciplines[i].res }}</td>
                                             <td class="col-dis-pts">{{ p.disciplines[i].pts }}</td>
                                         {% endfor %}
 
-                                        {# Schwimmen #}
                                         <td class="col-swim">
-                                            {% if p.has_swimming %}
-                                                {{ p.swimming_year }}    
-                                            {% endif %}
+                                            {% if p.has_swimming %}{{ p.swimming_year }}{% endif %}
                                         </td>
-                                        
-                                        {# Gesamtpunkte #}
-                                        <td class="col-sum fw-bold">{{ p.total_points }}</td>
-
+                                        <td class="col-sum">{{ p.total_points }}</td>
+                                    
                                     {% else %}
                                         {# --- LEERE ZEILE (Platzhalter) --- #}
-                                        {# Auffüllen auf 17 Spalten (nachgezählt: 1+1+1 + 4*3 + 1+1 = 17) #}
-                                        {% for i in 1..17 %}<td>&nbsp;</td>{% endfor %}
+                                        {# Wir nutzen &nbsp; damit die Zeile nicht kollabiert #}
+                                        <td class="col-name">&nbsp;</td>
+                                        <td class="col-gender">&nbsp;</td>
+                                        <td class="col-birth">&nbsp;</td>
+                                        {% for i in 1..4 %}
+                                            <td class="col-dis-nr">&nbsp;</td>
+                                            <td class="col-dis-res">&nbsp;</td>
+                                            <td class="col-dis-pts">&nbsp;</td>
+                                        {% endfor %}
+                                        <td class="col-swim">&nbsp;</td>
+                                        <td class="col-sum">&nbsp;</td>
                                     {% endif %}
                                 </tr>
                             {% endfor %}
@@ -115,12 +124,12 @@
                     </table>
                 </div>
 
-                {# 4. FOOTER #}
+                {# 4. Footer (Prüfer & Datum) #}
                 <div class="footer-verifier">
                     {% if app.user %}
                         {{ app.user.firstname }} {{ app.user.lastname }}
                     {% endif %}
-                    {% if userNumber is defined and userNumber is not empty %}
+                    {% if userNumber is defined and userNumber %}
                         ({{ userNumber }})
                     {% endif %}
                 </div>
@@ -132,5 +141,6 @@
             </div>
         </div>
     {% endfor %}
-</div>
-{% endblock %}
+
+</body>
+</html>
