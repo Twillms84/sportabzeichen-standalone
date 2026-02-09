@@ -18,12 +18,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?int $id = null;
 
+    // --- LOGIN FELDER (E-Mail bevorzugt) ---
+
+    #[ORM\Column(length: 180, unique: true, nullable: true)]
+    private ?string $email = null;
+
     #[ORM\Column(length: 180, unique: true, nullable: true)]
     private ?string $username = null;
+
+    // --- ISERV / EDUPLACES FELDER ---
 
     // IServ Account ID (Login Name)
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $act = null; 
+
+    // 'iserv' oder 'csv' oder 'register' oder 'system'
+    #[ORM\Column(length: 50, options: ['default' => 'iserv'])]
+    private ?string $source = 'iserv';
+
+    // Die ID aus der CSV (früher externalId genannt, im SQL aber import_id)
+    #[ORM\Column(name: 'import_id', length: 255, nullable: true, unique: true)]
+    private ?string $importId = null; 
+
+    // --- STAMMDATEN ---
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $firstname = null;
@@ -31,14 +48,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lastname = null;
 
-    // 'iserv' oder 'csv'
-    #[ORM\Column(length: 50, options: ['default' => 'iserv'])]
-    private ?string $source = 'iserv';
-
-    // Die ID aus der CSV (früher externalId genannt, im SQL aber import_id)
-    #[ORM\Column(name: 'import_id', length: 255, nullable: true, unique: true)]
-    private ?string $importId = null; 
-    
     #[ORM\Column]
     private array $roles = [];
 
@@ -47,7 +56,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     // --- RELATIONEN ---
 
-    // Die wichtige Verbindung zu den Gruppen (Tabelle users_groups)
+    // WICHTIG NEU: Zugehörigkeit zur Institution
+    #[ORM\ManyToOne(targetEntity: Institution::class, inversedBy: 'users')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Institution $institution = null;
+
+    // Verbindung zu Gruppen (bleibt erhalten)
     #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'users')]
     #[ORM\JoinTable(name: 'users_groups')]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
@@ -59,32 +73,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->groups = new ArrayCollection();
     }
 
-    // --- Getter & Setter ---
+    // --- LOGIK ---
 
-    public function getId(): ?int { return $this->id; }
-
-    public function getUsername(): ?string { return $this->username; }
-    public function setUsername(?string $username): self { $this->username = $username; return $this; }
-
-    public function getUserIdentifier(): string { 
-        // Fallback: Wenn kein Username (IServ) da ist, nehmen wir die importId oder den Namen
+    /**
+     * Identifiziert den User im System.
+     * Reihenfolge: E-Mail -> Username -> ImportID -> ID
+     */
+    public function getUserIdentifier(): string 
+    { 
+        if ($this->email) {
+            return $this->email;
+        }
         return (string) ($this->username ?? $this->importId ?? 'user_'.$this->id); 
     }
 
-    #[ORM\Column(length: 180, unique: true, nullable: true)]
-    private ?string $email = null;
+    // --- GETTER & SETTER ---
 
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function setEmail(?string $email): static
-    {
-        $this->email = $email;
+    public function getEmail(): ?string { return $this->email; }
+    public function setEmail(?string $email): static { $this->email = $email; return $this; }
 
-        return $this;
-    }
+    public function getUsername(): ?string { return $this->username; }
+    public function setUsername(?string $username): self { $this->username = $username; return $this; }
 
     public function getAct(): ?string { return $this->act; }
     public function setAct(?string $act): self { $this->act = $act; return $this; }
@@ -100,6 +111,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getImportId(): ?string { return $this->importId; }
     public function setImportId(?string $importId): self { $this->importId = $importId; return $this; }
+
+    public function getInstitution(): ?Institution { return $this->institution; }
+    public function setInstitution(?Institution $institution): self { $this->institution = $institution; return $this; }
 
     /**
      * @return Collection<int, Group>
@@ -136,6 +150,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->firstname && $this->lastname) {
             return $this->firstname . ' ' . $this->lastname;
         }
-        return $this->username ?? (string)$this->id; 
+        return $this->email ?? $this->username ?? (string)$this->id; 
     }
 }
