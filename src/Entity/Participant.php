@@ -34,8 +34,7 @@ class Participant
         return $this;
     }
 
-    // Verknüpfung zum User (Hier holen wir uns Name, Klasse etc.)
-    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')] 
+    #[ORM\OneToOne(inversedBy: 'participant', targetEntity: User::class, cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?User $user = null;
 
@@ -96,7 +95,7 @@ class Participant
         $this->legacyGroupName = $groupName;
         return $this;
     }
-    
+
     public function getOrigin(): ?string { return $this->origin; }
     public function setOrigin(?string $origin): self { $this->origin = $origin; return $this; }
 
