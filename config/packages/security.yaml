@@ -22,7 +22,7 @@ security:
                 check_path: app_login
                 enable_csrf: true
                 username_parameter: email  # <--- HIER: Sag Symfony, dass das Feld im HTML 'email' heißt
-                password_parameter: password
+                password_parameter: _password
                 default_target_path: app_exams_dashboard
             
             logout:
