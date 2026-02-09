@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\ExamParticipant;
+use App\Entity\Institution; // <--- Importieren
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -17,17 +18,23 @@ class ExamParticipantRepository extends ServiceEntityRepository
     }
 
     /**
-     * Findet alle Teilnehmer einer bestimmten Prüfung (Jahr)
+     * Findet alle Teilnehmer einer bestimmten Prüfung
+     * SICHER: Filtert zusätzlich nach der Institution!
      */
-    public function findByExam(int $examId): array
+    public function findByExam(int $examId, Institution $institution): array
     {
         return $this->createQueryBuilder('ep')
-            ->andWhere('ep.exam = :examId')
+            ->join('ep.exam', 'e') // Wir müssen das Exam joinen, um die Schule zu prüfen
+            ->andWhere('e.id = :examId')
+            ->andWhere('e.institution = :institution') // <--- DER SICHERHEITS-CHECK
             ->setParameter('examId', $examId)
-            ->leftJoin('ep.participant', 'p') // Join für Performance
+            ->setParameter('institution', $institution)
+            
+            ->leftJoin('ep.participant', 'p')
             ->addSelect('p')
-            ->leftJoin('p.user', 'u') // Join bis zum User für Namen
+            ->leftJoin('p.user', 'u')
             ->addSelect('u')
+            
             ->orderBy('u.lastname', 'ASC')
             ->getQuery()
             ->getResult();
