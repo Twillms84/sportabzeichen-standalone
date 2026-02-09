@@ -13,7 +13,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:fix-admin',
-    description: 'Erstellt Admin und Institution (Schule) neu nach DB-Reset',
+    description: 'Erstellt Admin und Institution basierend auf Registrar-Email',
 )]
 class FixAdminCommand extends Command
 {
@@ -26,60 +26,61 @@ class FixAdminCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $email = 'admin@schule.de';
+        // --- KONFIGURATION ---
+        // Das ist jetzt der "Master-Key": Die E-Mail des Registrierers
+        $adminEmail = 'admin@schule.de'; 
+        
         $password = 'admin123';
         $schoolName = 'Musterschule';
-        
-        // WICHTIG: Passe dies an deine erlaubten Typen an (z.B. 'Grundschule', 'Gymnasium', 'SCHOOL' etc.)
         $schoolType = 'SCHOOL'; 
 
         // ---------------------------------------------------------
-        // 1. Institution (Schule) sicherstellen
+        // 1. Institution über Registrar-Email suchen
         // ---------------------------------------------------------
         $instRepo = $this->entityManager->getRepository(Institution::class);
-        $institution = $instRepo->findOneBy(['name' => $schoolName]);
+        
+        // Die entscheidende Änderung: Wir suchen nach der E-Mail des Besitzers
+        $institution = $instRepo->findOneBy(['registrarEmail' => $adminEmail]);
 
         if (!$institution) {
-            $output->writeln('<comment>Keine Institution gefunden. Erstelle "' . $schoolName . '"...</comment>');
+            $output->writeln('<comment>Keine Institution für "' . $adminEmail . '" gefunden. Erstelle neu...</comment>');
+            
             $institution = new Institution();
             $institution->setName($schoolName);
+            $institution->setRegistrarEmail($adminEmail); // Hier wird die Verknüpfung gesetzt
+            $institution->setType($schoolType);
             
-            // HIER WAR DER FEHLER: Der Typ muss gesetzt werden!
-            $institution->setType($schoolType); 
+            // Optional: Identifier für später (kann auch null sein erstmal)
+            $institution->setIdentifier('auto-' . uniqid()); 
             
-            // Falls du weitere Pflichtfelder hast (z.B. Adresse), setze sie hier auch:
-            // $institution->setCity('Musterstadt');
-
             $this->entityManager->persist($institution);
         } else {
-            $output->writeln('<info>Institution "' . $schoolName . '" gefunden (ID: ' . $institution->getId() . ').</info>');
+            $output->writeln('<info>Institution gefunden: ' . $institution->getName() . ' (gehört: ' . $adminEmail . ')</info>');
         }
 
         // ---------------------------------------------------------
-        // 2. User sicherstellen
+        // 2. User sicherstellen (Der Admin selbst)
         // ---------------------------------------------------------
         $userRepo = $this->entityManager->getRepository(User::class);
-        $user = $userRepo->findOneBy(['email' => $email]);
+        $user = $userRepo->findOneBy(['email' => $adminEmail]);
 
         if (!$user) {
-            $output->writeln('<comment>User nicht gefunden. Erstelle neuen Admin...</comment>');
+            $output->writeln('<comment>User Account existiert noch nicht. Erstelle...</comment>');
             $user = new User();
-            $user->setEmail($email);
+            $user->setEmail($adminEmail);
             $user->setFirstname('Super');
             $user->setLastname('Admin');
         }
 
         // ---------------------------------------------------------
-        // 3. Verknüpfung und Passwort
+        // 3. Verknüpfung
         // ---------------------------------------------------------
         
-        // Institution zuweisen
+        // Den User der Institution zuweisen, die ihm gehört
         $user->setInstitution($institution);
         
-        // Admin-Rechte geben
         $user->setRoles(['ROLE_ADMIN']);
 
-        // Passwort hashen
         $hashedPassword = $this->passwordHasher->hashPassword(
             $user,
             $password
@@ -90,19 +91,12 @@ class FixAdminCommand extends Command
         // 4. Speichern
         // ---------------------------------------------------------
         $this->entityManager->persist($user);
-        
-        try {
-            $this->entityManager->flush();
-        } catch (\Exception $e) {
-            $output->writeln('<error>Fehler beim Speichern: ' . $e->getMessage() . '</error>');
-            return Command::FAILURE;
-        }
+        $this->entityManager->flush();
 
         $output->writeln('----------------------------------------');
-        $output->writeln('<info>ERFOLGREICH WIEDERHERGESTELLT!</info>');
-        $output->writeln('Institution: ' . $institution->getName() . ' (Type: ' . $institution->getType() . ')');
-        $output->writeln('User:        ' . $email);
-        $output->writeln('Passwort:    ' . $password);
+        $output->writeln('<info>SETUP ABGESCHLOSSEN</info>');
+        $output->writeln('Registrar:   ' . $adminEmail);
+        $output->writeln('Institution: ' . $institution->getName());
         $output->writeln('----------------------------------------');
 
         return Command::SUCCESS;
