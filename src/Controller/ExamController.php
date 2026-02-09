@@ -29,12 +29,25 @@ final class ExamController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function index(ExamRepository $examRepo): Response
     {
-        // 1. Alle Prüfungen laden (via Doctrine)
-        $exams = $examRepo->findBy([], ['year' => 'DESC', 'date' => 'DESC']);
+        // 1. Institution des eingeloggten Users holen
+        $user = $this->getUser();
+        $institution = $user ? $user->getInstitution() : null;
 
-        // 2. Daten aggregieren
-        // Hinweis: Für maximale Performance bei riesigen Datenmengen wäre hier 
-        // eine DQL-Aggregation besser, aber ORM ist lesbarer und für < 5000 Schüler okay.
+        // Sicherheits-Check: Ohne Institution keine Daten anzeigen
+        if (!$institution) {
+            return $this->render('exams/dashboard.html.twig', [
+                'yearlyStats' => [],
+            ]);
+        }
+
+        // 2. NUR Prüfungen der eigenen Institution laden
+        // Das ist der wichtigste Teil:
+        $exams = $examRepo->findBy(
+            ['institution' => $institution], // <--- FILTER HINZUGEFÜGT
+            ['year' => 'DESC', 'date' => 'DESC']
+        );
+
+        // 3. Daten aggregieren
         $yearlyStats = [];
 
         foreach ($exams as $exam) {
@@ -49,7 +62,6 @@ final class ExamController extends AbstractController
                 ];
             }
             
-            // Einfache Array-Repräsentation für das Template bauen
             $yearlyStats[$year]['exams'][] = [
                 'id' => $exam->getId(),
                 'exam_name' => $exam->getName(),
@@ -59,7 +71,13 @@ final class ExamController extends AbstractController
 
             // Statistiken berechnen
             foreach ($exam->getExamParticipants() as $ep) {
-                $userId = $ep->getParticipant()->getUser()->getId();
+                // Vorsicht: Null-Check, falls durch Import-Fehler User fehlt
+                $participant = $ep->getParticipant();
+                if (!$participant || !$participant->getUser()) {
+                    continue; 
+                }
+
+                $userId = $participant->getUser()->getId();
                 
                 // User pro Jahr nur einmal zählen für Total
                 if (!isset($yearlyStats[$year]['unique_users'][$userId])) {
@@ -67,7 +85,10 @@ final class ExamController extends AbstractController
                      $yearlyStats[$year]['unique_users'][$userId] = true;
                 }
 
-                $pts = $ep->getTotalPoints();
+                // Punkte auswerten
+                // HINWEIS: Methode getTotalPoints() muss in ExamParticipant existieren!
+                $pts = $ep->getTotalPoints(); 
+                
                 if ($pts >= 11) $yearlyStats[$year]['stats']['Gold']++;
                 elseif ($pts >= 8) $yearlyStats[$year]['stats']['Silber']++;
                 elseif ($pts >= 4) $yearlyStats[$year]['stats']['Bronze']++;
