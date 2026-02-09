@@ -619,8 +619,8 @@ final class ExamController extends AbstractController
         $sqlResults = "
             SELECT 
                 d.name as discipline_name,
-                d.berechnungsart,  -- NEU: Wichtig für die Sortierung!
-                d.einheit,         -- NEU: Hilfreich für die Anzeige (m, s, min)
+                d.berechnungsart,
+                d.einheit,
                 r.leistung as value,
                 r.points,
                 u.firstname, 
@@ -628,15 +628,12 @@ final class ExamController extends AbstractController
                 p.geburtsdatum, 
                 p.geschlecht,
                 
-                -- Subquery für Gruppen (verhindert doppelte Zeilen)
+                -- Subquery für Gruppennamen (korrigiert auf users_groups)
                 (
                     SELECT STRING_AGG(DISTINCT g_sub.name, ', ')
-                    FROM app_groups g_sub
-                    -- FIX 1: Typ-Umwandlung (CAST) für den Vergleich
-                    JOIN members m_sub ON CAST(g_sub.id AS VARCHAR) = m_sub.actgrp
-                    -- FIX 2: Auch hier User-ID als Text vergleichen, falls u.act alt ist
-                    WHERE m_sub.actuser = CAST(u.id AS VARCHAR)
-                    -- FIX 3: Spaltennamen anpassen (id statt act, group_id statt act)
+                    FROM groups g_sub
+                    JOIN users_groups ug_sub ON g_sub.id = ug_sub.group_id
+                    WHERE ug_sub.user_id = u.id
                     AND g_sub.id IN (SELECT group_id FROM sportabzeichen_exam_groups WHERE exam_id = :id)
                 ) as group_name
 
@@ -648,7 +645,6 @@ final class ExamController extends AbstractController
             
             WHERE ep.exam_id = :id AND r.points > 0
             
-            -- Grobe Vorsortierung (Fein-Sortierung macht PHP gleich)
             ORDER BY d.name ASC, r.points DESC
         ";
 
