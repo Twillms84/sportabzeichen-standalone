@@ -4,17 +4,29 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Doctrine\DBAL\Connection;
+use App\Entity\User;
+use App\Entity\Group;
+use App\Entity\Participant;
+use App\Repository\UserRepository;
+use App\Repository\GroupRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[Route('/admin', name: 'admin_')]
 final class ParticipantUploadController extends AbstractController
 {
     #[Route('/participants_upload', name: 'participants_upload')]
-    public function upload(Request $request, Connection $conn): Response
+    public function upload(
+        Request $request, 
+        EntityManagerInterface $em, 
+        UserRepository $userRepo,
+        GroupRepository $groupRepo,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response
     {
         $imported = 0;
         $skipped  = 0;
@@ -24,51 +36,51 @@ final class ParticipantUploadController extends AbstractController
 
         if ($request->isMethod('POST')) {
             $file = $request->files->get('csvFile');
-            // Strategie: 'iserv_match' (suche nach Login/Act) oder 'standalone' (lege User an)
             $strategy = $request->request->get('strategy', 'iserv_match');
 
-            if (!$file || strtolower($file->getClientOriginalExtension()) !== 'csv') {
+            // --- 1. Vorbereitungs-Check: Institution ---
+            // Wir brauchen die Institution als Objekt, nicht nur als ID
+            $admin = $this->getUser();
+            $institution = null;
+            
+            if ($admin && method_exists($admin, 'getInstitution')) {
+                $institution = $admin->getInstitution();
+            }
+
+            if (!$institution) {
+                $error = 'Fehler: Du bist keiner Institution zugewiesen. Import abgebrochen.';
+            } elseif (!$file || strtolower($file->getClientOriginalExtension()) !== 'csv') {
                 $error = 'Bitte eine gültige CSV-Datei auswählen.';
             } else {
-                $filePath = $file->getRealPath();
                 
-                // 1. Trennzeichen erkennen
+                $filePath = $file->getRealPath();
                 $firstLine = fgets(fopen($filePath, 'r'));
                 $separator = str_contains($firstLine, ';') ? ';' : ',';
                 
                 $handle = fopen($filePath, 'r');
+                fgetcsv($handle, 0, $separator); // Header überspringen
                 
-                // Header überspringen
-                fgetcsv($handle, 0, $separator); 
                 $lineNumber = 1;
 
-                // Caches für Performance (damit wir nicht für jede Zeile die Gruppe neu suchen)
-                $groupCache = []; // ['5b' => 12, '6a' => 14]
-                
-                // Transaktion starten für Datenintegrität
-                $conn->beginTransaction();
+                // Cache für Gruppen-Objekte um DB-Abfragen zu sparen
+                // Key = Name, Value = Group Entity
+                $groupCache = []; 
 
                 try {
                     while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
+                        $lineNumber++;
+
+                        // Zeichensatz korrigieren
                         $row = array_map(function($cell) {
                             return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
                         }, $row);
-                        
-                        $lineNumber++;
 
-                        // Leere Zeilen ignorieren
+                        // Leere Zeilen skippen
                         if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
                             continue;
                         }
 
-                        // Mapping (Spaltenindexe an deine CSV anpassen)
-                        // 0: ID (Import ID)
-                        // 2: Geschlecht
-                        // 3: Datum
-                        // 4: Nachname
-                        // 5: Vorname
-                        // 6: Klasse (Optional)
-
+                        // Validierung Spaltenanzahl
                         if (count($row) < 5) {
                             $skipped++;
                             $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten.";
@@ -84,72 +96,75 @@ final class ParticipantUploadController extends AbstractController
 
                         if ($importIdRaw === '') continue;
 
-                        // --- 1. User finden oder erstellen ---
-                        $userId = null;
+                        // --- 2. User finden oder erstellen (ORM) ---
+                        $user = $userRepo->findOneBy(['importId' => $importIdRaw]);
 
-                       $userId = null;
+                        // Strategie: IServ Match über 'act' (Username)
+                        if (!$user && $strategy === 'iserv_match') {
+                            // Suche nach Username/Act
+                            $user = $userRepo->findOneBy(['act' => $importIdRaw]); // Annahme: 'act' Feld existiert in Entity
+                            
+                            // Fallback: Wenn 'act' nicht im Entity gemappt ist, versuchen wir 'username'
+                            if (!$user) {
+                                // Hier musst du prüfen, wie dein Login-Feld heißt (meist 'username' oder 'email')
+                                // $user = $userRepo->findOneBy(['username' => $importIdRaw]); 
+                            }
 
-                        // IMMER zuerst prüfen, ob der User über die import_id schon da ist (Egal welche Strategie)
-                        $userId = $conn->fetchOne("SELECT id FROM users WHERE import_id = ?", [$importIdRaw]);
-
-                        if (!$userId && $strategy === 'iserv_match') {
-                            // Falls nicht über ID gefunden, versuche es über den IServ-Account (act)
-                            $userId = $conn->fetchOne("SELECT id FROM users WHERE LOWER(act) = LOWER(?)", [$importIdRaw]);
-                            if ($userId) {
-                                // Gefunden! Jetzt die import_id für das nächste Mal am User speichern
-                                $conn->update('users', ['import_id' => $importIdRaw], ['id' => $userId]);
+                            if ($user) {
+                                // Gefunden -> Import ID nachtragen
+                                $user->setImportId($importIdRaw);
                             }
                         }
 
-                        // Wenn er jetzt IMMER NOCH NICHT gefunden wurde -> Neu anlegen
-                        if (!$userId) {
-                            $conn->insert('users', [
-                                'import_id' => $importIdRaw,
-                                'firstname' => $firstname,
-                                'lastname'  => $lastname,
-                                'username'  => $firstname . ' ' . $lastname . '_' . substr(md5($importIdRaw), 0, 4), 
-                                'source'    => 'csv',
-                                'roles'     => json_encode([]),
-                            ]);
-                            $userId = $conn->lastInsertId();
+                        // Neu anlegen, wenn nicht gefunden
+                        if (!$user) {
+                            $user = new User();
+                            $user->setImportId($importIdRaw);
+                            $user->setFirstname($firstname);
+                            $user->setLastname($lastname);
+                            
+                            // Username generieren
+                            $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
+                            $genUsername = preg_replace('/[^a-z0-9.]/', '', $genUsername);
+                            $user->setUsername($genUsername);
+                            
+                            // Dummy Passwort (oder leer lassen wenn erlaubt)
+                            $user->setPassword($passwordHasher->hashPassword($user, 'start123')); 
+                            
+                            $user->setSource('csv');
+                            $user->setRoles([]);
+                            
+                            $em->persist($user);
                         } else {
-                            // OPTIONAL: Hier könntest du bestehende User aktualisieren (z.B. Namen korrigieren)
-                            $conn->update('users', [
-                                'firstname' => $firstname,
-                                'lastname'  => $lastname,
-                            ], ['id' => $userId]);
+                            // Update User Info
+                            $user->setFirstname($firstname);
+                            $user->setLastname($lastname);
                         }
 
-                        if (!$userId) {
-                            $skipped++;
-                            $detailedErrors[] = "Zeile $lineNumber ($importIdRaw): User in Datenbank nicht gefunden (IServ-Modus).";
-                            continue;
-                        }
-
-                        // --- 2. Gruppe verarbeiten (Klasse) ---
+                        // --- 3. Gruppe (Klasse) verarbeiten ---
                         if ($groupName !== '') {
-                            // Check Cache
                             if (!isset($groupCache[$groupName])) {
-                                // Check DB
-                                $groupId = $conn->fetchOne('SELECT id FROM "groups" WHERE name = ?', [$groupName]);
-                                if (!$groupId) {
-                                    // Create Group
-                                    $conn->insert('"groups"', ['name' => $groupName]);
-                                    $groupId = $conn->lastInsertId();
+                                // Versuche Gruppe in DB zu finden
+                                $group = $groupRepo->findOneBy(['name' => $groupName]);
+                                
+                                if (!$group) {
+                                    $group = new Group();
+                                    $group->setName($groupName);
+                                    // Optional: Gruppe der Institution zuweisen, falls Group Entity das unterstützt
+                                    // if (method_exists($group, 'setInstitution')) { $group->setInstitution($institution); }
+                                    $em->persist($group);
                                 }
-                                $groupCache[$groupName] = $groupId;
+                                $groupCache[$groupName] = $group;
                             }
-                            $groupId = $groupCache[$groupName];
-
-                            // Link User <-> Group (users_groups)
-                            // "ON CONFLICT DO NOTHING" Ersatz für Postgres/MySQL ohne Exception
-                            $exists = $conn->fetchOne('SELECT 1 FROM users_groups WHERE user_id = ? AND group_id = ?', [$userId, $groupId]);
-                            if (!$exists) {
-                                $conn->insert('users_groups', ['user_id' => $userId, 'group_id' => $groupId]);
-                            }
+                            
+                            $group = $groupCache[$groupName];
+                            
+                            // User zur Gruppe hinzufügen (Many-to-Many Handling in Doctrine)
+                            // Methode addGroup() in User Entity prüft meistens schon auf Duplikate
+                            $user->addGroup($group);
                         }
 
-                        // --- 3. Participant (Sportdaten) verarbeiten ---
+                        // --- 4. Participant (Sportdaten) ---
                         
                         // Validierung
                         $geschlecht = match (strtolower($geschlechtRaw)) {
@@ -162,51 +177,55 @@ final class ParticipantUploadController extends AbstractController
                         $geburtsdatum = self::parseDate($geburtsdatumRaw);
 
                         if (!$geschlecht || !$geburtsdatum) {
-                             $detailedErrors[] = "Zeile $lineNumber: Ungültiges Datum ($geburtsdatumRaw) oder Geschlecht ($geschlechtRaw)";
-                             // Wir brechen hier nicht ab, sondern updaten nur den Rest nicht, 
-                             // oder wir überspringen. Hier: Überspringen um Datenmüll zu vermeiden.
-                             $skipped++;
-                             continue;
+                            $skipped++;
+                            $detailedErrors[] = "Zeile $lineNumber ($lastname): Ungültiges Datum/Geschlecht.";
+                            continue;
                         }
 
-                        // Prüfen ob Participant Eintrag existiert
-                        $existingPartId = $conn->fetchOne(
-                            'SELECT id FROM sportabzeichen_participants WHERE user_id = ?',
-                            [$userId]
-                        );
+                        // Participant laden oder erstellen
+                        $participant = $user->getParticipant();
 
-                        $data = [
-                            'user_id'      => $userId,
-                            'geschlecht'   => $geschlecht,
-                            'geburtsdatum' => $geburtsdatum,
-                            'updated_at'   => (new \DateTime())->format('Y-m-d H:i:s'),
-                            // Legacy Felder füllen wir auch, falls alte Logik noch greift
-                            'username'     => $firstname . ' ' . $lastname, 
-                            'group_name'   => $groupName 
-                        ];
+                        if (!$participant) {
+                            $participant = new Participant();
+                            $participant->setUser($user);
+                            // WICHTIG: Hier setzen wir die Institution via Objekt!
+                            $participant->setInstitution($institution);
+                            
+                            // Beziehung auch andersrum setzen, damit Doctrine es sofort weiß
+                            $user->setParticipant($participant);
+                        }
 
-                        if ($existingPartId) {
-                            $conn->update('sportabzeichen_participants', $data, ['id' => $existingPartId]);
-                        } else {
-                            $conn->insert('sportabzeichen_participants', $data);
+                        // Daten setzen
+                        $participant->setGeschlecht($geschlecht);
+                        $participant->setGeburtsdatum($geburtsdatum);
+                        $participant->setUsername($firstname . ' ' . $lastname); // Legacy Feld
+                        $participant->setGroupName($groupName); // Legacy Feld
+                        $participant->setUpdatedAt(new \DateTime());
+
+                        // Damit wird es für das INSERT/UPDATE vorgemerkt
+                        $em->persist($participant);
+
+                        // Batch-Processing: Alle 50 Zeilen in die DB schreiben um Speicher zu sparen
+                        if ($imported % 50 === 0) {
+                            $em->flush();
                         }
 
                         $imported++;
                     }
                     
-                    $conn->commit();
-                    
-                } catch (\Throwable $e) {
-                    $conn->rollBack();
+                    // Den Rest schreiben
+                    $em->flush();
+
+                } catch (\Exception $e) {
                     $error = 'Systemfehler beim Import: ' . $e->getMessage();
                 }
 
                 fclose($handle);
                 
                 if ($imported > 0) {
-                    $message = "Import erfolgreich: $imported User aktualisiert/angelegt.";
+                    $message = "Import erfolgreich: $imported User verarbeitet.";
                 } elseif ($skipped > 0 && !$error) {
-                    $error = "Import abgeschlossen mit Warnungen ($skipped übersprungen).";
+                    $error = "Import abgeschlossen, aber $skipped Zeilen übersprungen.";
                 }
             }
         }
@@ -221,7 +240,7 @@ final class ParticipantUploadController extends AbstractController
         ]);
     }
     
-    private static function parseDate(?string $input): ?string
+    private static function parseDate(?string $input): ?\DateTime
     {
         if (!$input) return null;
         $formats = ['d.m.Y', 'Y-m-d', 'd-m-Y', 'd/m/Y', 'j.n.Y'];
@@ -231,7 +250,7 @@ final class ParticipantUploadController extends AbstractController
                  $dt->setTime(0, 0, 0);
                  $errors = \DateTime::getLastErrors();
                  if ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) continue;
-                 return $dt->format('Y-m-d');
+                 return $dt; // Doctrine braucht ein DateTime Objekt, keinen String!
             }
         }
         return null;
