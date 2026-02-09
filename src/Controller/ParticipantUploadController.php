@@ -39,7 +39,6 @@ final class ParticipantUploadController extends AbstractController
             $strategy = $request->request->get('strategy', 'iserv_match');
 
             // --- 1. Vorbereitungs-Check: Institution ---
-            // Wir brauchen die Institution als Objekt, nicht nur als ID
             $admin = $this->getUser();
             $institution = null;
             
@@ -61,26 +60,20 @@ final class ParticipantUploadController extends AbstractController
                 fgetcsv($handle, 0, $separator); // Header überspringen
                 
                 $lineNumber = 1;
-
-                // Cache für Gruppen-Objekte um DB-Abfragen zu sparen
-                // Key = Name, Value = Group Entity
                 $groupCache = []; 
 
                 try {
                     while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
                         $lineNumber++;
 
-                        // Zeichensatz korrigieren
                         $row = array_map(function($cell) {
                             return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
                         }, $row);
 
-                        // Leere Zeilen skippen
                         if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
                             continue;
                         }
 
-                        // Validierung Spaltenanzahl
                         if (count($row) < 5) {
                             $skipped++;
                             $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten.";
@@ -96,77 +89,67 @@ final class ParticipantUploadController extends AbstractController
 
                         if ($importIdRaw === '') continue;
 
-                        // --- 2. User finden oder erstellen (ORM) ---
+                        // --- 2. User finden oder erstellen ---
                         $user = $userRepo->findOneBy(['importId' => $importIdRaw]);
 
-                        // Strategie: IServ Match über 'act' (Username)
                         if (!$user && $strategy === 'iserv_match') {
-                            // Suche nach Username/Act
-                            $user = $userRepo->findOneBy(['act' => $importIdRaw]); // Annahme: 'act' Feld existiert in Entity
-                            
-                            // Fallback: Wenn 'act' nicht im Entity gemappt ist, versuchen wir 'username'
-                            if (!$user) {
-                                // Hier musst du prüfen, wie dein Login-Feld heißt (meist 'username' oder 'email')
-                                // $user = $userRepo->findOneBy(['username' => $importIdRaw]); 
-                            }
-
+                            $user = $userRepo->findOneBy(['act' => $importIdRaw]); // Oder 'username'
                             if ($user) {
-                                // Gefunden -> Import ID nachtragen
                                 $user->setImportId($importIdRaw);
                             }
                         }
 
-                        // Neu anlegen, wenn nicht gefunden
                         if (!$user) {
                             $user = new User();
+                            // WICHTIG: User der Institution zuweisen!
+                            $user->setInstitution($institution); 
+                            
                             $user->setImportId($importIdRaw);
                             $user->setFirstname($firstname);
                             $user->setLastname($lastname);
                             
-                            // Username generieren
                             $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
                             $genUsername = preg_replace('/[^a-z0-9.]/', '', $genUsername);
                             $user->setUsername($genUsername);
                             
-                            // Dummy Passwort (oder leer lassen wenn erlaubt)
                             $user->setPassword($passwordHasher->hashPassword($user, 'start123')); 
-                            
                             $user->setSource('csv');
                             $user->setRoles([]);
                             
                             $em->persist($user);
                         } else {
-                            // Update User Info
                             $user->setFirstname($firstname);
                             $user->setLastname($lastname);
+                            // Falls User existiert aber keine Schule hat:
+                            if (!$user->getInstitution()) {
+                                $user->setInstitution($institution);
+                            }
                         }
 
                         // --- 3. Gruppe (Klasse) verarbeiten ---
                         if ($groupName !== '') {
                             if (!isset($groupCache[$groupName])) {
-                                // Versuche Gruppe in DB zu finden
-                                $group = $groupRepo->findOneBy(['name' => $groupName]);
+                                // WICHTIG: Suche Gruppe NUR innerhalb dieser Schule!
+                                $group = $groupRepo->findOneBy([
+                                    'name' => $groupName,
+                                    'institution' => $institution // <--- DAS HAT GEFEHLT
+                                ]);
                                 
                                 if (!$group) {
                                     $group = new Group();
                                     $group->setName($groupName);
-                                    // Optional: Gruppe der Institution zuweisen, falls Group Entity das unterstützt
-                                    // if (method_exists($group, 'setInstitution')) { $group->setInstitution($institution); }
+                                    // WICHTIG: Hier muss die Institution gesetzt werden (Pflichtfeld!)
+                                    $group->setInstitution($institution); // <--- HIER WAR DER FEHLER
                                     $em->persist($group);
                                 }
                                 $groupCache[$groupName] = $group;
                             }
                             
                             $group = $groupCache[$groupName];
-                            
-                            // User zur Gruppe hinzufügen (Many-to-Many Handling in Doctrine)
-                            // Methode addGroup() in User Entity prüft meistens schon auf Duplikate
                             $user->addGroup($group);
                         }
 
                         // --- 4. Participant (Sportdaten) ---
-                        
-                        // Validierung
                         $geschlecht = match (strtolower($geschlechtRaw)) {
                             'm', 'male', 'männlich' => 'MALE',
                             'w', 'f', 'female', 'weiblich' => 'FEMALE',
@@ -182,30 +165,23 @@ final class ParticipantUploadController extends AbstractController
                             continue;
                         }
 
-                        // Participant laden oder erstellen
                         $participant = $user->getParticipant();
 
                         if (!$participant) {
                             $participant = new Participant();
                             $participant->setUser($user);
-                            // WICHTIG: Hier setzen wir die Institution via Objekt!
-                            $participant->setInstitution($institution);
-                            
-                            // Beziehung auch andersrum setzen, damit Doctrine es sofort weiß
+                            $participant->setInstitution($institution); // Hier war es schon korrekt
                             $user->setParticipant($participant);
                         }
 
-                        // Daten setzen
                         $participant->setGender($geschlecht);
                         $participant->setBirthdate($geburtsdatum);
-                        $participant->setUsername($firstname . ' ' . $lastname); // Legacy Feld
-                        $participant->setGroupName($groupName); // Legacy Feld
+                        $participant->setUsername($firstname . ' ' . $lastname);
+                        $participant->setGroupName($groupName);
                         $participant->setUpdatedAt(new \DateTime());
 
-                        // Damit wird es für das INSERT/UPDATE vorgemerkt
                         $em->persist($participant);
 
-                        // Batch-Processing: Alle 50 Zeilen in die DB schreiben um Speicher zu sparen
                         if ($imported % 50 === 0) {
                             $em->flush();
                         }
@@ -213,7 +189,6 @@ final class ParticipantUploadController extends AbstractController
                         $imported++;
                     }
                     
-                    // Den Rest schreiben
                     $em->flush();
 
                 } catch (\Exception $e) {
