@@ -18,6 +18,9 @@ class Institution
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true)]
+    private Collection $groups;
+
     // --- NEUE FELDER ---
 
     #[ORM\Column(length: 50)]
@@ -42,6 +45,7 @@ class Institution
 
     public function __construct()
     {
+        $this->groups = new ArrayCollection();
         $this->users = new ArrayCollection();
     }
 
@@ -86,6 +90,36 @@ class Institution
                 $user->setInstitution(null);
             }
         }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Group>
+     */
+    public function getGroups(): Collection
+    {
+        return $this->groups;
+    }
+
+    public function addGroup(Group $group): static
+    {
+        if (!$this->groups->contains($group)) {
+            $this->groups->add($group);
+            $group->setInstitution($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGroup(Group $group): static
+    {
+        if ($this->groups->removeElement($group)) {
+            // set the owning side to null (unless already changed)
+            if ($group->getInstitution() === $this) {
+                $group->setInstitution(null);
+            }
+        }
+
         return $this;
     }
 }

@@ -22,7 +22,11 @@ class Group
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $act = null;
 
-    // Hier die Rückbeziehung zu den Usern
+    // --- NEU: Verknüpfung zur Institution ---
+    #[ORM\ManyToOne(targetEntity: Institution::class, inversedBy: 'groups')]
+    #[ORM\JoinColumn(nullable: false)] // Eine Gruppe MUSS zu einer Schule gehören
+    private ?Institution $institution = null;
+
     #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'groups')]
     private Collection $users;
 
@@ -60,6 +64,22 @@ class Group
         return $this;
     }
 
+    // --- NEU: Getter & Setter für Institution ---
+
+    public function getInstitution(): ?Institution
+    {
+        return $this->institution;
+    }
+
+    public function setInstitution(?Institution $institution): static
+    {
+        $this->institution = $institution;
+
+        return $this;
+    }
+
+    // ---------------------------------------------
+
     /**
      * @return Collection<int, User>
      */
@@ -88,6 +108,6 @@ class Group
     }
     
     public function __toString(): string {
-        return $this->name;
+        return (string) $this->name;
     }
 }
