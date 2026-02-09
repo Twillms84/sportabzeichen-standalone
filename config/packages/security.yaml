@@ -28,12 +28,32 @@ security:
             logout:
                 path: app_logout
                 target: app_login
+        
+        firewalls:
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: app_exams_dashboard
+            logout:
+                path: app_logout
+                target: app_login
 
-    access_control:
-        # Nur eingeloggte User dürfen an die Prüfungen
-        - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/, roles: ROLE_USER }
+        access_control:
+            # Die Login-Seite (/) und Registrierung müssen öffentlich sein
+            - { path: ^/$, roles: PUBLIC_ACCESS }
+            - { path: ^/register, roles: PUBLIC_ACCESS }
+            # Alles andere erfordert ROLE_USER
+            - { path: ^/, roles: ROLE_USER }
+
+        access_control:
+            # Nur eingeloggte User dürfen an die Prüfungen
+            - { path: ^/login, roles: PUBLIC_ACCESS }
+            - { path: ^/register, roles: PUBLIC_ACCESS }
+            - { path: ^/, roles: ROLE_USER }
 
 when@test:
     security:
