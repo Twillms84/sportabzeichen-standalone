@@ -3,57 +3,36 @@ security:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
     providers:
-        # Hier sagen wir Symfony, dass die User in der Datenbank liegen
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: username # Das Feld, mit dem man sich anmeldet
+                property: username
 
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js|assets|build)/
             security: false
-        main:
-            lazy: true
-            provider: app_user_provider
-            
-            # Formular-Login aktivieren
-            form_login:
-                login_path: app_login
-                check_path: app_login
-                enable_csrf: true
-                default_target_path: app_exams_dashboard # Wohin nach dem Login?
-            
-            # Logout aktivieren
-            logout:
-                path: app_logout
-                target: app_login
         
-        firewalls:
         main:
             lazy: true
             provider: app_user_provider
+            
             form_login:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
                 default_target_path: app_exams_dashboard
+            
             logout:
                 path: app_logout
                 target: app_login
 
-        access_control:
-            # Die Login-Seite (/) und Registrierung müssen öffentlich sein
-            - { path: ^/$, roles: PUBLIC_ACCESS }
-            - { path: ^/register, roles: PUBLIC_ACCESS }
-            # Alles andere erfordert ROLE_USER
-            - { path: ^/, roles: ROLE_USER }
-
-        access_control:
-            # Nur eingeloggte User dürfen an die Prüfungen
-            - { path: ^/login, roles: PUBLIC_ACCESS }
-            - { path: ^/register, roles: PUBLIC_ACCESS }
-            - { path: ^/, roles: ROLE_USER }
+    access_control:
+        # Erlaubt Zugriff auf Login (Root) und Registrierung für alle
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        # Restliche Seite nur für angemeldete User
+        - { path: ^/, roles: ROLE_USER }
 
 when@test:
     security:
