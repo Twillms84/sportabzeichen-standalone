@@ -265,7 +265,6 @@ final class ExamController extends AbstractController
         // --- GET DATEN ---
 
         // A) Zugeordnete Gruppen
-        // FIX: "app_groups" -> "groups"
         $sqlGroups = "
             SELECT g.act, g.name 
             FROM sportabzeichen_exam_groups seg 
@@ -275,17 +274,26 @@ final class ExamController extends AbstractController
         ";
         $groupResults = $conn->fetchAllAssociative($sqlGroups, [$id]); 
         
+        // Alle 'act' Werte extrahieren
         $assignedActs = array_column($groupResults, 'act');
 
         // B) Verfügbare Gruppen
         $allGroupsObj = $em->getRepository(Group::class)->findBy([], ['name' => 'ASC']);
         $availableGroups = [];
         
-        $assignedMap = array_flip($assignedActs);
+        // FIX: Nur Werte behalten, die nicht null und nicht leer sind, bevor geflippt wird
+        $cleanAssignedActs = array_filter($assignedActs, function($val) {
+            return $val !== null && $val !== '';
+        });
+        
+        $assignedMap = array_flip($cleanAssignedActs);
 
         foreach ($allGroupsObj as $g) {
             $gAct = $g->getAct(); 
-            if (!isset($assignedMap[$gAct])) {
+            
+            // Falls gAct null oder leer ist, ignorieren wir es für die Auswahlliste,
+            // oder prüfen, ob es bereits in der Map der zugewiesenen Gruppen ist
+            if ($gAct !== null && $gAct !== '' && !isset($assignedMap[$gAct])) {
                 $availableGroups[$gAct] = $g->getName(); 
             }
         }
