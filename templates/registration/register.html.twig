@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Registrierung{% endblock %}
+
+{% block layout %}
+<div class="container d-flex justify-content-center align-items-center py-5" style="min-height: 100vh; background-color: #f8f9fa;">
+    <div class="card shadow-lg border-0" style="max-width: 600px; width: 100%;">
+        <div class="card-body p-5">
+            <h2 class="text-center mb-4">Account erstellen</h2>
+            
+            {{ form_start(registrationForm) }}
+                
+                <h5 class="text-primary border-bottom pb-2 mb-3">Institution / Schule</h5>
+                
+                {{ form_row(registrationForm.instName) }}
+                {{ form_row(registrationForm.instType) }}
+                {{ form_row(registrationForm.contactPerson) }}
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ form_row(registrationForm.instZip) }}
+                    </div>
+                    <div class="col-md-8">
+                        {{ form_row(registrationForm.instCity) }}
+                    </div>
+                </div>
+                
+                {{ form_row(registrationForm.instStreet) }}
+
+                <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">Benutzerdaten</h5>
+
+                {{ form_row(registrationForm.username) }}
+                {{ form_row(registrationForm.email) }}
+                {{ form_row(registrationForm.plainPassword) }}
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Kostenlos registrieren</button>
+                </div>
+            {{ form_end(registrationForm) }}
+            
+            <div class="text-center mt-3">
+                <a href="{{ path('app_login') }}" class="text-decoration-none">Bereits einen Account? Hier einloggen.</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

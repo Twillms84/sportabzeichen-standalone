@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Institution;
 use App\Entity\User;
+use App\Form\RegistrationFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,51 +14,58 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class RegistrationController extends AbstractController
 {
-    #[Route('/register', name: 'app_register', methods: ['GET', 'POST'])]
-    public function register(
-        Request $request, 
-        UserPasswordHasherInterface $userPasswordHasher, 
-        EntityManagerInterface $entityManager
-    ): Response {
-        // Wenn bereits eingeloggt, zum Dashboard schicken
-        if ($this->getUser()) {
-            return $this->redirectToRoute('app_exams_dashboard');
-        }
+    #[Route('/register', name: 'app_register')]
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
+    {
+        $user = new User();
+        $form = $this->createForm(RegistrationFormType::class, $user);
+        $form->handleRequest($request);
 
-        if ($request->isMethod('POST')) {
-            $username = $request->request->get('username');
-            $password = $request->request->get('password');
-            $firstname = $request->request->get('firstname');
-            $lastname = $request->request->get('lastname');
+        if ($form->isSubmitted() && $form->isValid()) {
+            
+            // 1. Institution anlegen
+            $institution = new Institution();
+            $institution->setName($form->get('instName')->getData());
+            $institution->setType($form->get('instType')->getData());
+            $institution->setContactPerson($form->get('contactPerson')->getData());
+            $institution->setZip($form->get('instZip')->getData());
+            $institution->setCity($form->get('instCity')->getData());
+            $institution->setStreet($form->get('instStreet')->getData());
+            
+            // Institution speichern, um ID zu bekommen (passiert durch cascade persist oder beim flush)
+            $entityManager->persist($institution);
 
-            // Validierung (Minimalbeispiel)
-            if (!$username || !$password) {
-                $this->addFlash('error', 'Bitte füllen Sie alle Pflichtfelder aus.');
-                return $this->redirectToRoute('app_register');
-            }
-
-            $user = new User();
-            $user->setUsername($username);
-            $user->setFirstname($firstname);
-            $user->setLastname($lastname);
-            $user->setSource('csv'); // Kennzeichnung als manueller Account
-            $user->setRoles(['ROLE_USER']); // Standard-Rolle
-
+            // 2. User vorbereiten
             // Passwort hashen
-            $hashedPassword = $userPasswordHasher->hashPassword($user, $password);
-            $user->setPassword($hashedPassword);
+            $user->setPassword(
+                $userPasswordHasher->hashPassword(
+                    $user,
+                    $form->get('plainPassword')->getData()
+                )
+            );
+            
+            // Rolle Admin geben, da er die Institution erstellt hat
+            $user->setRoles(['ROLE_ADMIN']);
+            $user->setSource('register'); // Markierung, dass er sich selbst registriert hat
+            
+            // Namen aus "Verantwortlicher" parsen (optional, quick & dirty)
+            $parts = explode(' ', $institution->getContactPerson(), 2);
+            $user->setFirstname($parts[0] ?? 'Admin');
+            $user->setLastname($parts[1] ?? 'User');
 
-            try {
-                $entityManager->persist($user);
-                $entityManager->flush();
+            // 3. User der Institution zuweisen
+            $user->setInstitution($institution);
 
-                $this->addFlash('success', 'Registrierung erfolgreich! Sie können sich jetzt anmelden.');
-                return $this->redirectToRoute('app_login');
-            } catch (\Exception $e) {
-                $this->addFlash('error', 'Benutzername bereits vergeben oder Datenbankfehler.');
-            }
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            // Weiterleitung zum Login
+            $this->addFlash('success', 'Registrierung erfolgreich! Bitte logge dich ein.');
+            return $this->redirectToRoute('app_login');
         }
 
-        return $this->render('registration/register.html.twig');
+        return $this->render('registration/register.html.twig', [
+            'registrationForm' => $form->createView(),
+        ]);
     }
 }
