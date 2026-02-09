@@ -71,6 +71,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return (string) ($this->username ?? $this->importId ?? 'user_'.$this->id); 
     }
 
+    #[ORM\Column(length: 180, unique: true, nullable: true)]
+    private ?string $email = null;
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
     public function getAct(): ?string { return $this->act; }
     public function setAct(?string $act): self { $this->act = $act; return $this; }
 
