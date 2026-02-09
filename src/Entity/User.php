@@ -152,4 +152,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this->email ?? $this->username ?? (string)$this->id; 
     }
+
+    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?Participant $participant = null;
+
+    public function getParticipant(): ?Participant
+    {
+        return $this->participant;
+    }
+
+    public function setParticipant(?Participant $participant): static
+    {
+        // Wichtig: Damit beide Seiten der Beziehung synchron bleiben
+        if ($participant !== null && $participant->getUser() !== $this) {
+            $participant->setUser($this);
+        }
+
+        $this->participant = $participant;
+
+        return $this;
+    }
 }
