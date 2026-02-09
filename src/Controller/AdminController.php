@@ -213,6 +213,34 @@ final class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/participants/edit/{id}', name: 'participants_edit')]
+    public function participantsEdit(Request $request, Participant $participant): Response
+    {
+        // 1. SICHERHEIT: Gehört der Teilnehmer zu meiner Institution?
+        if ($participant->getInstitution() !== $this->getUser()->getInstitution()) {
+            throw $this->createAccessDeniedException('Dieser Teilnehmer gehört nicht zu Ihrer Institution.');
+        }
+
+        $form = $this->createParticipantForm($participant, 'Änderungen speichern');
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $participant->setUpdatedAt(new \DateTime());
+                $this->em->flush(); 
+                $this->addFlash('success', 'Daten aktualisiert.');
+                return $this->redirectToRoute('admin_participants_index');
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Fehler: ' . $e->getMessage());
+            }
+        }
+
+        return $this->render('admin/participants/add.html.twig', [
+            'form' => $form->createView(),
+            'user' => $participant->getUser()
+        ]);
+    }
+    
     #[Route('/participants/{id}/update', name: 'participants_update', methods: ['POST'])]
     public function participantsUpdate(Request $request, Participant $participant): Response
     {
