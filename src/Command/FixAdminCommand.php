@@ -3,7 +3,7 @@
 namespace App\Command;
 
 use App\Entity\User;
-use App\Entity\Institution; // Wichtig!
+use App\Entity\Institution;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -29,6 +29,9 @@ class FixAdminCommand extends Command
         $email = 'admin@schule.de';
         $password = 'admin123';
         $schoolName = 'Musterschule';
+        
+        // WICHTIG: Passe dies an deine erlaubten Typen an (z.B. 'Grundschule', 'Gymnasium', 'SCHOOL' etc.)
+        $schoolType = 'SCHOOL'; 
 
         // ---------------------------------------------------------
         // 1. Institution (Schule) sicherstellen
@@ -40,11 +43,14 @@ class FixAdminCommand extends Command
             $output->writeln('<comment>Keine Institution gefunden. Erstelle "' . $schoolName . '"...</comment>');
             $institution = new Institution();
             $institution->setName($schoolName);
-            // Falls du ein Feld "key" oder "identifier" in der Institution hast:
-            // $institution->setKey('musterschule'); 
             
+            // HIER WAR DER FEHLER: Der Typ muss gesetzt werden!
+            $institution->setType($schoolType); 
+            
+            // Falls du weitere Pflichtfelder hast (z.B. Adresse), setze sie hier auch:
+            // $institution->setCity('Musterstadt');
+
             $this->entityManager->persist($institution);
-            // Wir flushen hier noch nicht, machen wir am Ende alles zusammen
         } else {
             $output->writeln('<info>Institution "' . $schoolName . '" gefunden (ID: ' . $institution->getId() . ').</info>');
         }
@@ -59,7 +65,7 @@ class FixAdminCommand extends Command
             $output->writeln('<comment>User nicht gefunden. Erstelle neuen Admin...</comment>');
             $user = new User();
             $user->setEmail($email);
-            $user->setFirstname('Super'); // Pflichtfelder füllen
+            $user->setFirstname('Super');
             $user->setLastname('Admin');
         }
 
@@ -67,7 +73,7 @@ class FixAdminCommand extends Command
         // 3. Verknüpfung und Passwort
         // ---------------------------------------------------------
         
-        // Institution zuweisen (WICHTIG!)
+        // Institution zuweisen
         $user->setInstitution($institution);
         
         // Admin-Rechte geben
@@ -84,11 +90,17 @@ class FixAdminCommand extends Command
         // 4. Speichern
         // ---------------------------------------------------------
         $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        
+        try {
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            $output->writeln('<error>Fehler beim Speichern: ' . $e->getMessage() . '</error>');
+            return Command::FAILURE;
+        }
 
         $output->writeln('----------------------------------------');
         $output->writeln('<info>ERFOLGREICH WIEDERHERGESTELLT!</info>');
-        $output->writeln('Institution: ' . $institution->getName() . ' (ID: ' . $institution->getId() . ')');
+        $output->writeln('Institution: ' . $institution->getName() . ' (Type: ' . $institution->getType() . ')');
         $output->writeln('User:        ' . $email);
         $output->writeln('Passwort:    ' . $password);
         $output->writeln('----------------------------------------');
