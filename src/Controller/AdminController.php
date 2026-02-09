@@ -213,8 +213,43 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    // ... Update, Edit und Import bleiben weitgehend gleich, 
-    // solange sie ORM nutzen. Hier der Form Builder als Helper:
+    #[Route('/participants/{id}/update', name: 'participants_update', methods: ['POST'])]
+    public function participantsUpdate(Request $request, Participant $participant): Response
+    {
+        // 1. Sicherheits-Check: Gehört der Teilnehmer zu meiner Institution?
+        $currentUser = $this->getUser();
+        $institution = $currentUser ? $currentUser->getInstitution() : null;
+
+        if ($participant->getInstitution() !== $institution) {
+             throw new AccessDeniedException('Zugriff verweigert.');
+        }
+
+        // 2. Daten aus dem Request holen
+        $dob = $request->request->get('dob');
+        $gender = $request->request->get('gender');
+
+        // 3. Update durchführen
+        if ($dob) {
+            try {
+                $participant->setBirthdate(new \DateTime($dob));
+            } catch (\Exception $e) {
+                // Bei ungültigem Datum ignorieren oder Fehler werfen
+            }
+        }
+
+        if ($gender && in_array($gender, ['MALE', 'FEMALE', 'DIVERSE'], true)) {
+             $participant->setGender($gender);
+        }
+
+        $participant->setUpdatedAt(new \DateTime());
+        
+        // 4. Speichern via EntityManager
+        $this->em->flush();
+        
+        $this->addFlash('success', 'Daten gespeichert.');
+        
+        return $this->redirectToRoute('admin_participants_index');
+    }
 
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
