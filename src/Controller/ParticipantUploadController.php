@@ -197,7 +197,7 @@ final class ParticipantUploadController extends AbstractController
 
                         // Daten setzen
                         $participant->setGender($geschlecht);
-                        $participant->setGeburtsdatum($geburtsdatum);
+                        $participant->setBirthdate($geburtsdatum);
                         $participant->setUsername($firstname . ' ' . $lastname); // Legacy Feld
                         $participant->setGroupName($groupName); // Legacy Feld
                         $participant->setUpdatedAt(new \DateTime());
