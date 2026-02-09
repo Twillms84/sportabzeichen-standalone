@@ -83,6 +83,24 @@ final class ExamController extends AbstractController
     #[Route('/new', name: 'new')]
     public function new(Request $request, GroupRepository $groupRepo): Response
     {
+        // 1. Institution holen (Wichtig für Filter & Speichern)
+        $user = $this->getUser();
+        $institution = null;
+        if ($user && method_exists($user, 'getInstitution')) {
+            $institution = $user->getInstitution();
+        }
+
+        // Falls keine Institution da ist, Abbruch (sonst Crash)
+        if (!$institution) {
+            $this->addFlash('error', 'Fehler: Deinem Benutzer ist keine Institution zugewiesen.');
+            return $this->redirectToRoute('app_exams_dashboard'); // Oder wohin du willst
+        }
+
+        // 2. Gruppen laden 
+        // OPTIONAL: Wenn du nur DEINE Gruppen sehen willst, musst du filtern.
+        // Da deine Group-Entity (laut letztem Stand) keine 'institution_id' hat, 
+        // ist das Filtern schwer. Ich lasse es erstmal auf findAll(), 
+        // aber langfristig brauchst du 'institution_id' auch in der Group-Tabelle!
         $allGroups = $groupRepo->findBy([], ['name' => 'ASC']);
 
         if ($request->isMethod('POST')) {
@@ -99,16 +117,23 @@ final class ExamController extends AbstractController
                 $exam->setName($name);
                 $exam->setYear($year);
                 $exam->setDate($date);
-                $exam->setCreator($this->getUser()?->getUserIdentifier());
+                $exam->setCreator($user->getUserIdentifier());
+                
+                // --- HIER IST DER FIX FÜR DEN FEHLER ---
+                $exam->setInstitution($institution);
+                // ---------------------------------------
                 
                 $this->em->persist($exam);
 
                 // Gruppen hinzufügen
                 $countAdded = 0;
                 foreach ($groupIds as $groupId) {
-                    $group = $groupRepo->find($groupId); // Hier ID nutzen, nicht 'act' string
+                    $group = $groupRepo->find($groupId); 
                     if ($group) {
                         $exam->addGroup($group);
+                        // ACHTUNG: Prüfe unbedingt auch diese Methode "importParticipantsFromGroup"!
+                        // Falls die "ExamParticipant" erstellt, muss dort evtl. auch setInstitution rein?
+                        // Wenn ExamParticipant keine Institution braucht (weil es am Exam hängt), ist es ok.
                         $countAdded += $this->importParticipantsFromGroup($exam, $group);
                     }
                 }
