@@ -16,7 +16,7 @@
                     {{ icon('plus') }} {{'Nacherfassen'|trans}}
                 </a>
                 <a href="{{ path('admin_participants_upload') }}" class="btn btn-default btn-sm">
-                    {{ icon('upload') }} {{'Nacherfassen'|trans}}
+                    {{ icon('upload') }} {{'Import'|trans}}
                 </a>
             </div>
         </div>
@@ -25,7 +25,7 @@
             
             <form method="get" class="input-group mb-3">
                 <span class="input-group-addon">{{ icon('search') }}</span>
-                <input type="text" name="q" class="form-control" value="{{ searchTerm }}" placeholder="{{'Suche (Enter drücken)...'}}">
+                <input type="text" name="q" class="form-control" value="{{ searchTerm }}" placeholder="{{'Suche (Name, IServ-Account)...'}}">
             </form>
 
             <div class="table-responsive">
@@ -33,50 +33,52 @@
                     <thead>
                         <tr>
                             <th>{{'Name'}}</th>
-                            <th>{{'Klasse'}}</th> {# Spalte 2 #}
-                            <th>{{'Geburtstag'}}</th> {# Spalte 3 #}
-                            <th>{{'Geschlecht'}}</th> {# Spalte 4 #}
-                            <th class="text-end">{{'Aktion'}}</th> {# Spalte 5 #}
+                            <th>{{'Klasse/Gruppe'}}</th>
+                            <th>{{'Geburtstag'}}</th>
+                            <th>{{'Geschlecht'}}</th>
+                            <th class="text-end">{{'Aktion'}}</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for p in participants %}
+                        {# p ist jetzt ein Participant-Objekt #}
                         <tr>
-                            {# 1. Name #}
+                            {# 1. Name (via Relation zum User) #}
                             <td>
-                                {% if p.u_lastname %}
-                                    <strong>{{ p.u_lastname }}</strong>, {{ p.u_firstname }}
-                                    {% if p.iserv_account %}
-                                        <br><small class="text-muted">({{ p.iserv_account }})</small>
+                                {% if p.user %}
+                                    <strong>{{ p.user.lastname }}</strong>, {{ p.user.firstname }}
+                                    {% if p.user.act %}
+                                        <br><small class="text-muted">({{ p.user.act }})</small>
                                     {% endif %}
-                                {% elseif p.username %}
-                                    {{ p.username }}
                                 {% else %}
-                                    <span class="text-muted"><em>Unbekannt / Gelöscht</em></span>
+                                    <span class="text-muted"><em>{{ 'User gelöscht'|trans }}</em></span>
                                 {% endif %}
                             </td>
 
-                            {# 2. Klasse (Platzhalter, da DB-Spalte fehlt) #}
+                            {# 2. Klasse (Iterieren über die Gruppen-Collection) #}
                             <td>
-                                {# Hier werden jetzt die Klassen angezeigt (z.B. "5a, InfoAG") #}
-                                {% if p.group_name %}
-                                    <span class="badge bg-secondary">{{ p.group_name }}</span>
+                                {% if p.user and p.user.groups is not empty %}
+                                    {% for group in p.user.groups %}
+                                        <span class="badge bg-secondary">{{ group.name }}</span>
+                                    {% endfor %}
                                 {% else %}
                                     <span class="text-muted small">-</span>
                                 {% endif %}
                             </td>
 
                             {# 3. Geburtstag #}
-                            <td>{{ p.geburtsdatum ? p.geburtsdatum|date('d.m.Y') : '-' }}</td>
+                            <td>{{ p.birthdate ? p.birthdate|date('d.m.Y') : '-' }}</td>
 
                             {# 4. Geschlecht #}
                             <td>
-                                {% if p.geschlecht == 'MALE' %}
+                                {% if p.gender == 'MALE' %}
                                     M
-                                {% elseif p.geschlecht == 'FEMALE' %}
+                                {% elseif p.gender == 'FEMALE' %}
                                     W
+                                {% elseif p.gender == 'DIVERSE' %}
+                                    D
                                 {% else %}
-                                    {{ p.geschlecht }}
+                                    {{ p.gender }}
                                 {% endif %}
                             </td>
 
@@ -99,29 +101,32 @@
                                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                                             <h4 class="modal-title">
                                                 {{ 'Bearbeiten'|trans }}: 
-                                                {% if p.u_firstname %}
-                                                    {{ p.u_firstname }} {{ p.u_lastname }}
-                                                {% elseif p.username %}
-                                                    {{ p.username }}
+                                                {% if p.user %}
+                                                    {{ p.user.firstname }} {{ p.user.lastname }}
                                                 {% else %}
-                                                    {{ 'Unbekannt'|trans }}
+                                                    {{ 'Teilnehmer'|trans }} #{{ p.id }}
                                                 {% endif %}
                                             </h4>
                                         </div>
                                         <div class="modal-body text-left">
                                             <div class="form-group">
                                                 <label>{{'Geburtsdatum'}}</label>
+                                                {# Zugriff auf Objekt-Property birthdate #}
                                                 <input type="date" name="dob" class="form-control" 
-                                                       value="{{ p.geburtsdatum ? p.geburtsdatum|date('Y-m-d') : '' }}">
+                                                       value="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}">
                                             </div>
                                             <div class="form-group">
                                                 <label>{{'Geschlecht'}}</label>
+                                                {# Zugriff auf Objekt-Property gender #}
                                                 <select name="gender" class="form-control">
-                                                    <option value="MALE" {{ p.geschlecht == 'MALE' ? 'selected' : '' }}>
+                                                    <option value="MALE" {{ p.gender == 'MALE' ? 'selected' : '' }}>
                                                         {{'Männlich'}} (M)
                                                     </option>
-                                                    <option value="FEMALE" {{ p.geschlecht == 'FEMALE' ? 'selected' : '' }}>
+                                                    <option value="FEMALE" {{ p.gender == 'FEMALE' ? 'selected' : '' }}>
                                                         {{'Weiblich'}} (W)
+                                                    </option>
+                                                    <option value="DIVERSE" {{ p.gender == 'DIVERSE' ? 'selected' : '' }}>
+                                                        {{'Divers'}} (D)
                                                     </option>
                                                 </select>
                                             </div>
