@@ -302,7 +302,6 @@ final class ExamController extends AbstractController
         $searchTerm = trim($request->query->get('q', ''));
         $missingStudents = [];
 
-        // FIX: "app_groups" -> "groups"
         $sql = "
             SELECT DISTINCT
                 u.id, u.act, u.firstname, u.lastname,
@@ -310,15 +309,18 @@ final class ExamController extends AbstractController
                 g.name as group_name,
                 (sp.geburtsdatum IS NULL) as is_missing_dob
             FROM users u
-            INNER JOIN members m ON u.act = m.actuser
+            -- Geändert: Join über die korrekte Relationstabelle users_groups
+            INNER JOIN users_groups ug ON u.id = ug.user_id
+            INNER JOIN groups g ON ug.group_id = g.id
             
-            -- Brücke: members (String) -> groups (ID) -> exam_groups (ID)
-            INNER JOIN groups g ON m.actgrp = g.act 
+            -- Verbindung zur Prüfung über die zugeordneten Gruppen
             INNER JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id
             
             LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
             
-            WHERE u.deleted IS NULL
+            WHERE u.id IS NOT NULL 
+            -- 'deleted' gibt es in deiner Entity nicht, falls die Spalte im SQL existiert, lass es drin
+            -- AND u.deleted IS NULL 
             AND seg.exam_id = :examId
             
             AND (
