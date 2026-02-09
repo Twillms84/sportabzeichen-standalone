@@ -65,7 +65,7 @@
                     <li class="nav-item mb-1">
                         {% set is_admin = app.request.attributes.get('_route') starts with 'admin_' %}
                         {# Hinweis: Pfad muss existieren, sonst Fehler. Ggf. anpassen #}
-                        <a href="#" class="nav-link text-white opacity-75 {% if is_admin %}active bg-primary{% endif %} rounded">
+                        <a href="{{ path('admin_dashboard') }}" class="nav-link text-white opacity-75 {% if is_admin %}active bg-primary{% endif %} rounded">
                             <i class="fas fa-tools me-2"></i> Verwaltung
                         </a>
                     </li>
