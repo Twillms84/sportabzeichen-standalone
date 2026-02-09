@@ -21,6 +21,21 @@ class Exam
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)] // Muss gesetzt sein!
+    private ?Institution $institution = null;
+
+    public function getInstitution(): ?Institution
+    {
+        return $this->institution;
+    }
+
+    public function setInstitution(?Institution $institution): static
+    {
+        $this->institution = $institution;
+        return $this;
+    }
+
     #[ORM\Column(type: 'string', length: 255, name: 'exam_name')]
     private ?string $name = null;
 

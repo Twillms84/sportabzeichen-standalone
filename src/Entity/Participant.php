@@ -19,6 +19,21 @@ class Participant
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)] // Muss gesetzt sein!
+    private ?Institution $institution = null;
+
+    public function getInstitution(): ?Institution
+    {
+        return $this->institution;
+    }
+
+    public function setInstitution(?Institution $institution): static
+    {
+        $this->institution = $institution;
+        return $this;
+    }
+    
     // Verknüpfung zum User (Hier holen wir uns Name, Klasse etc.)
     #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')] 
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
