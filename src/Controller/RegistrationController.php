@@ -32,11 +32,15 @@ class RegistrationController extends AbstractController
             $institution->setCity($form->get('instCity')->getData());
             $institution->setStreet($form->get('instStreet')->getData());
             
-            // Institution speichern, um ID zu bekommen (passiert durch cascade persist oder beim flush)
+            // --- WICHTIG: Hier fehlte die Zuweisung! ---
+            // Die Schule gehört der E-Mail-Adresse, die sich gerade registriert.
+            $institution->setRegistrarEmail($user->getEmail());
+            // --------------------------------------------
+
+            // Institution speichern
             $entityManager->persist($institution);
 
             // 2. User vorbereiten
-            // Passwort hashen
             $user->setPassword(
                 $userPasswordHasher->hashPassword(
                     $user,
@@ -44,14 +48,19 @@ class RegistrationController extends AbstractController
                 )
             );
             
-            // Rolle Admin geben, da er die Institution erstellt hat
             $user->setRoles(['ROLE_ADMIN']);
-            $user->setSource('register'); // Markierung, dass er sich selbst registriert hat
+            $user->setSource('register'); 
             
-            // Namen aus "Verantwortlicher" parsen (optional, quick & dirty)
-            $parts = explode(' ', $institution->getContactPerson(), 2);
-            $user->setFirstname($parts[0] ?? 'Admin');
-            $user->setLastname($parts[1] ?? 'User');
+            // Namen aus "Verantwortlicher" parsen (Fallback Logik)
+            $contactPerson = $institution->getContactPerson();
+            if ($contactPerson) {
+                $parts = explode(' ', $contactPerson, 2);
+                $user->setFirstname($parts[0] ?? 'Admin');
+                $user->setLastname($parts[1] ?? 'User');
+            } else {
+                $user->setFirstname('Admin');
+                $user->setLastname('User');
+            }
 
             // 3. User der Institution zuweisen
             $user->setInstitution($institution);
