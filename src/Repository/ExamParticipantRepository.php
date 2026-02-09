@@ -39,4 +39,19 @@ class ExamParticipantRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    public function findResultsForStats(Exam $exam): array
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('r', 'ep', 'p', 'u', 'd')
+            ->from('App\Entity\ExamResult', 'r')
+            ->join('r.examParticipant', 'ep')
+            ->join('ep.participant', 'p')
+            ->join('p.user', 'u')
+            ->join('r.discipline', 'd')
+            ->where('ep.exam = :exam')
+            ->andWhere('r.points > 0')
+            ->setParameter('exam', $exam)
+            ->getQuery()
+            ->getResult();
+    }
 }

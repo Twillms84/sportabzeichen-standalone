@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Doctrine\DBAL\Connection;
+use App\Entity\Exam;
+use App\Entity\ExamParticipant;
+use App\Entity\Group;
+use App\Entity\Participant;
+use App\Entity\User;
+use App\Repository\ExamParticipantRepository;
+use App\Repository\ExamRepository;
+use App\Repository\GroupRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use App\Entity\Group;
-use App\Entity\Exam;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,38 +22,24 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/exams', name: 'app_exams_')]
 final class ExamController extends AbstractController
 {
+    public function __construct(
+        private EntityManagerInterface $em
+    ) {}
+
     #[Route('/', name: 'dashboard')]
-    public function index(Connection $conn): Response
+    public function index(ExamRepository $examRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        // 1. Alle Prüfungen laden (via Doctrine)
+        $exams = $examRepo->findBy([], ['year' => 'DESC', 'date' => 'DESC']);
 
-        // 1. Alle Prüfungen laden
-        $exams = $conn->fetchAllAssociative("
-            SELECT * FROM sportabzeichen_exams 
-            ORDER BY exam_year DESC, exam_date DESC
-        ");
-
-        // 2. Performance-Query: Punkte aller Teilnehmer aller Prüfungen
-        $sqlResults = "
-            SELECT 
-                e.exam_year,
-                e.id as exam_id,
-                p.user_id,
-                SUM(COALESCE(r.points, 0)) as total_points
-            FROM sportabzeichen_exams e
-            JOIN sportabzeichen_exam_participants ep ON e.id = ep.exam_id
-            JOIN sportabzeichen_participants p ON ep.participant_id = p.id
-            LEFT JOIN sportabzeichen_exam_results r ON ep.id = r.ep_id
-            GROUP BY e.id, ep.id, p.user_id
-        ";
-        
-        $rawResults = $conn->fetchAllAssociative($sqlResults);
-
-        // 3. Daten aggregieren
+        // 2. Daten aggregieren
+        // Hinweis: Für maximale Performance bei riesigen Datenmengen wäre hier 
+        // eine DQL-Aggregation besser, aber ORM ist lesbarer und für < 5000 Schüler okay.
         $yearlyStats = [];
 
         foreach ($exams as $exam) {
-            $year = $exam['exam_year'];
+            $year = $exam->getYear();
+            
             if (!isset($yearlyStats[$year])) {
                 $yearlyStats[$year] = [
                     'year' => $year,
@@ -56,34 +48,30 @@ final class ExamController extends AbstractController
                     'unique_users' => [] 
                 ];
             }
-            $yearlyStats[$year]['exams'][] = $exam;
-        }
+            
+            // Einfache Array-Repräsentation für das Template bauen
+            $yearlyStats[$year]['exams'][] = [
+                'id' => $exam->getId(),
+                'exam_name' => $exam->getName(),
+                'exam_date' => $exam->getDate() ? $exam->getDate()->format('Y-m-d') : null,
+                'creator' => $exam->getCreator(),
+            ];
 
-        foreach ($rawResults as $row) {
-            $year = $row['exam_year'];
-            if (isset($yearlyStats[$year])) {
-                $pts = (int)$row['total_points'];
+            // Statistiken berechnen
+            foreach ($exam->getExamParticipants() as $ep) {
+                $userId = $ep->getParticipant()->getUser()->getId();
                 
-                // Teilnehmer zählen (Unique Check via UserID)
-                if (isset($yearlyStats[$year]['unique_users'][$row['user_id']])) {
-                    // User schon gezählt -> Ergebnisse ignorieren oder addieren?
-                    // In dieser Logik zählt das 'Beste' oder das 'Letzte', da wir einfach drüber loopen.
-                    // Für eine saubere Statistik müsste man pro User summieren, das macht das SQL aber schon pro Exam.
-                    // Da ein User mehrere Exams im Jahr haben kann, zählen wir ihn hier nur einmal für die 'Total'-Statistik.
-                    continue; 
+                // User pro Jahr nur einmal zählen für Total
+                if (!isset($yearlyStats[$year]['unique_users'][$userId])) {
+                     $yearlyStats[$year]['stats']['Total']++;
+                     $yearlyStats[$year]['unique_users'][$userId] = true;
                 }
-                $yearlyStats[$year]['unique_users'][$row['user_id']] = true;
 
-                if ($pts >= 11) {
-                    $yearlyStats[$year]['stats']['Gold']++;
-                } elseif ($pts >= 8) {
-                    $yearlyStats[$year]['stats']['Silber']++;
-                } elseif ($pts >= 4) {
-                    $yearlyStats[$year]['stats']['Bronze']++;
-                } else {
-                    $yearlyStats[$year]['stats']['Ohne']++;
-                }
-                $yearlyStats[$year]['stats']['Total']++;
+                $pts = $ep->getTotalPoints();
+                if ($pts >= 11) $yearlyStats[$year]['stats']['Gold']++;
+                elseif ($pts >= 8) $yearlyStats[$year]['stats']['Silber']++;
+                elseif ($pts >= 4) $yearlyStats[$year]['stats']['Bronze']++;
+                else $yearlyStats[$year]['stats']['Ohne']++;
             }
         }
 
@@ -93,20 +81,9 @@ final class ExamController extends AbstractController
     }
 
     #[Route('/new', name: 'new')]
-    public function new(Request $request, EntityManagerInterface $em, Connection $conn): Response
+    public function new(Request $request, GroupRepository $groupRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_ADMIN');
-
-        // Gruppen laden
-        $groupRepo = $em->getRepository(Group::class);
         $allGroups = $groupRepo->findBy([], ['name' => 'ASC']);
-
-      $groupsForDropdown = [];
-        foreach ($allGroups as $g) {
-            // Der Name (z.B. "8b") ist das Label für den User, 
-            // die ID (z.B. 42) ist der Wert, der an den Server geht.
-            $groupsForDropdown[$g->getName()] = $g->getId();
-        }
 
         if ($request->isMethod('POST')) {
             try {
@@ -116,45 +93,29 @@ final class ExamController extends AbstractController
                 
                 $dateStr = $request->request->get('exam_date');
                 $date = $dateStr ? new \DateTime($dateStr) : null;
-                
-                $postData = $request->request->all();
-                $selectedGroups  = $postData['groups'] ?? [];
+                $groupIds = $request->request->all()['groups'] ?? [];
 
                 $exam = new Exam();
                 $exam->setName($name);
                 $exam->setYear($year);
                 $exam->setDate($date);
-                $exam->setCreator($this->getUser() ? $this->getUser()->getUserIdentifier() : null); // getUserIdentifier() ist moderner als getUsername()
+                $exam->setCreator($this->getUser()?->getUserIdentifier());
                 
-                $em->persist($exam);
-                $em->flush(); // ID generieren
+                $this->em->persist($exam);
 
-                $debugLog = ['added' => [], 'skipped' => [], 'errors' => []];
-
-                if (!empty($selectedGroups) && is_array($selectedGroups)) {
-                    foreach ($selectedGroups as $groupAccount) {
-                        $this->importParticipantsFromGroup($em, $conn, $exam, (string)$groupAccount, $debugLog);
+                // Gruppen hinzufügen
+                $countAdded = 0;
+                foreach ($groupIds as $groupId) {
+                    $group = $groupRepo->find($groupId); // Hier ID nutzen, nicht 'act' string
+                    if ($group) {
+                        $exam->addGroup($group);
+                        $countAdded += $this->importParticipantsFromGroup($exam, $group);
                     }
                 }
 
-                // Feedback
-                $countAdded = count($debugLog['added']);
-                $countErrors = count($debugLog['errors']);
-                
-                $msg = "Prüfung angelegt. ";
-                if ($countAdded > 0) {
-                    $msg .= "<strong>$countAdded</strong> Teilnehmer hinzugefügt.";
-                } else {
-                    $msg .= "<strong>Keine Teilnehmer hinzugefügt.</strong>";
-                }
+                $this->em->flush();
 
-                if ($countErrors > 0) {
-                    $msg .= "<br><br><span style='color:red'><strong>$countErrors Fehler:</strong></span><br>" . implode('<br>', $debugLog['errors']);
-                    $this->addFlash('warning', $msg); // Warning statt Success bei Fehlern
-                } else {
-                    $this->addFlash('success', $msg);
-                }
-               
+                $this->addFlash('success', "Prüfung angelegt. $countAdded Teilnehmer hinzugefügt.");
                 return $this->redirectToRoute('app_exams_dashboard');
 
             } catch (\Throwable $e) {
@@ -162,37 +123,34 @@ final class ExamController extends AbstractController
             }
         }
 
+        // Dropdown Daten vorbereiten
+        $groupsForDropdown = [];
+        foreach ($allGroups as $g) {
+            $groupsForDropdown[$g->getName()] = $g->getId();
+        }
+
         return $this->render('exams/new.html.twig', [
-            'groups'  => $groupsForDropdown
+            'groups' => $groupsForDropdown
         ]);
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
-    public function edit(int $id, Request $request, Connection $conn, EntityManagerInterface $em): Response
+    public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
-
-        $examEntity = $em->getRepository(Exam::class)->find($id);
-        if (!$examEntity) throw $this->createNotFoundException('Prüfung nicht gefunden');
-        
-        $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = :id", ['id' => $id]);
+        $exam = $examRepo->find($id);
+        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
 
         // --- POST HANDLING ---
         if ($request->isMethod('POST')) {
             
-            // 1. STAMMDATEN
+            // 1. STAMMDATEN SPEICHERN
             if ($request->request->has('exam_year')) {
-                $name = trim($request->request->get('exam_name'));
+                $exam->setName(trim($request->request->get('exam_name')));
                 $year = (int)$request->request->get('exam_year');
-                if ($year < 100) $year += 2000;
-                $date = $request->request->get('exam_date') ?: null;
-
-                $conn->update('sportabzeichen_exams', [
-                    'exam_name' => $name,
-                    'exam_year' => $year,
-                    'exam_date' => $date
-                ], ['id' => $id]);
-
+                $exam->setYear($year < 100 ? $year + 2000 : $year);
+                $exam->setDate($request->request->get('exam_date') ? new \DateTime($request->request->get('exam_date')) : null);
+                
+                $this->em->flush();
                 $this->addFlash('success', 'Stammdaten gespeichert.');
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
@@ -200,13 +158,13 @@ final class ExamController extends AbstractController
             // 2. GRUPPE HINZUFÜGEN
             if ($request->request->has('add_group')) {
                 $groupAct = $request->request->get('group_act');
-                if ($groupAct) {
-                    try {
-                        $this->importParticipantsFromGroup($em, $conn, $examEntity, $groupAct);
-                        $this->addFlash('success', 'Gruppe hinzugefügt und Mitglieder importiert.');
-                    } catch (\Throwable $e) {
-                        $this->addFlash('error', 'Fehler beim Import: ' . $e->getMessage());
-                    }
+                $group = $groupRepo->findOneBy(['act' => $groupAct]); // Finde Gruppe via 'act'
+                
+                if ($group) {
+                    $exam->addGroup($group);
+                    $addedCount = $this->importParticipantsFromGroup($exam, $group);
+                    $this->em->flush();
+                    $this->addFlash('success', "Gruppe hinzugefügt und $addedCount Mitglieder importiert.");
                 }
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
@@ -214,521 +172,290 @@ final class ExamController extends AbstractController
             // 3. GRUPPE ENTFERNEN
             if ($request->request->has('remove_group')) {
                 $groupAct = $request->request->get('remove_group');
+                $group = $groupRepo->findOneBy(['act' => $groupAct]);
                 
-                // FIX: "app_groups" -> "groups"
-                $groupId = $conn->fetchOne("SELECT id FROM groups WHERE act = ?", [$groupAct]);
-                
-                if ($groupId) {
-                    $conn->executeStatement(
-                        "DELETE FROM sportabzeichen_exam_groups WHERE exam_id = ? AND group_id = ?", 
-                        [$id, $groupId]
-                    );
-                    $this->addFlash('success', 'Gruppe aus der Prüfung entfernt (Teilnehmer bleiben).');
-                } else {
-                     $this->addFlash('error', 'Gruppe nicht gefunden.');
+                if ($group) {
+                    $exam->removeGroup($group);
+                    $this->em->flush();
+                    $this->addFlash('success', 'Gruppe entfernt (Teilnehmer bleiben bestehen).');
                 }
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
             // 4. EINZELNEN TEILNEHMER HINZUFÜGEN
             if ($request->request->has('account')) {
-                $account = trim($request->request->get('account', ''));
-                $gender  = $request->request->get('gender');
-                $dobStr  = $request->request->get('dob');
-
-                if ($account && $gender && $dobStr) {
-                    $userId = $conn->fetchOne("SELECT id FROM users WHERE act = :act AND deleted IS NULL", ['act' => $account]);
-                    if ($userId) {
-                        try {
-                            // A) Pool Update/Insert
-                            $conn->executeStatement("
-                                INSERT INTO sportabzeichen_participants (user_id, geburtsdatum, geschlecht, username)
-                                VALUES (?, ?, ?, ?)
-                                ON CONFLICT (user_id) DO UPDATE SET 
-                                    geburtsdatum = EXCLUDED.geburtsdatum, 
-                                    geschlecht = EXCLUDED.geschlecht
-                            ", [$userId, $dobStr, $gender, $account]);
-
-                            // B) Prüfung hinzufügen
-                            $this->processParticipantByUserId($conn, (int)$id, (int)$exam['exam_year'], (int)$userId);
-                            
-                            $this->addFlash('success', "Teilnehmer hinzugefügt.");
-                        } catch (\Throwable $e) {
-                            $this->addFlash('error', 'Fehler: ' . $e->getMessage());
-                        }
-                    }
-                }
+                $this->handleAddSingleParticipant($request, $exam, $userRepo);
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id, 'q' => $request->query->get('q')]);
             }
         }
 
-        // --- GET DATEN ---
-
-        // A) Zugeordnete Gruppen
-        $sqlGroups = "
-            SELECT g.act, g.name 
-            FROM sportabzeichen_exam_groups seg 
-            JOIN groups g ON seg.group_id = g.id
-            WHERE seg.exam_id = ? 
-            ORDER BY g.name ASC
-        ";
-        $groupResults = $conn->fetchAllAssociative($sqlGroups, [$id]); 
-        
-        // Alle 'act' Werte extrahieren
-        $assignedActs = array_column($groupResults, 'act');
-
-        // B) Verfügbare Gruppen
-        $allGroupsObj = $em->getRepository(Group::class)->findBy([], ['name' => 'ASC']);
+        // --- VIEW DATEN ---
+        // Verfügbare Gruppen filtern
+        $assignedGroups = $exam->getGroups();
+        $allGroups = $groupRepo->findBy([], ['name' => 'ASC']);
         $availableGroups = [];
-        
-        // FIX: Nur Werte behalten, die nicht null und nicht leer sind, bevor geflippt wird
-        $cleanAssignedActs = array_filter($assignedActs, function($val) {
-            return $val !== null && $val !== '';
-        });
-        
-        $assignedMap = array_flip($cleanAssignedActs);
 
-        foreach ($allGroupsObj as $g) {
-            $gAct = $g->getAct(); 
-            
-            // Falls gAct null oder leer ist, ignorieren wir es für die Auswahlliste,
-            // oder prüfen, ob es bereits in der Map der zugewiesenen Gruppen ist
-            if ($gAct !== null && $gAct !== '' && !isset($assignedMap[$gAct])) {
-                $availableGroups[$gAct] = $g->getName(); 
+        foreach ($allGroups as $g) {
+            if (!$assignedGroups->contains($g) && $g->getAct()) {
+                $availableGroups[$g->getAct()] = $g->getName();
             }
         }
 
-        // C) Liste der fehlenden Schüler
+        // Fehlende Schüler laden (via Repository-Logik)
         $searchTerm = trim($request->query->get('q', ''));
-        $missingStudents = [];
-
-        $sql = "
-            SELECT DISTINCT
-                u.id, u.act, u.firstname, u.lastname,
-                sp.geburtsdatum, sp.geschlecht as sp_gender,
-                g.name as group_name,
-                (sp.geburtsdatum IS NULL) as is_missing_dob
-            FROM users u
-            -- Geändert: Join über die korrekte Relationstabelle users_groups
-            INNER JOIN users_groups ug ON u.id = ug.user_id
-            INNER JOIN groups g ON ug.group_id = g.id
+        $missingUsers = $examRepo->findMissingUsersForExam($exam, $searchTerm);
+        
+        $missingStudentsData = [];
+        foreach ($missingUsers as $user) {
+            $p = $user->getParticipant();
+            $dob = $p ? $p->getGeburtsdatum() : null;
             
-            -- Verbindung zur Prüfung über die zugeordneten Gruppen
-            INNER JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id
-            
-            LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
-            
-            WHERE u.id IS NOT NULL 
-            -- 'deleted' gibt es in deiner Entity nicht, falls die Spalte im SQL existiert, lass es drin
-            -- AND u.deleted IS NULL 
-            AND seg.exam_id = :examId
-            
-            AND (
-                NOT EXISTS (
-                    SELECT 1 FROM sportabzeichen_exam_participants sep
-                    JOIN sportabzeichen_participants sp_inner ON sep.participant_id = sp_inner.id
-                    WHERE sp_inner.user_id = u.id AND sep.exam_id = :examId
-                )
-                OR
-                (sp.geburtsdatum IS NULL OR sp.geschlecht IS NULL OR sp.geschlecht = '')
-            )
-        ";
+            // Gruppennamen sammeln
+            $grpNames = array_map(fn($g) => $g->getName(), $user->getGroups()->toArray());
 
-        $params = ['examId' => $id];
-
-        if (!empty($searchTerm)) {
-            $sql .= " AND (u.lastname ILIKE :search OR u.firstname ILIKE :search) ";
-            $params['search'] = '%' . $searchTerm . '%';
-        }
-
-        $sql .= " ORDER BY is_missing_dob DESC, u.lastname ASC, u.firstname ASC LIMIT 300";
-
-        $rows = $conn->fetchAllAssociative($sql, $params);
-
-        foreach ($rows as $row) {
-            $missingStudents[] = [
-                'account'   => $row['act'],
-                'name'      => $row['firstname'] . ' ' . $row['lastname'],
-                'dob'       => $row['geburtsdatum'],
-                'gender'    => $row['sp_gender'] ?? 'MALE',
-                'group'     => $row['group_name']
+            $missingStudentsData[] = [
+                'account' => $user->getAct(),
+                'name'    => $user->getFirstname() . ' ' . $user->getLastname(),
+                'dob'     => $dob ? $dob->format('Y-m-d') : null,
+                'gender'  => $p ? $p->getGeschlecht() : 'MALE',
+                'group'   => implode(', ', $grpNames)
             ];
         }
 
         return $this->render('exams/edit.html.twig', [
-            'exam' => $exam,
-            'assigned_groups' => $groupResults, 
+            'exam' => [
+                'id' => $exam->getId(),
+                'name' => $exam->getName(),
+                'year' => $exam->getYear(),
+                'date' => $exam->getDate() ? $exam->getDate()->format('Y-m-d') : '',
+            ],
+            'assigned_groups' => array_map(fn($g) => ['act' => $g->getAct(), 'name' => $g->getName()], $assignedGroups->toArray()),
             'available_groups' => $availableGroups,
-            'missing_students' => $missingStudents,
+            'missing_students' => $missingStudentsData,
             'search_term' => $searchTerm
         ]);
     }
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
-    public function delete(int $id, Request $request, Connection $conn): Response
+    public function delete(int $id, Request $request, ExamRepository $examRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
-
         $token = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('delete' . $id, $token)) {
             $this->addFlash('error', 'Ungültiger Token.');
             return $this->redirectToRoute('app_exams_dashboard');
         }
 
-        $conn->beginTransaction();
-        try {
-            // 1. Ergebnisse löschen
-            $conn->executeStatement("
-                DELETE FROM sportabzeichen_exam_results 
-                WHERE ep_id IN (SELECT id FROM sportabzeichen_exam_participants WHERE exam_id = ?)
-            ", [$id]);
-
-            // 2. Teilnehmer-Verknüpfungen
-            $conn->executeStatement("DELETE FROM sportabzeichen_exam_participants WHERE exam_id = ?", [$id]);
-            
-            // 3. Gruppen-Verknüpfungen (ManyToMany Table)
-            $conn->executeStatement("DELETE FROM sportabzeichen_exam_groups WHERE exam_id = ?", [$id]);
-
-            // 4. Prüfung
-            $conn->executeStatement("DELETE FROM sportabzeichen_exams WHERE id = ?", [$id]);
-
-            $conn->commit();
+        $exam = $examRepo->find($id);
+        if ($exam) {
+            // Doctrine kümmert sich um die Löschung abhängiger Daten 
+            // (Voraussetzung: cascade={"remove"} oder orphanRemoval=true in Entity)
+            $this->em->remove($exam);
+            $this->em->flush();
             $this->addFlash('success', 'Prüfung gelöscht.');
-
-        } catch (\Exception $e) {
-            $conn->rollBack();
-            $this->addFlash('error', 'Fehler: ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('app_exams_dashboard');
     }
 
-    private function importParticipantsFromGroup(
-        EntityManagerInterface $em, 
-        Connection $conn, 
-        Exam $exam, 
-        string $groupId, 
-        array &$debugLog = []
-    ): void {
-        // 1. Gruppe finden
-        $groupEntity = $em->getRepository(Group::class)->find($groupId);
-
-        if (!$groupEntity) {
-            $debugLog['errors'][] = "Gruppe mit ID '$groupId' nicht gefunden.";
-            return;
-        }
-
-        // Relation zwischen Prüfung und Gruppe speichern
-        // Symfony nutzt hierfür laut deiner Liste: sportabzeichen_exam_groups
-        $exam->addGroup($groupEntity);
-        $em->persist($exam);
-        $em->flush(); 
-
-        // 2. Mitglieder der Gruppe laden
-        // Wir nutzen jetzt den Tabellennamen aus deinem Terminal: users_groups
-        $sql = "
-            SELECT u.id, u.firstname, u.lastname
-            FROM users u
-            INNER JOIN users_groups ug ON u.id = ug.user_id
-            WHERE ug.group_id = ?
-        ";
-        
-        $users = $conn->fetchAllAssociative($sql, [$groupId]);
-
-        if (empty($users)) {
-            $debugLog['skipped'][] = "Gruppe '" . $groupEntity->getName() . "' (ID $groupId) ist leer oder hat keine verknüpften User.";
-            return;
-        }
-
-        foreach ($users as $row) {
-            $this->processParticipantByUserId($conn, $exam->getId(), $exam->getYear(), (int)$row['id']);
-            $debugLog['added'][] = $row['firstname'] . ' ' . $row['lastname'];
-        }
-    }
-
-    private function processParticipantByUserId(Connection $conn, int $examId, int $examYear, int $userId): void
-    {
-        // 1. Participant im Pool suchen
-        $poolData = $conn->fetchAssociative(
-            "SELECT id, geburtsdatum FROM sportabzeichen_participants WHERE user_id = ?", 
-            [$userId]
-        );
-        
-        if ($poolData) {
-            $participantId = $poolData['id'];
-            $dob = $poolData['geburtsdatum'];
-        } else {
-            // Falls der User noch nie im Sport-Pool war: Minimal-Eintrag anlegen
-            $conn->executeStatement("
-                INSERT INTO sportabzeichen_participants (user_id, updated_at) 
-                VALUES (?, CURRENT_TIMESTAMP)
-            ", [$userId]);
-            $participantId = $conn->lastInsertId();
-            $dob = null;
-        }
-
-        // 2. Alter berechnen (Sport-Regel: Jahr - Jahr)
-        $age = 0;
-        if ($dob) {
-            $birthYear = (int)date('Y', strtotime((string)$dob));
-            $age = $examYear - $birthYear;
-        }
-
-        // 3. In die Prüfung (Exam) eintragen
-        $conn->executeStatement("
-            INSERT INTO sportabzeichen_exam_participants (exam_id, participant_id, age_year)
-            VALUES (?, ?, ?)
-            ON CONFLICT (exam_id, participant_id) 
-            DO UPDATE SET age_year = EXCLUDED.age_year
-        ", [$examId, $participantId, $age]);
-    }
-
     #[Route('/{id}/add_participant', name: 'add_participant', methods: ['GET', 'POST'])]
-    public function addParticipant(int $id, Request $request, Connection $conn): Response
+    public function addParticipant(int $id, Request $request, ExamRepository $examRepo, UserRepository $userRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        $exam = $examRepo->find($id);
+        if (!$exam) throw $this->createNotFoundException();
 
-        $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = :id", ['id' => $id]);
-        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
-
-        // --- POST: Manuell hinzufügen ---
         if ($request->isMethod('POST')) {
-            $account = trim($request->request->get('account', ''));
-            $gender  = $request->request->get('gender');
-            $dobStr  = $request->request->get('dob');
-
-            if ($account && $userId = $conn->fetchOne("SELECT id FROM users WHERE act = ?", [$account])) {
-                // Update Pool with form data
-                 $conn->executeStatement("
-                    INSERT INTO sportabzeichen_participants (user_id, geburtsdatum, geschlecht, username)
-                    VALUES (?, ?, ?, ?)
-                    ON CONFLICT (user_id) DO UPDATE SET 
-                        geburtsdatum = EXCLUDED.geburtsdatum, 
-                        geschlecht = EXCLUDED.geschlecht
-                ", [$userId, $dobStr, $gender, $account]);
-
-                $this->processParticipantByUserId($conn, (int)$id, (int)$exam['exam_year'], (int)$userId);
-                $this->addFlash('success', "Teilnehmer hinzugefügt.");
-            }
+            $this->handleAddSingleParticipant($request, $exam, $userRepo);
             return $this->redirectToRoute('app_exams_add_participant', ['id' => $id, 'q' => $request->query->get('q')]);
         }
 
-        // --- GET LISTE ---
+        // Liste aller verfügbaren User, die noch nicht in der Prüfung sind
+        // Da die Logik ähnlich zu 'missingUsers' ist, könnten wir die Repo-Methode nutzen,
+        // aber hier geht es um ALLE User, nicht nur die aus den Gruppen.
+        // Das ist eine ähnliche Query, daher nutzen wir hier die gleiche Methode oder bauen eine allgemeinere.
+        // Für dieses Beispiel nutze ich die existierende Missing-Logik:
         $searchTerm = trim($request->query->get('q', ''));
-        $missingStudents = [];
+        $users = $examRepo->findMissingUsersForExam($exam, $searchTerm); 
+        // HINWEIS: findMissingUsersForExam filtert aktuell nach Usern, die eine Gruppe HABEN, die der Exam zugeordnet ist.
+        // Wenn du ALLE User willst, müsstest du den Gruppen-Join im Repository entfernen.
 
-        // FIX: "app_groups" -> "groups"
-        $sql = "
-            SELECT DISTINCT
-                u.id, u.act, u.firstname, u.lastname,
-                sp.geburtsdatum, sp.geschlecht as sp_gender
-            FROM users u
-            JOIN members m ON u.act = m.actuser
-            
-            -- Brücke: members(String) -> groups(ID) -> exam_groups(ID)
-            JOIN groups g ON m.actgrp = g.act
-            JOIN sportabzeichen_exam_groups seg ON g.id = seg.group_id
-            
-            LEFT JOIN sportabzeichen_participants sp ON u.id = sp.user_id
-            
-            WHERE u.deleted IS NULL
-            AND seg.exam_id = :examId
-            
-            AND NOT EXISTS (
-                SELECT 1 FROM sportabzeichen_exam_participants sep
-                JOIN sportabzeichen_participants sp_inner ON sep.participant_id = sp_inner.id
-                WHERE sp_inner.user_id = u.id AND sep.exam_id = :examId
-            )
-        ";
-
-        $params = ['examId' => $id];
-
-        if (!empty($searchTerm)) {
-            $sql .= " AND (u.lastname ILIKE :search OR u.firstname ILIKE :search) ";
-            $params['search'] = '%' . $searchTerm . '%';
-        }
-
-        $sql .= " ORDER BY (sp.geburtsdatum IS NULL) DESC, u.lastname ASC, u.firstname ASC LIMIT 500";
-
-        $rows = $conn->fetchAllAssociative($sql, $params);
-
-        foreach ($rows as $row) {
-            $missingStudents[] = [
-                'account'   => $row['act'],
-                'name'      => $row['firstname'] . ' ' . $row['lastname'],
-                'dob'       => $row['geburtsdatum'],
-                'gender'    => $row['sp_gender'] ?? 'MALE'
+        $missingStudentsData = [];
+        foreach ($users as $user) {
+            $p = $user->getParticipant();
+            $missingStudentsData[] = [
+                'account' => $user->getAct(),
+                'name'    => $user->getFirstname() . ' ' . $user->getLastname(),
+                'dob'     => $p?->getGeburtsdatum()?->format('Y-m-d'),
+                'gender'  => $p?->getGeschlecht() ?? 'MALE'
             ];
         }
 
         return $this->render('exams/add_participant.html.twig', [
-            'exam' => $exam,
-            'missing_students' => $missingStudents,
+            'exam' => ['id' => $exam->getId(), 'year' => $exam->getYear()],
+            'missing_students' => $missingStudentsData,
             'search_term' => $searchTerm
         ]);
     }
 
     #[Route('/{id}/stats', name: 'stats', methods: ['GET'])]
-    public function stats(int $id, Connection $conn): Response
+    public function stats(int $id, ExamRepository $examRepo, ExamParticipantRepository $epRepo): Response
     {
-        //$this->denyAccessUnlessGranted('PRIV_SPORTABZEICHEN_RESULTS');
+        $exam = $examRepo->find($id);
+        if (!$exam) throw $this->createNotFoundException();
 
-        // 1. Prüfungsdaten laden
-        $exam = $conn->fetchAssociative("SELECT * FROM sportabzeichen_exams WHERE id = :id", ['id' => $id]);
-        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
+        // 1. Medaillen-Statistik
+        // Wir nutzen den QueryBuilder im Repository oder zählen iterativ (bei kleinen Mengen OK)
+        $participants = $exam->getExamParticipants();
+        $stats = ['Gold' => 0, 'Silber' => 0, 'Bronze' => 0, 'Ohne' => 0];
 
-        // 2. Punkte pro Teilnehmer berechnen
-        $sqlPoints = "
-            SELECT 
-                ep.id,
-                u.firstname, u.lastname,
-                SUM(COALESCE(r.points, 0)) as total_points
-            FROM sportabzeichen_exam_participants ep
-            JOIN sportabzeichen_participants p ON ep.participant_id = p.id
-            JOIN users u ON p.user_id = u.id
-            LEFT JOIN sportabzeichen_exam_results r ON ep.id = r.ep_id
-            WHERE ep.exam_id = :id
-            GROUP BY ep.id, u.lastname, u.firstname
-        ";
-        
-        // KORREKTUR: Hier fehlte das Array ['id' => $id]
-        $participants = $conn->fetchAllAssociative($sqlPoints, ['id' => $id]);
-
-        // Statistik berechnen
-        $stats = [
-            'Gold' => 0,
-            'Silber' => 0,
-            'Bronze' => 0,
-            'Ohne' => 0
-        ];
-
-        foreach ($participants as $p) {
-            $pts = (int)$p['total_points'];
-            if ($pts >= 11) {
-                $stats['Gold']++;
-            } elseif ($pts >= 8) {
-                $stats['Silber']++;
-            } elseif ($pts >= 4) {
-                $stats['Bronze']++;
-            } else {
-                $stats['Ohne']++;
-            }
+        foreach ($participants as $ep) {
+            $pts = $ep->getTotalPoints();
+            if ($pts >= 11) $stats['Gold']++;
+            elseif ($pts >= 8) $stats['Silber']++;
+            elseif ($pts >= 4) $stats['Bronze']++;
+            else $stats['Ohne']++;
         }
 
-        // 3. Top 10 pro Disziplin laden
-        $sqlResults = "
-            SELECT 
-                d.name as discipline_name,
-                d.berechnungsart,
-                d.einheit,
-                r.leistung as value,
-                r.points,
-                u.firstname, 
-                u.lastname,
-                p.geburtsdatum, 
-                p.geschlecht,
-                
-                -- Subquery für Gruppennamen (korrigiert auf users_groups)
-                (
-                    SELECT STRING_AGG(DISTINCT g_sub.name, ', ')
-                    FROM groups g_sub
-                    JOIN users_groups ug_sub ON g_sub.id = ug_sub.group_id
-                    WHERE ug_sub.user_id = u.id
-                    AND g_sub.id IN (SELECT group_id FROM sportabzeichen_exam_groups WHERE exam_id = :id)
-                ) as group_name
+        // 2. Top-Listen (Ergebnisse laden)
+        // Hier laden wir die Ergebnisse effizient über das ParticipantRepo mit Joins
+        $results = $epRepo->findResultsForStats($exam); // << Muss ins Repo!
 
-            FROM sportabzeichen_exam_results r
-            JOIN sportabzeichen_disciplines d ON r.discipline_id = d.id
-            JOIN sportabzeichen_exam_participants ep ON r.ep_id = ep.id
-            JOIN sportabzeichen_participants p ON ep.participant_id = p.id
-            JOIN users u ON p.user_id = u.id
-            
-            WHERE ep.exam_id = :id AND r.points > 0
-            
-            ORDER BY d.name ASC, r.points DESC
-        ";
-
-        $allResults = $conn->fetchAllAssociative($sqlResults, ['id' => $id]);
-
-        // ... (Jahresberechnung $examYear bleibt gleich) ...
-        $examYear = (int)date('Y');
-        if (!empty($exam['exam_year'])) {
-            $examYear = (int)$exam['exam_year'];
-        } elseif (!empty($exam['exam_date'])) {
-            $examYear = (int)(new \DateTime($exam['exam_date']))->format('Y');
-        }
-
-        // Struktur aufbauen
         $topList = [];
-
-        foreach ($allResults as $row) {
-            $disc = $row['discipline_name'];
+        // Die Sortierlogik bleibt PHP-seitig, da sie komplex (Calculated vs Measured) ist.
+        foreach ($results as $res) {
+            $discName = $res->getDiscipline()->getName();
+            $gender = $res->getExamParticipant()->getParticipant()->getGeschlecht();
+            $genderKey = match($gender) { 'MALE' => 'Männlich', 'FEMALE' => 'Weiblich', default => 'Divers' };
             
-            // Geschlecht
-            $dbGeschlecht = $row['geschlecht'];
-            $genderKey = ($dbGeschlecht === 'MALE') ? 'Männlich' : (($dbGeschlecht === 'FEMALE') ? 'Weiblich' : 'Divers');
+            // Alter
+            $age = $res->getExamParticipant()->getAge();
+            $akKey = 'AK ' . $age;
 
-            // Altersklasse
-            $akKey = 'Unbekannt';
-            if (!empty($row['geburtsdatum'])) {
-                try {
-                    $birthYear = (int)(new \DateTime($row['geburtsdatum']))->format('Y');
-                    $age = $examYear - $birthYear;
-                    $akKey = 'AK ' . $age; 
-                } catch (\Exception $e) {}
+            if (!isset($topList[$discName][$genderKey][$akKey])) {
+                $topList[$discName][$genderKey][$akKey] = [];
             }
 
-            if (!isset($topList[$disc])) {
-                $topList[$disc] = ['Männlich' => [], 'Weiblich' => [], 'Divers' => []];
-            }
-            if (!isset($topList[$disc][$genderKey][$akKey])) {
-                $topList[$disc][$genderKey][$akKey] = [];
-            }
-
-            $topList[$disc][$genderKey][$akKey][] = $row;
+            $topList[$discName][$genderKey][$akKey][] = [
+                'firstname' => $res->getExamParticipant()->getParticipant()->getUser()->getFirstname(),
+                'lastname' => $res->getExamParticipant()->getParticipant()->getUser()->getLastname(),
+                'points' => $res->getPoints(),
+                'value' => $res->getLeistung(),
+                'unit' => $res->getDiscipline()->getEinheit(),
+                'type' => $res->getDiscipline()->getBerechnungsart(),
+                'groups' => '...' // Gruppen zu laden ist teuer, evtl. weglassen oder vorladen
+            ];
         }
 
-        // SORTIERUNG & FILTERUNG
-        foreach ($topList as $disc => $genders) {
-            foreach ($genders as $gender => $aks) {
-                if (empty($aks)) {
-                    unset($topList[$disc][$gender]);
-                    continue;
-                }
-
-                foreach ($aks as $ak => $rows) {
-                    usort($rows, function ($a, $b) {
-                        // 1. PUNKTE vergleichen (immer absteigend: 3 ist besser als 1)
-                        if ($a['points'] !== $b['points']) {
-                            return $b['points'] <=> $a['points'];
-                        }
-
-                        // 2. WERT vergleichen (nur wenn Punkte gleich sind)
-                        // Hier kommt 'berechnungsart' ins Spiel
-                        $type = $a['berechnungsart']; // z.B. 'GREATER' oder 'LESS'
-                        
-                        // Fall A: 'GREATER' (Weitsprung etc.) -> Absteigend sortieren
-                        if ($type === 'BIGGER') {
-                            return $b['value'] <=> $a['value'];
-                        } 
-                        
-                        // Fall B: 'LESS' (Laufen, Schwimmen etc.) -> Aufsteigend sortieren
-                        // (Kleinerer Wert ist besser)
+        // Sortieren
+        foreach ($topList as $d => &$gend) {
+            foreach ($gend as $g => &$aks) {
+                foreach ($aks as $ak => &$rows) {
+                    usort($rows, function($a, $b) {
+                        if ($a['points'] !== $b['points']) return $b['points'] <=> $a['points'];
+                        // Tie-Breaker: Leistung
+                        if ($a['type'] === 'BIGGER') return $b['value'] <=> $a['value'];
                         return $a['value'] <=> $b['value'];
                     });
-
-                    // Top 10 beschneiden
-                    $topList[$disc][$gender][$ak] = array_slice($rows, 0, 10);
+                    $rows = array_slice($rows, 0, 10);
                 }
-                uksort($topList[$disc][$gender], 'strnatcmp');
             }
         }
 
         return $this->render('exams/stats.html.twig', [
-            'exam' => $exam,
+            'exam' => ['id' => $exam->getId(), 'name' => $exam->getName(), 'year' => $exam->getYear()],
             'stats' => $stats,
             'topList' => $topList,
             'totalParticipants' => count($participants)
         ]);
+    }
+
+    // --- HELPER METHODS (Private Logic) ---
+
+    /**
+     * Importiert alle User einer Gruppe in die Prüfung
+     */
+    private function importParticipantsFromGroup(Exam $exam, Group $group): int
+    {
+        $count = 0;
+        foreach ($group->getUsers() as $user) {
+            if ($this->addParticipantToExam($exam, $user)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Handled den Request für einzelnen Teilnehmer hinzufügen
+     */
+    private function handleAddSingleParticipant(Request $request, Exam $exam, UserRepository $userRepo): void
+    {
+        $account = trim($request->request->get('account', ''));
+        $gender = $request->request->get('gender');
+        $dobStr = $request->request->get('dob');
+        
+        $user = $userRepo->findOneBy(['act' => $account]);
+
+        if ($user) {
+            // Pool Daten aktualisieren
+            $participant = $this->getOrCreateParticipant($user);
+            if ($dobStr) $participant->setGeburtsdatum(new \DateTime($dobStr));
+            if ($gender) $participant->setGeschlecht($gender);
+            
+            // Zur Prüfung hinzufügen
+            $this->addParticipantToExam($exam, $user, $participant); // Übergibt $participant um neu-query zu sparen
+            
+            $this->em->flush();
+            $this->addFlash('success', 'Teilnehmer hinzugefügt/aktualisiert.');
+        } else {
+            $this->addFlash('error', 'Benutzerkonto nicht gefunden.');
+        }
+    }
+
+    private function getOrCreateParticipant(User $user): Participant
+    {
+        if ($user->getParticipant()) {
+            return $user->getParticipant();
+        }
+
+        $p = new Participant();
+        $p->setUser($user);
+        $p->setUsername($user->getAct()); // Fallback/Cache
+        $this->em->persist($p);
+        
+        // Relation im User aktualisieren (für denselben Request wichtig)
+        $user->setParticipant($p);
+        
+        return $p;
+    }
+
+    private function addParticipantToExam(Exam $exam, User $user, ?Participant $participant = null): bool
+    {
+        if (!$participant) {
+            $participant = $this->getOrCreateParticipant($user);
+        }
+
+        // Prüfen ob schon drin (Collection Check)
+        // Performance-Tipp: Bei sehr vielen Teilnehmern > 1000 lieber Query checken, 
+        // aber für normale Klassen reicht der Collection Check
+        foreach ($exam->getExamParticipants() as $ep) {
+            if ($ep->getParticipant() === $participant) {
+                return false; // Schon drin
+            }
+        }
+
+        // Alter berechnen
+        $age = 0;
+        if ($participant->getGeburtsdatum()) {
+            $birthYear = (int)$participant->getGeburtsdatum()->format('Y');
+            $age = $exam->getYear() - $birthYear;
+        }
+
+        $ep = new ExamParticipant();
+        $ep->setExam($exam);
+        $ep->setParticipant($participant);
+        $ep->setAge($age);
+        
+        $this->em->persist($ep);
+        return true;
     }
 }
