@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\ExamRepository;
 use App\Entity\User; 
 use App\Entity\Group;
+use App\Entity\ExamParticipant; // Optional, falls im gleichen Namespace, aber sauberer
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
@@ -15,26 +16,14 @@ use Doctrine\Common\Collections\Collection;
 #[ORM\Entity(repositoryClass: ExamRepository::class)]
 class Exam
 {
-    // ... (id, name, year, date bleiben wie sie sind) ...
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)] // Muss gesetzt sein!
+    #[ORM\JoinColumn(nullable: false)]
     private ?Institution $institution = null;
-
-    public function getInstitution(): ?Institution
-    {
-        return $this->institution;
-    }
-
-    public function setInstitution(?Institution $institution): static
-    {
-        $this->institution = $institution;
-        return $this;
-    }
 
     #[ORM\Column(type: 'string', length: 255, name: 'exam_name')]
     private ?string $name = null;
@@ -48,19 +37,37 @@ class Exam
     #[ORM\Column(type: 'string', nullable: true, name: 'creator_id')]
     private ?string $creator = null;
 
-    public function getCreator(): ?string
+    #[ORM\ManyToMany(targetEntity: Group::class)]
+    #[ORM\JoinTable(name: 'sportabzeichen_exam_groups')]
+    private Collection $groups;
+
+    // --- NEU HINZUGEFÜGT: Die Beziehung zu den Teilnehmern dieser Prüfung ---
+    #[ORM\OneToMany(mappedBy: 'exam', targetEntity: ExamParticipant::class, cascade: ['persist', 'remove'])]
+    private Collection $examParticipants;
+    // -----------------------------------------------------------------------
+
+    public function __construct()
     {
-        return $this->creator;
+        $this->groups = new ArrayCollection();
+        // WICHTIG: Auch diese Collection initialisieren!
+        $this->examParticipants = new ArrayCollection();
     }
 
-    public function setCreator(?string $creator): self
+    public function getId(): ?int 
+    { 
+        return $this->id; 
+    }
+
+    public function getInstitution(): ?Institution
     {
-        $this->creator = $creator;
+        return $this->institution;
+    }
+
+    public function setInstitution(?Institution $institution): static
+    {
+        $this->institution = $institution;
         return $this;
     }
-    // ... (Getter/Setter für id, name, year, date bleiben gleich) ...
-
-    public function getId(): ?int { return $this->id; }
 
     public function getName(): ?string { return $this->name; }
     public function setName(string $name): self { $this->name = $name; return $this; }
@@ -71,24 +78,18 @@ class Exam
     public function getDate(): ?\DateTimeInterface { return $this->date; }
     public function setDate(?\DateTimeInterface $date): self { $this->date = $date; return $this; }
 
-    // ... (toString und getDisplayName bleiben gleich) ...
-    public function __toString(): string 
-    { 
-        return $this->name ?? (string)$this->year; 
-    }
-    
-    public function getDisplayName(): string
+    public function getCreator(): ?string
     {
-        return 'Sportabzeichen ' . $this->year;
+        return $this->creator;
     }
-    #[ORM\ManyToMany(targetEntity: Group::class)]
-    #[ORM\JoinTable(name: 'sportabzeichen_exam_groups')] // <--- Das löst deinen Fehler!
-    private Collection $groups;
 
-    public function __construct()
+    public function setCreator(?string $creator): self
     {
-        $this->groups = new ArrayCollection();
+        $this->creator = $creator;
+        return $this;
     }
+
+    // --- Methoden für Groups ---
 
     /**
      * @return Collection<int, Group>
@@ -103,14 +104,55 @@ class Exam
         if (!$this->groups->contains($group)) {
             $this->groups->add($group);
         }
-
         return $this;
     }
 
     public function removeGroup(Group $group): static
     {
         $this->groups->removeElement($group);
+        return $this;
+    }
+
+    // --- NEU: Methoden für ExamParticipants ---
+
+    /**
+     * @return Collection<int, ExamParticipant>
+     */
+    public function getExamParticipants(): Collection
+    {
+        return $this->examParticipants;
+    }
+
+    public function addExamParticipant(ExamParticipant $examParticipant): static
+    {
+        if (!$this->examParticipants->contains($examParticipant)) {
+            $this->examParticipants->add($examParticipant);
+            $examParticipant->setExam($this);
+        }
 
         return $this;
+    }
+
+    public function removeExamParticipant(ExamParticipant $examParticipant): static
+    {
+        if ($this->examParticipants->removeElement($examParticipant)) {
+            // set the owning side to null (unless already changed)
+            if ($examParticipant->getExam() === $this) {
+                $examParticipant->setExam(null);
+            }
+        }
+
+        return $this;
+    }
+    // ------------------------------------------
+
+    public function __toString(): string 
+    { 
+        return $this->name ?? (string)$this->year; 
+    }
+    
+    public function getDisplayName(): string
+    {
+        return 'Sportabzeichen ' . $this->year;
     }
 }
