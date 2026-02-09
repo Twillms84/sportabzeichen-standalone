@@ -33,7 +33,7 @@ class Participant
         $this->institution = $institution;
         return $this;
     }
-    
+
     // Verknüpfung zum User (Hier holen wir uns Name, Klasse etc.)
     #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')] 
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
@@ -86,6 +86,17 @@ class Participant
     // Alias für alten Code
     public function getGeschlecht(): ?string { return $this->gender; }
 
+    public function getGroupName(): ?string
+    {
+        return $this->legacyGroupName;
+    }
+
+    public function setGroupName(?string $groupName): self
+    {
+        $this->legacyGroupName = $groupName;
+        return $this;
+    }
+    
     public function getOrigin(): ?string { return $this->origin; }
     public function setOrigin(?string $origin): self { $this->origin = $origin; return $this; }
 
