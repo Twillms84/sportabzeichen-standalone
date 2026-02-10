@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Participant;
 use App\Entity\User;
+use App\Entity\Group;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -394,7 +395,7 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_participants_index');
     }
-    
+
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
         return $this->createFormBuilder($participant)
