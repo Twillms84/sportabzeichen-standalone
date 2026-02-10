@@ -1,0 +1,32 @@
+/* public/css/admin.css */
+
+.participants-table .align-middle td {
+    vertical-align: middle;
+}
+
+.participants-table .action-col {
+    white-space: nowrap;
+    width: 1%;
+}
+
+/* Panel Header Optimierung */
+.panel-heading.flex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* CSP-konforme Abstände statt Inline-Style */
+.d-inline {
+    display: inline;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Badge Styling */
+.badge-id {
+    font-weight: normal;
+    opacity: 0.7;
+}
