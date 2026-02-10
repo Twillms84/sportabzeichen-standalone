@@ -137,11 +137,6 @@
                                 </div>
 
                                 <div class="d-flex gap-2 align-items-center">
-                                    {# Punkte Badge #}
-                                    <div class="result-badge-box bg-light" title="Gesamtpunkte">
-                                        <div class="badge-label-small text-muted">Pkt</div>
-                                        <div class="fw-bold fs-6" id="total-points-{{ p.ep_id }}">{{ p.total_points|default(0) }}</div>
-                                    </div>
                                     
                                     {# Medaille Logik vorbereiten #}
                                     {% set medalValue = p.final_medal|default('none')|lower %}
