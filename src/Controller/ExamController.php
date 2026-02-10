@@ -450,8 +450,8 @@ final class ExamController extends AbstractController
         if ($user) {
             // Pool Daten aktualisieren
             $participant = $this->getOrCreateParticipant($user);
-            if ($dobStr) $participant->setGeburtsdatum(new \DateTime($dobStr));
-            if ($gender) $participant->setGeschlecht($gender);
+            if ($dobStr) $participant->setBirthdate(new \DateTime($dobStr));
+            if ($gender) $participant->setGender($gender);
             
             // Zur Prüfung hinzufügen
             $this->addParticipantToExam($exam, $user, $participant); // Übergibt $participant um neu-query zu sparen
