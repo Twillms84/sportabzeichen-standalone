@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Teilnehmer manuell anlegen'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="page-header">
+        <h1>{{ icon('user-plus') }} {{ 'Teilnehmer & Account anlegen'|trans }}</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <form method="post" action="{{ path('admin_participants_create') }}">
+                        
+                        <h4 class="text-primary">{{ 'Account-Daten (IServ)'|trans }}</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Vorname'|trans }}</label>
+                                    <input type="text" name="firstname" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Nachname'|trans }}</label>
+                                    <input type="text" name="lastname" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>{{ 'IServ-Account'|trans }} ({{ 'z.B. max.mustermann'|trans }})</label>
+                            <input type="text" name="act" class="form-control" required>
+                        </div>
+
+                        <hr>
+                        <h4 class="text-primary">{{ 'Teilnehmer-Details'|trans }}</h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Geburtsdatum'|trans }}</label>
+                                    <input type="date" name="dob" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Geschlecht'|trans }}</label>
+                                    <select name="gender" class="form-control">
+                                        <option value="MALE">{{ 'Männlich'|trans }}</option>
+                                        <option value="FEMALE">{{ 'Weiblich'|trans }}</option>
+                                        <option value="DIVERSE">{{ 'Divers'|trans }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>{{ 'Klasse / Gruppe'|trans }}</label>
+                            <select name="group" class="form-control">
+                                {% for group in availableGroups %}
+                                    <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="well well-sm">
+                            <p class="text-info">
+                                {{ icon('info-sign') }} 
+                                {{ 'Hinweis: Es wird automatisch ein lokaler User-Account erstellt, falls dieser noch nicht existiert.'|trans }}
+                            </p>
+                        </div>
+
+                        <div class="text-right">
+                            <a href="{{ path('admin_participants_index') }}" class="btn btn-default">{{ 'Abbrechen'|trans }}</a>
+                            <button type="submit" class="btn btn-success">{{ icon('floppy-disk') }} {{ 'Anlegen'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
