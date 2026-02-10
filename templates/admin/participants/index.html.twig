@@ -7,7 +7,8 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('js/admin.js') }}"></script>
+    {# Wir binden hier dein neues JS ein #}
+    <script src="{{ asset('js/admin_participants.js') }}"></script>
 {% endblock %}
 
 {% block title %}{{ 'Teilnehmerverwaltung'|trans }}{% endblock %}
@@ -35,10 +36,11 @@
         </div>
 
         <div class="panel-body">
-            <form method="get" class="input-group mb-3">
+            {# ID 'searchTable' für dein JavaScript hinzugefügt #}
+            <div class="input-group mb-3">
                 <span class="input-group-addon">{{ icon('search') }}</span>
-                <input type="text" name="q" class="form-control" value="{{ searchTerm }}" placeholder="{{'Suche (Name, IServ-Account)...'}}">
-            </form>
+                <input type="text" id="searchTable" class="form-control" placeholder="{{'Live-Suche in dieser Ansicht...'}}">
+            </div>
 
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle participants-table">
@@ -51,7 +53,8 @@
                             <th class="text-end">{{'Aktion'}}</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    {# ID 'participantRows' für dein JavaScript hinzugefügt #}
+                    <tbody id="participantRows">
                     {% for p in participants %}
                         <tr>
                             <td>
@@ -80,7 +83,15 @@
                             </td>
                             <td class="text-end action-col">
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#modal-{{ p.id }}">
+                                    {# Pencil-Button nutzt jetzt das Generic Modal und liefert die Daten via data-Attribute #}
+                                    <button type="button" 
+                                            class="btn btn-default btn-sm" 
+                                            data-toggle="modal" 
+                                            data-target="#genericEditModal"
+                                            data-id="{{ p.id }}"
+                                            data-name="{{ p.user ? p.user.firstname ~ ' ' ~ p.user.lastname : 'Teilnehmer' }}"
+                                            data-dob="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}"
+                                            data-gender="{{ p.gender }}">
                                         {{ icon('pencil') }}
                                     </button>
                                     
@@ -96,42 +107,6 @@
                                 </div>
                             </td>
                         </tr>
-
-                        {# --- MODAL --- #}
-                        <div class="modal fade" id="genericEditModal" tabindex="-1" role="dialog">
-                            <div class="modal-dialog" role="document">
-                                {# Das url-template enthält den Platzhalter für das JS #}
-                                <form method="post" action="#" 
-                                    id="genericEditForm" 
-                                    data-url-template="{{ path('admin_participants_update', {id: 'PLACEHOLDER_ID'}) }}">
-                                    
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                            <h4 class="modal-title">{{ 'Bearbeiten'|trans }}: <span id="modalUserName"></span></h4>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="form-group">
-                                                <label for="modalDob">{{'Geburtsdatum'}}</label>
-                                                <input type="date" name="dob" id="modalDob" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="modalGender">{{'Geschlecht'}}</label>
-                                                <select name="gender" id="modalGender" class="form-control">
-                                                    <option value="MALE">{{'Männlich'}}</option>
-                                                    <option value="FEMALE">{{'Weiblich'}}</option>
-                                                    <option value="DIVERSE">{{'Divers'}}</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-default" data-dismiss="modal">{{'Abbrechen'}}</button>
-                                            <button type="submit" class="btn btn-primary">{{'Speichern'}}</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     {% else %}
                         <tr>
                             <td colspan="5" class="text-center text-muted">{{'Keine Teilnehmer gefunden.'}}</td>
@@ -141,8 +116,39 @@
                 </table>
             </div>
             
-            {# Paginierung (gekürzt für Übersicht) #}
-            {# ... (Bleibt wie zuvor, nur CSS-Klassen für Zentrierung nutzen) ... #}
+            {# Paginierung hier einfügen ... #}
+        </div>
+    </div>
+
+    {# --- GENERIC MODAL (AUSSERHALB DER SCHLEIFE) --- #}
+    <div class="modal fade" id="genericEditModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <form method="post" action="#" id="genericEditForm" data-url-template="{{ path('admin_participants_update', {id: 'PLACEHOLDER_ID'}) }}">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">{{ 'Bearbeiten'|trans }}: <span id="modalUserName"></span></h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="modalDob">{{'Geburtsdatum'}}</label>
+                            <input type="date" name="dob" id="modalDob" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="modalGender">{{'Geschlecht'}}</label>
+                            <select name="gender" id="modalGender" class="form-control">
+                                <option value="MALE">{{'Männlich'}} (M)</option>
+                                <option value="FEMALE">{{'Weiblich'}} (W)</option>
+                                <option value="DIVERSE">{{'Divers'}} (D)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{{'Abbrechen'}}</button>
+                        <button type="submit" class="btn btn-primary">{{'Speichern'}}</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock %}
