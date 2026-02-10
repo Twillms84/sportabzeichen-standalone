@@ -8,6 +8,7 @@
     --text-main: #212529;
     --text-muted: #6c757d;
     --zebra-bg: #fafafa;
+    --input-bg: #ffffff;
 }
 
 .table-results-compact {
@@ -16,6 +17,7 @@
     border-collapse: separate;
     border-spacing: 0;
     background-color: var(--table-bg);
+    font-size: 1.0rem !important;
 }
 
 /* Sticky Header */
@@ -37,36 +39,160 @@
     border-right: 2px solid var(--border-color) !important;
 }
 
-/* Schnittpunkt oben links */
 thead .col-sticky-left {
     z-index: 1030 !important;
     background-color: var(--header-bg) !important;
 }
 
-/* Zebra-Look für Light Mode */
+/* Zebra-Streifen */
 .table-striped tbody tr:nth-of-type(odd) td,
 .table-striped tbody tr:nth-of-type(odd) .col-sticky-left {
     background-color: var(--zebra-bg) !important;
 }
 
 /* =========================================
-   2. INPUTS & MEDAILLEN (DYNAMISCH)
+   2. SPALTEN-DEFINITIONEN
+   ========================================= */
+.col-name {
+    width: 240px;
+    min-width: 240px;
+    padding: 10px !important;
+    vertical-align: middle !important;
+}
+
+.col-discipline {
+    min-width: 160px;
+    width: 160px;
+    vertical-align: top;
+    padding: 8px !important;
+}
+
+.col-swimming {
+    width: 130px !important;
+    min-width: 130px !important;
+    vertical-align: middle !important;
+    padding: 4px !important;
+}
+
+/* =========================================
+   3. INPUTS & MEDAILLEN
    ========================================= */
 .discipline-selector, 
-.form-control-custom {
-    background-color: var(--table-bg) !important;
+.form-control-custom,
+.swimming-select-compact {
+    background-color: var(--input-bg) !important;
     color: var(--text-main) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 4px !important;
+    padding: 4px 6px !important;
+    text-align: center !important;
 }
 
-/* Medaillen (Pastell für Light Mode) */
-.medal-gold { background-color: #ffecb3 !important; color: #856404 !important; border-color: #ffe082 !important; }
-.medal-silver { background-color: #f1f3f5 !important; color: #495057 !important; border-color: #dee2e6 !important; }
-.medal-bronze { background-color: #f8e1d0 !important; color: #7d4a25 !important; border-color: #f1cbb0 !important; }
+/* Medaillen (Light Mode) */
+.medal-gold { background-color: #ffecb3 !important; color: #856404 !important; border-color: #ffe082 !important; font-weight: 700 !important; }
+.medal-silver, .medal-silber { background-color: #f1f3f5 !important; color: #495057 !important; border-color: #dee2e6 !important; font-weight: 700 !important; }
+.medal-bronze { background-color: #f8e1d0 !important; color: #7d4a25 !important; border-color: #f1cbb0 !important; font-weight: 700 !important; }
 
 /* =========================================
-   3. DARK MODE ANPASSUNG
+   4. SCHWIMM-BEREICH (KOMPLETT)
+   ========================================= */
+.swimming-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column !important; 
+    align-items: center;
+    gap: 2px; 
+}
+
+.swim-badge-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column !important;
+    align-items: center;
+    background-color: transparent !important;
+    color: #198754; 
+    padding: 2px;
+}
+
+.swim-info-text {
+    font-size: 0.95rem !important; 
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.btn-delete-swimming {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 0.8rem !important; 
+    color: #dc3545;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-delete-swimming:hover { opacity: 1; }
+
+/* =========================================
+   5. NAMEN & BADGES
+   ========================================= */
+.name-container { display: flex; flex-direction: column; line-height: 1.2; }
+.name-main { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+.name-age { font-size: 0.85rem; color: var(--text-muted); }
+
+.bg-gold-transparent { border-left: 5px solid #ffc107 !important; background-color: rgba(255, 193, 7, 0.1) !important; }
+.bg-silver-transparent { border-left: 5px solid #adb5bd !important; background-color: rgba(173, 181, 189, 0.1) !important; }
+.bg-bronze-transparent { border-left: 5px solid #d98a4e !important; background-color: rgba(217, 138, 78, 0.1) !important; }
+
+.result-badge-box {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 65px;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    margin-top: 5px;
+}
+
+/* Anforderungen */
+.req-hint { 
+    font-size: 0.9rem !important;
+    font-weight: 600;
+    display: flex; 
+    justify-content: space-between;
+    margin-top: 4px;
+}
+.req-val-b { color: #d98a4e !important; }
+.req-val-s { color: #868e96 !important; }
+.req-val-g { color: #b8860b !important; }
+
+/* =========================================
+   6. FILTER-TOOLBAR & BUTTONS
+   ========================================= */
+.filter-toolbar {
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 15px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-iserv {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    padding: 5px 12px !important;
+    border-radius: 4px !important;
+    font-size: 0.9rem !important;
+}
+
+/* =========================================
+   7. DARK MODE ÜBERSCHREIBUNGEN
    ========================================= */
 @media (prefers-color-scheme: dark) {
     :root {
@@ -76,48 +202,25 @@ thead .col-sticky-left {
         --text-main: #f8f9fa;
         --text-muted: #adb5bd;
         --zebra-bg: #252a2e;
+        --input-bg: #2b3035;
     }
 
-    body {
-        background-color: #1a1d20;
-        color: var(--text-main);
-    }
+    body { background-color: #1a1d20; color: var(--text-main); }
 
-    /* Medaillen im Dark Mode (leuchtenderer Kontrast) */
+    /* Medaillen im Dark Mode (Kontrastreicher) */
     .medal-gold { background-color: rgba(255, 193, 7, 0.2) !important; color: #ffda6a !important; border-color: #ffc107 !important; }
-    .medal-silver { background-color: rgba(173, 181, 189, 0.2) !important; color: #dee2e6 !important; border-color: #adb5bd !important; }
+    .medal-silver, .medal-silber { background-color: rgba(173, 181, 189, 0.2) !important; color: #dee2e6 !important; border-color: #adb5bd !important; }
     .medal-bronze { background-color: rgba(217, 138, 78, 0.2) !important; color: #eecba9 !important; border-color: #d98a4e !important; }
-
-    /* Filter Toolbar im Dark Mode */
-    .filter-toolbar {
-        background-color: var(--header-bg) !important;
-        border-bottom-color: var(--border-color) !important;
-    }
-
-    .btn-iserv {
-        background-color: #343a40 !important;
-        border-color: #495057 !important;
-        color: #e9ecef !important;
-    }
+    
+    .req-val-g { color: #ffda6a !important; }
 }
 
 /* =========================================
-   4. NAMEN & HINTERGRÜNDE (FIX)
+   8. RESPONSIVE
    ========================================= */
-.name-main { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
-.name-age { font-size: 0.85rem; color: var(--text-muted); }
-
-.bg-gold-transparent { border-left: 5px solid #ffc107 !important; }
-.bg-silver-transparent { border-left: 5px solid #adb5bd !important; }
-.bg-bronze-transparent { border-left: 5px solid #d98a4e !important; }
-
-/* =========================================
-   5. FILTER TOOLBAR (LIGHT)
-   ========================================= */
-.filter-toolbar {
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #dee2e6;
-    padding: 10px 15px;
-    display: flex;
-    gap: 12px;
+@media (max-width: 768px) {
+    .col-name { width: 140px !important; min-width: 140px; }
+    .col-swimming { width: 60px !important; min-width: 60px; }
+    .swim-info-text, .swimming-select-compact { display: none; }
+    .swim-badge-container::before { content: "✓"; font-size: 1.2rem; }
 }
