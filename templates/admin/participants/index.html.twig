@@ -84,11 +84,20 @@
 
                             {# 5. Aktion #}
                             <td class="text-end">
-                                <button type="button" class="btn btn-default btn-sm"
-                                        data-toggle="modal" 
-                                        data-target="#modal-{{ p.id }}">
-                                    {{ icon('pencil') }}
-                                </button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#modal-{{ p.id }}">
+                                        {{ icon('pencil') }}
+                                    </button>
+                                    
+                                    {# Lösch-Button mit Sicherheitsabfrage #}
+                                    <form method="post" action="{{ path('admin_participants_delete', {id: p.id}) }}" 
+                                        style="display:inline;" onsubmit="return confirm('{{ 'Teilnehmer wirklich löschen? Dies kann auch den User-Account betreffen.'|trans }}');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ p.id) }}">
+                                        <button class="btn btn-danger btn-sm">
+                                            {{ icon('trash') }}
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 
