@@ -137,19 +137,23 @@
                                 </div>
 
                                 <div class="d-flex gap-2 align-items-center">
+                                    {# Punkte Badge #}
+                                    <div class="result-badge-box js-medal-badge {{ medalClass }}" id="final-medal-{{ p.ep_id }}">
+                                        <div class="badge-label-small text-muted">Pkt</div>
+                                        <div class="fw-bold fs-6" id="total-points-{{ p.ep_id }}">{{ p.total_points|default(0) }}</div>
+                                    </div>
                                     
-                                    {# Medaille Logik vorbereiten #}
+                                    {# Medaille Badge #}
                                     {% set medalValue = p.final_medal|default('none')|lower %}
                                     {% set medalLabel = (medalValue == 'gold') ? 'Gold' : ((medalValue in ['silver','silber']) ? 'Silber' : ((medalValue == 'bronze') ? 'Bronze' : '-')) %}
-
-                                    {# Wir entfernen bg-light und nutzen nur noch funktionale Klassen #}
-                                    {% set medalClass = 'border' %}
+                                    {% set medalClass = 'bg-light text-muted border' %}
+                                    
                                     {% if medalValue == 'gold' %}
-                                        {% set medalClass = 'medal-gold' %}
+                                        {% set medalClass = 'bg-gold-transparent' %}
                                     {% elseif medalValue in ['silver','silber'] %}
-                                        {% set medalClass = 'medal-silber' %}
+                                        {% set medalClass = 'bg-silver-transparent' %}
                                     {% elseif medalValue == 'bronze' %}
-                                        {% set medalClass = 'medal-bronze' %}
+                                        {% set medalClass = 'bg-bronze-transparent' %} 
                                     {% endif %}
 
                                     <div class="result-badge-box js-medal-badge {{ medalClass }}" id="final-medal-{{ p.ep_id }}">
@@ -158,6 +162,7 @@
                                             <div class="fw-bold fs-6 js-medal-label">{{ medalLabel }}</div>
                                         </div>
                                     </div>
+                                </div>    
                             </div>
                         </td>
 
