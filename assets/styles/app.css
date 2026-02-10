@@ -1,23 +1,39 @@
 /* =========================================
-   1. KONFIGURATION & BASIS
+   1. KONFIGURATION & BASIS (DARK MODE READY)
    ========================================= */
 :root {
-    /* Farben */
-    --sidebar-bg-color: #144018; /* Dunkelgrün */
-    --sidebar-accent: #2ecc71;   /* Hellgrüner Akzent */
-    
-    /* Maße */
-    --sidebar-width: 180px;      /* Schmale Sidebar */
+    /* Deine Sidebar-Farben (bleiben konstant) */
+    --sidebar-bg-color: #144018; 
+    --sidebar-accent: #2ecc71; 
+    --sidebar-width: 180px;
+
+    /* Dynamische App-Farben (Light Mode Standard) */
+    --app-bg: #f4f7f6; /* Sehr helles Grau für den Hintergrund */
+    --app-card-bg: #ffffff;
+    --app-text: #2c3e50;
+    --app-border: #dee2e6;
+}
+
+/* Dark Mode Umschaltung der Variablen */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --app-bg: #1a1d20;    /* Dunkler Hintergrund */
+        --app-card-bg: #212529; /* Dunkle Karten/Container */
+        --app-text: #f8f9fa;   /* Heller Text */
+        --app-border: #495057; /* Dunklere Ränder */
+    }
 }
 
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    /* background-color: skyblue; */
+    background-color: var(--app-bg); /* Nutzt die Variable */
+    color: var(--app-text);          /* Nutzt die Variable */
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* =========================================
-   2. SIDEBAR (DASHBOARD MENÜ)
+   2. SIDEBAR (BLEIBT DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
@@ -25,7 +41,6 @@ body {
     min-height: 100vh;
 }
 
-/* Links in der Sidebar */
 .sidebar .nav-link {
     color: rgba(255, 255, 255, 0.7);
     padding: 10px 15px;
@@ -40,12 +55,6 @@ body {
     border-left-color: var(--sidebar-accent);
 }
 
-.sidebar .nav-link i {
-    width: 25px;
-    text-align: center;
-    margin-right: 8px;
-}
-
 .sidebar-brand {
     padding: 15px;
     font-size: 1.2rem;
@@ -56,75 +65,40 @@ body {
     display: block;
 }
 
-/* Wrapper Logik */
 .sidebar-wrapper {
     background-color: var(--sidebar-bg-color);
     width: var(--sidebar-width);
 }
 
-/* Mobile: Menü muss ÜBER den Backdrop (1040) */
-.offcanvas.show {
-    z-index: 1055 !important;
-}
-
 /* =========================================
-   3. ISERV DROPDOWN STYLING
+   3. ISERV DROPDOWN STYLING (OPTIMIERT)
    ========================================= */
-
-/* WICHTIG: Der Fix für dein Problem! 
-   Dropdowns müssen einen höheren Z-Index haben als die Sticky-Leiste (1040) */
 .dropdown-menu {
     z-index: 2000 !important; 
 }
 
+/* Dropdown passt sich jetzt dem Modus an */
 .dropdown-menu-iserv {
-    background-color: rgba(44, 62, 80, 0.95); 
+    background-color: var(--app-card-bg); 
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    color: #ecf0f1;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-.dropdown-menu-iserv .btn-link {
-    color: #bdc3c7 !important;
-    transition: color 0.2s;
-}
-
-.dropdown-menu-iserv .btn-link:hover {
-    color: #ffffff !important;
-    text-decoration: underline;
-}
-
-.dropdown-menu-iserv .border-bottom {
-    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Checkbox Styling */
-.dropdown-menu-iserv .form-check {
-    padding: 8px 12px 8px 2.5rem;
-    margin-bottom: 0;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
+/* Checkboxen im Dropdown */
 .dropdown-menu-iserv .form-check:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .dropdown-menu-iserv .form-check-input {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-    margin-left: -1.8rem;
-}
-
-.dropdown-menu-iserv .form-check-input:checked {
-    background-color: #3498db;
-    border-color: #3498db;
+    background-color: rgba(128, 128, 128, 0.2);
+    border-color: var(--app-border);
 }
 
 /* =========================================
-   4. MEDIA QUERIES (DESKTOP)
+   4. LAYOUT & DESKTOP
    ========================================= */
 @media (min-width: 992px) {
     .sidebar-wrapper {
@@ -136,17 +110,21 @@ body {
         left: 0;
         bottom: 0;
         width: var(--sidebar-width);
-        z-index: 100; /* Sidebar unter Modals/Dropdowns */
+        z-index: 100;
         overflow-y: auto;
     }
 
-    /* Inhalt nach rechts schieben */
     .main-content {
         margin-left: var(--sidebar-width);
+        padding: 20px;
     }
 
-    .mobile-header, 
-    .offcanvas-header {
+    .mobile-header, .offcanvas-header {
         display: none !important;
     }
+}
+
+/* Offcanvas Fix */
+.offcanvas.show {
+    z-index: 1055 !important;
 }
