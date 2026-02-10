@@ -240,7 +240,42 @@ final class AdminController extends AbstractController
             'user' => $participant->getUser()
         ]);
     }
-    
+    #[Route('/participants/{id}/delete', name: 'participants_delete', methods: ['POST'])]
+    public function participantsDelete(Request $request, Participant $participant): Response
+    {
+        // Sicherheit: CSRF-Token prüfen
+        if (!$this->isCsrfTokenValid('delete' . $participant->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Ungültiger Sicherheits-Token.');
+            return $this->redirectToRoute('admin_participants_index');
+        }
+
+        // Sicherheit: Institution prüfen
+        if ($participant->getInstitution() !== $this->getUser()->getInstitution()) {
+            throw new AccessDeniedException('Nicht autorisiert.');
+        }
+
+        $user = $participant->getUser();
+        $name = $user ? $user->getFirstname() . ' ' . $user->getLastname() : 'Unbekannt';
+
+        try {
+            // Logik: User nur löschen, wenn er keine importId hat (nicht von eduplaces kommt)
+            // und nur wenn er keine anderen Rollen/Beziehungen hat (optional)
+            if ($user && empty($user->getImportId())) {
+                $this->em->remove($user);
+                $this->addFlash('info', "Account von $name wurde ebenfalls gelöscht.");
+            }
+
+            $this->em->remove($participant);
+            $this->em->flush();
+
+            $this->addFlash('success', "Teilnehmer $name wurde gelöscht.");
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Fehler beim Löschen: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_participants_index');
+    }
+
     #[Route('/participants/{id}/update', name: 'participants_update', methods: ['POST'])]
     public function participantsUpdate(Request $request, Participant $participant): Response
     {
@@ -279,6 +314,87 @@ final class AdminController extends AbstractController
         return $this->redirectToRoute('admin_participants_index');
     }
 
+    #[Route('/participants/new', name: 'participants_new')]
+    public function participantsNew(): Response
+    {
+        $user = $this->getUser();
+        $institution = $user ? $user->getInstitution() : null;
+
+        if (!$institution) {
+            throw new AccessDeniedException('Keine Institution zugewiesen.');
+        }
+
+        // Alle Gruppen der Institution für das Dropdown holen
+        $groups = $this->em->getRepository(Group::class)->findBy(
+            ['institution' => $institution],
+            ['name' => 'ASC']
+        );
+
+        return $this->render('admin/participants/new.html.twig', [
+            'activeTab' => 'participants_manage',
+            'availableGroups' => $groups,
+        ]);
+    }
+
+    #[Route('/participants/create', name: 'participants_create', methods: ['POST'])]
+    public function participantsCreate(Request $request): Response
+    {
+        $currentUser = $this->getUser();
+        $institution = $currentUser ? $currentUser->getInstitution() : null;
+
+        if (!$institution) {
+            throw new AccessDeniedException('Keine Institution.');
+        }
+
+        // 1. Daten aus Request holen
+        $firstname = $request->request->get('firstname');
+        $lastname = $request->request->get('lastname');
+        $act = $request->request->get('act'); // IServ-Account
+        $dob = $request->request->get('dob');
+        $gender = $request->request->get('gender');
+        $groupId = $request->request->get('group');
+
+        try {
+            // 2. User anlegen
+            $user = new User();
+            $user->setFirstname($firstname);
+            $user->setLastname($lastname);
+            $user->setAct($act);
+            $user->setUsername($act); // Oft identisch mit ACT
+            $user->setInstitution($institution);
+            $user->setRoles(['ROLE_USER']);
+            $user->setPassword('manual_entry'); // Oder ein Random-Passwort
+
+            // Gruppe zuweisen
+            if ($groupId) {
+                $group = $this->em->getRepository(Group::class)->find($groupId);
+                if ($group && $group->getInstitution() === $institution) {
+                    $user->addGroup($group);
+                }
+            }
+
+            $this->em->persist($user);
+
+            // 3. Teilnehmer anlegen
+            $participant = new Participant();
+            $participant->setUser($user);
+            $participant->setInstitution($institution);
+            $participant->setBirthdate(new \DateTime($dob));
+            $participant->setGender($gender);
+            $participant->setUpdatedAt(new \DateTime());
+
+            $this->em->persist($participant);
+            $this->em->flush();
+
+            $this->addFlash('success', "Teilnehmer $firstname $lastname wurde erfolgreich angelegt.");
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Fehler beim Anlegen: ' . $e->getMessage());
+            return $this->redirectToRoute('admin_participants_new');
+        }
+
+        return $this->redirectToRoute('admin_participants_index');
+    }
+    
     private function createParticipantForm(Participant $participant, string $btnLabel): \Symfony\Component\Form\FormInterface
     {
         return $this->createFormBuilder($participant)
