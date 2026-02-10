@@ -26,16 +26,13 @@ class ExamRepository extends ServiceEntityRepository
 
         $qb->select('u')
         ->from(User::class, 'u')
-        ->join('u.groups', 'g') 
-        // KORREKTUR: Wir joinen die Exams, die diese Gruppe 'g' in ihrer Collection haben
-        ->join(Exam::class, 'e', 'WITH', 'g MEMBER OF e.groups') 
+        ->join('u.groups', 'g')
+        ->join(Exam::class, 'e', 'WITH', 'g MEMBER OF e.groups')
         ->leftJoin('u.participant', 'p')
-        // Wir prüfen, ob dieser Participant bereits Teil der Prüfung ist
-        ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam') 
+        ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
         
         ->where('e.id = :examId')
-        ->andWhere('ep.id IS NULL') 
-        ->andWhere('u.deleted IS NULL');
+        ->andWhere('ep.id IS NULL'); // Wir lassen 'deleted' weg, da das Feld fehlt
 
         if ($search) {
             $qb->andWhere('u.lastname LIKE :search OR u.firstname LIKE :search')
