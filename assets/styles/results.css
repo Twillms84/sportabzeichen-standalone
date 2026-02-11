@@ -160,10 +160,12 @@
     text-align: center;
 }
 .col-swimming {
-    width: 140px;
-    min-width: 140px;
-    text-align: center;
+    width: 100px;      
+    min-width: 100px;
+    max-width: 100px; 
+    padding: 4px !important;
 }
+
 .col-result {
     width: 90px;
     min-width: 90px;
@@ -345,22 +347,37 @@
     color: #198754; 
 }
 .swim-info-text {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 0.8rem;   
+    line-height: 1.1;    
+    white-space: normal;
+    word-wrap: break-word; 
+    text-align: center;
+    display: block;
 }
 
 /* Mülleimer Icon */
 .btn-delete-swimming {
+    /* Reset */
     border: none;
-    background: transparent;
-    font-size: 0.85rem;
-    color: #dc3545;
-    opacity: 0.4;
+    background: transparent !important; /* Kein rotes Feld mehr */
+    
+    /* Farbe & Sichtbarkeit */
+    color: #dc3545 !important; /* Immer Rot */
+    opacity: 0.6;              /* Leicht transparent im Ruhezustand */
+    
+    font-size: 0.9rem;
     cursor: pointer;
-    transition: opacity 0.2s;
-    margin-top: 2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    transition: all 0.2s;
 }
-.btn-delete-swimming:hover { opacity: 1; }
+
+.btn-delete-swimming:hover {
+    opacity: 1;           /* Volle Deckkraft bei Hover */
+    transform: scale(1.2); /* Kleiner Zoom Effekt */
+    background: rgba(220, 53, 69, 0.1) !important; /* Nur ganz leichter roter Hintergrund */
+    border-radius: 4px;
+}
 
 /* Anforderungen (kleine Zahlen unter Input) */
 .req-hint {
