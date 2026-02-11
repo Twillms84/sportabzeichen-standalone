@@ -10,7 +10,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    {% block stylesheets %}{% endblock %}
+    {% block stylesheets %}
+    {# Parent behält FontAwesome und Bootstrap bei #}
+    {{ parent() }} 
+    <link rel="stylesheet" href="{{ asset('css/results.css') }}">
+{% endblock %}
 
     {% block javascripts %}
         {{ importmap('app') }}
