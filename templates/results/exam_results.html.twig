@@ -2,7 +2,6 @@
 
 {% block title %}Ergebnisse – {{ exam.name }}{% endblock %}
 
-
 {% block body %}
 {% set unitMap = {'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'} %}
 
@@ -18,19 +17,14 @@
 
         {# DRUCKEN #}
         <a id="btn-print-groupcard" 
-            href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
-            class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
+             href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+             class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
             {{ icon('print')|raw }} <span class="ms-2">{{ 'Drucken'|trans }}</span>
         </a>
     </div>
 
-
-
     {# --- 2. FILTER LEISTE (Card Design) --- #}
-    <div class="filter-toolbar sticky-top bg-light p-2 mb-3 border-bottom d-flex align-items-center flex-wrap" style="z-index: 1040; top: 0;">
-
-        {# --- 2. FILTER LEISTE (Card Design) --- #}
-    <div class="filter-toolbar sticky-top bg-light p-2 mb-3 border-bottom d-flex align-items-center flex-wrap" style="z-index: 1040; top: 0;">
+    <div class="filter-toolbar sticky-top bg-light p-2 mb-3 border-bottom d-flex align-items-center flex-wrap">
 
         {# A) ANSICHT / DISZIPLINEN FILTER #}
         <div class="dropdown me-2"> 
@@ -38,7 +32,7 @@
                 Ansicht: Alle
             </button>
             
-            <div class="dropdown-menu dropdown-menu-iserv p-3 shadow" aria-labelledby="viewFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+            <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="viewFilterBtn">
                 <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
                     <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-view-all">Alle</button>
                     <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-view-none">Keine</button>
@@ -57,7 +51,7 @@
                     Alle Gruppen
                 </button>
                 
-                <div class="dropdown-menu dropdown-menu-iserv p-3 shadow" aria-labelledby="groupFilterBtn" style="min-width: 250px; max-height: 400px; overflow-y: auto;">
+                <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="groupFilterBtn">
                     <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
@@ -69,18 +63,15 @@
         </div>
 
         {# C) SUCHLEISTE (Nimmt den restlichen Platz ein) #}
-        <div class="d-flex align-items-center flex-grow-1" style="min-width: 200px;">
+        <div class="d-flex align-items-center flex-grow-1 search-container">
             <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white border-secondary text-secondary" style="border-color: #ccc !important;">
+                <span class="input-group-text bg-white border-secondary text-secondary search-icon-box">
                     <i class="fas fa-search"></i>
                 </span>
                 <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
             </div>
         </div>
         
-        {# Optional: Platzhalter für Aktionen rechts (z.B. Drucken) #}
-        {# <div class="ms-2">...</div> #}
-
     </div>
 
     {# --- 3. TABELLE --- #}
@@ -92,6 +83,7 @@
       data-global-token="{{ csrf_token('autosave') }}">
 
         <div class="table-responsive">
+            {# WICHTIG: Hier sind die Standard-Klassen. Die Farbe kommt jetzt aus der CSS #}
             <table class="table table-sm table-bordered table-results-compact align-middle table-hover">
                 <thead class="table-light text-center align-middle sticky-header">
                     <tr>
@@ -136,7 +128,6 @@
                                     {{ p.nachname }}<span class="fw-normal">, {{ p.vorname }}</span>
                                 </div>
                                 
-                                {# HIER AUCH ANPASSEN: Wenn keine Klasse, zeige die Gruppe an #}
                                 <div class="name-age text-truncate mb-2">
                                     {{ p.klasse|default(p.group)|default('-') }} | {{ p.age_year }} J.
                                 </div>
@@ -178,30 +169,22 @@
                                 
                                 {# --- LOGIK START: Den Namen aus dem String "DISCIPLINE:ID" extrahieren --- #}
                                 {% set swimDisplayName = null %}
-                                {% set rawSource = p.swimming_met_via|default('') %} {# Hier steht "DISCIPLINE:193" drin #}
-
-                                {# Wir prüfen jede mögliche Disziplin #}
+                                {% set rawSource = p.swimming_met_via|default('') %} 
                                 {% for sd in swimming_disciplines %}
-                                    {# Wir bauen den String, wie er in der DB steht: z.B. "DISCIPLINE:193" #}
                                     {% set searchString = 'DISCIPLINE:' ~ sd.id %}
-                                    
-                                    {# Wenn dieser String in den Daten gefunden wird, haben wir den Namen gefunden! #}
                                     {% if searchString in rawSource %}
                                         {% set swimDisplayName = sd.name %}
                                     {% endif %}
                                 {% endfor %}
 
-                                {# Fallback: Wenn es keine Disziplin-ID war, sondern Freitext (z.B. "DLRG Schein") #}
                                 {% if swimDisplayName is empty %}
                                     {% set swimDisplayName = rawSource %}
                                 {% endif %}
 
-                                {# Putzfrau: Falls immer noch "DISCIPLINE:..." sichtbar wäre (sollte nicht passieren) #}
                                 {% if 'DISCIPLINE' in swimDisplayName %}
                                     {% set swimDisplayName = 'Nachweis erbracht' %}
                                 {% endif %}
                                 {# --- LOGIK ENDE --- #}
-
 
                                 {% set proofYear = p.swimming_year|default(exam.year) %} 
                                 
@@ -212,12 +195,12 @@
                                             {{ swimDisplayName }}
                                         </small>
                                         
-                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 btn-delete-swimming mt-1" 
+                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 btn-delete-swimming btn-delete-swimming-custom mt-1" 
                                                 data-ep-id="{{ p.ep_id }}" 
                                                 data-proof-year="{{ proofYear }}"
                                                 data-exam-year="{{ exam.year }}"
                                                 data-source="{{ p.swimming_met_via|default('') }}"
-                                                title="Nachweis löschen" style="font-size: 0.7rem;">
+                                                title="Nachweis löschen">
                                             {{ icon('trash')|raw }}
                                         </button>
                                     </div>
@@ -262,7 +245,6 @@
                                             {% endif %}
                                         {% endfor %}
                                         
-                                        {# Klasse für Rahmenfarbe initial #}
                                         {% set mClass = 'medal-none' %}
                                         {% if resObj %}
                                             {% if resObj.points == 3 %}{% set mClass = 'medal-gold' %}

@@ -211,32 +211,59 @@
 }
 
 /* =========================================
-   5. INPUT & SELECT STYLING (Die "Karten")
+   5. TABELLEN RAHMEN & CLEANUP
    ========================================= */
 
-/* Grundzustand (Weiß/Grau) */
-.discipline-selector, 
-.form-control-custom,
-.swimming-select-compact {
-    width: 100% !important;
-    background-color: var(--app-bg) !important; /* Passt sich Light/Dark an */
-    color: var(--app-text) !important;
-    border: 1px solid var(--app-border) !important;
-    border-radius: 6px !important;
-    padding: 6px 4px !important;
-    font-size: 0.95rem !important;
-    text-align: center;
-    text-align-last: center; /* Zentriert auch Select-Pfeil Text */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Leichter Schatten für "Karten"-Look */
-    transition: all 0.2s ease-in-out;
-    appearance: none; /* Standard-Styling entfernen für cleaneren Look */
+/* --- A) Dunklere Rahmen für die Tabelle --- */
+.table-results-compact {
+    /* Setzt die Rahmenfarbe für die gesamte Tabelle */
+    border-color: #cfd4da !important; 
 }
 
-/* Fokus */
-.discipline-selector:focus, .form-control-custom:focus {
-    outline: none;
-    border-color: #3498db !important;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
+.table-results-compact th,
+.table-results-compact td {
+    /* Damit jede Zelle den dunkleren Rahmen bekommt */
+    border-color: #cfd4da !important; 
+}
+
+/* Dark Mode Rahmen Anpassung */
+@media (prefers-color-scheme: dark) {
+    .table-results-compact,
+    .table-results-compact th,
+    .table-results-compact td {
+        border-color: #495057 !important; /* Dunkelgrauer Rahmen im Darkmode */
+    }
+}
+
+
+/* --- B) Erstatz für Inline-Styles (Aufräumen) --- */
+
+/* Filter Toolbar (Sticky) */
+.filter-toolbar {
+    z-index: 1040; 
+    top: 0;
+}
+
+/* Dropdown Menüs (Scrollbar) */
+.filter-dropdown-scroll {
+    min-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Suchleiste Container */
+.search-container {
+    min-width: 200px;
+}
+
+/* Such-Icon Box */
+.search-icon-box {
+    border-color: #ccc !important; /* Erzwingt den Grauton */
+}
+
+/* Delete Button im Schwimmen (klein) */
+.btn-delete-swimming-custom {
+    font-size: 0.7rem;
 }
 
 /* =========================================
