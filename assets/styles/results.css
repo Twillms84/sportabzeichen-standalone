@@ -4,26 +4,72 @@
    1. FILTER TOOLBAR (Der "Kopf" der Tabelle)
    ========================================= */
 .filter-toolbar {
+    /* Standard (Light Mode): Weiß oder helles Grau */
     background-color: var(--app-card-bg, #fff);
+    
     border: 1px solid var(--app-border, #dee2e6);
-    border-bottom: none; /* Verbindet sich mit der Tabelle */
+    border-bottom: none; /* Verbindet sich optisch mit der Tabelle */
     border-radius: 8px 8px 0 0;
     padding: 12px 15px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    position: relative;
-    z-index: 1025; /* Über dem Tabelleninhalt, unter dem Header */
+    position: sticky; /* Wichtig: Damit sie beim Scrollen oben bleibt */
+    top: 0;
+    z-index: 1025; 
 }
 
-.filter-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--app-text);
-    opacity: 0.7;
-    text-transform: uppercase;
-    margin-right: 4px;
+/* =========================================
+   1b. FILTER ELEMENTE (Dropdowns & Suche in der Toolbar)
+   ========================================= */
+
+/* Damit die Inputs/Buttons in der Toolbar gut aussehen */
+.filter-toolbar .btn-outline-secondary,
+.filter-toolbar .form-control,
+.filter-toolbar .input-group-text {
+    background-color: #fff;
+    border-color: #ced4da;
+    color: #495057;
+}
+
+/* =========================================
+   DARK MODE FÜR TOOLBAR
+   ========================================= */
+@media (prefers-color-scheme: dark) {
+    /* 1. Die Toolbar selbst dunkel machen */
+    .filter-toolbar {
+        background-color: #212529 !important; /* Dunkler Hintergrund */
+        border-color: #495057; /* Dunkler Rahmen */
+    }
+
+    /* 2. Dropdown-Buttons & Suchfeld dunkel machen */
+    .filter-toolbar .btn-outline-secondary,
+    .filter-toolbar .form-control,
+    .filter-toolbar .input-group-text {
+        background-color: #2b3035 !important; /* Dunkles Eingabefeld */
+        border-color: #495057 !important;
+        color: #e9ecef !important;
+    }
+
+    /* 3. Dropdown-Menü (das aufklappt) dunkel */
+    .filter-toolbar .dropdown-menu {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+    .filter-toolbar .dropdown-menu .dropdown-item,
+    .filter-toolbar .dropdown-menu button {
+        color: #dee2e6;
+    }
+    .filter-toolbar .dropdown-menu .dropdown-item:hover,
+    .filter-toolbar .dropdown-menu button:hover {
+        background-color: #495057;
+    }
+
+    /* 4. Das Such-Icon im Input-Group-Text anpassen */
+    .filter-toolbar .input-group-text i {
+        color: #adb5bd;
+    }
 }
 
 /* ISERV-Style Buttons & Inputs */
