@@ -1,5 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {# Parent behält FontAwesome und Bootstrap bei #}
+    {{ parent() }} 
+    <link rel="stylesheet" href="{{ asset('css/results.css') }}">
+{% endblock %}
+
 {% block title %}Ergebnisse – {{ exam.name }}{% endblock %}
 
 {% block body %}
