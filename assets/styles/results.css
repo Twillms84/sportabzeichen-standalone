@@ -298,6 +298,19 @@
 .bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.15) !important; border-left: 4px solid #d98a4e !important; }
 
 /* =========================================
+   6. FIX: HEADER & DROPDOWNS (Dunkler Hintergrund)
+   ========================================= */
+
+/* --- A) Tabellen-Kopf (Header) dunkler machen --- */
+/* Wir überschreiben .table-light für die Datenspalten */
+.table-results-compact thead th.col-discipline,
+.table-results-compact thead th.col-swimming {
+    background-color: #e9ecef !important; /* Dunkleres Grau für Header im Light Mode */
+    border-bottom-color: #ced4da;
+    color: #495057;
+}
+
+/* =========================================
    7. UI HELFER (Schwimmen & Hints)
    ========================================= */
 
