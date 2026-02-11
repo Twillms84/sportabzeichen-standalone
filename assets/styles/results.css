@@ -126,16 +126,19 @@
 }
 
 /* =========================================
-   4. SPALTEN-BREITEN & INHALTE
+   4. SPALTEN-BREITEN & INHALTE (Mit Hintergrund-Farbe)
    ========================================= */
 
-/* Spalte: Name */
+/* Spalte: Name (Bleibt hell/weiß als Anker) */
 .col-name {
-    width: 240px; /* Etwas breiter für lange Namen */
+    width: 240px;
     min-width: 240px;
     max-width: 240px;
     white-space: nowrap;
     overflow: hidden;
+    /* Hintergrund muss definiert sein für Sticky-Effekt */
+    background-color: var(--app-card-bg, #fff); 
+    z-index: 10; /* Damit er über den scrollbaren Spalten liegt */
 }
 
 .name-container {
@@ -147,14 +150,26 @@
 .name-main { font-size: 1.05rem; font-weight: 700; line-height: 1.2; color: var(--app-text); }
 .name-age { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
-/* Spalte: Disziplinen (Inputs) */
+/* NEU: Gemeinsamer Style für alle Datenspalten 
+   Hier setzen wir den "dunkleren" Hintergrund
+*/
+.col-discipline, 
+.col-swimming {
+    /* Hintergrundfarbe für die Spalte (Hervorhebung) */
+    background-color: #f1f3f5; /* Hellgrau im Light Mode */
+    
+    border-right: 1px solid rgba(0,0,0,0.05); /* Zarte Trennlinie */
+    vertical-align: middle; /* Inhalt vertikal zentrieren */
+}
+
+/* Spalte: Disziplinen (Inputs) - Breite */
 .col-discipline {
     width: 170px;
     min-width: 170px;
     text-align: center;
 }
 
-/* Spalte: Schwimmen */
+/* Spalte: Schwimmen - Breite */
 .col-swimming {
     width: 140px;
     min-width: 140px;
@@ -166,10 +181,34 @@
     width: 90px;
     min-width: 90px;
     text-align: center;
+    background-color: var(--app-card-bg, #fff); /* Ergebnis wieder hell */
 }
 
 /* Ausblenden via JS */
 .col-hidden { display: none !important; }
+
+
+/* =========================================
+   DARK MODE ANPASSUNG FÜR SPALTEN
+   ========================================= */
+@media (prefers-color-scheme: dark) {
+    /* Name Spalte dunkel */
+    .col-name { 
+        background-color: #212529 !important; 
+    }
+    
+    /* Datenspalten deutlich dunkler absetzen */
+    .col-discipline, 
+    .col-swimming {
+        background-color: #1c1e21 !important; /* Sehr dunkel, fast schwarz */
+        border-right-color: #343a40;
+    }
+
+    /* Ergebnis Spalte Standard dunkel */
+    .col-result {
+        background-color: #212529 !important;
+    }
+}
 
 /* =========================================
    5. INPUT & SELECT STYLING (Die "Karten")
