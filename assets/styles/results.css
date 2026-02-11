@@ -1,135 +1,67 @@
 /* results.css */
 
 /* =========================================
-   1. FILTER TOOLBAR (Der "Kopf" der Tabelle)
+   1. FILTER TOOLBAR (Grüner Header Look)
    ========================================= */
 .filter-toolbar {
-    /* Standard (Light Mode): Weiß oder helles Grau */
-    background-color: var(--app-card-bg, #fff);
+    /* Wir nutzen die Variable aus style.css */
+    background-color: var(--sidebar-bg-color, #144018); 
+    /* Ein leichter Verlauf für den "Effekt" */
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.05) 100%);
     
-    border: 1px solid var(--app-border, #dee2e6);
-    border-bottom: none; /* Verbindet sich optisch mit der Tabelle */
-    border-radius: 8px 8px 0 0;
-    padding: 12px 15px;
+    border: none;
+    /* Oben stark abgerundet */
+    border-radius: 16px 16px 0 0; 
+    padding: 15px 20px;
+    
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    position: sticky; /* Wichtig: Damit sie beim Scrollen oben bleibt */
+    
+    position: sticky;
     top: 0;
-    z-index: 1025; 
+    z-index: 1040;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Kleiner Schatten nach unten */
 }
 
-/* =========================================
-   1b. FILTER ELEMENTE (Dropdowns & Suche in der Toolbar)
-   ========================================= */
-
-/* Damit die Inputs/Buttons in der Toolbar gut aussehen */
-.filter-toolbar .btn-outline-secondary,
-.filter-toolbar .form-control,
+/* Text und Labels in der Toolbar weiß machen */
+.filter-toolbar label, 
 .filter-toolbar .input-group-text {
-    background-color: #fff;
-    border-color: #ced4da;
-    color: #495057;
+    color: #fff;
+    border-color: rgba(255,255,255,0.3);
+    background-color: rgba(255,255,255,0.1); /* Halbtransparent */
 }
+
+/* Dropdowns & Inputs IN DER TOOLBAR (oben) */
+.filter-toolbar .form-select,
+.filter-toolbar .form-control {
+    background-color: rgba(255, 255, 255, 0.9); /* Fast weiß, passt gut zu Grün */
+    border: 1px solid transparent;
+    color: #144018; /* Text in Grün */
+    font-weight: 500;
+}
+.filter-toolbar .form-select:focus,
+.filter-toolbar .form-control:focus {
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.4); /* Hellgrüner Glow */
+}
+
 
 /* =========================================
-   DARK MODE FÜR TOOLBAR
-   ========================================= */
-@media (prefers-color-scheme: dark) {
-    /* 1. Die Toolbar selbst dunkel machen */
-    .filter-toolbar {
-        background-color: #212529 !important; /* Dunkler Hintergrund */
-        border-color: #495057; /* Dunkler Rahmen */
-    }
-
-    /* 2. Dropdown-Buttons & Suchfeld dunkel machen */
-    .filter-toolbar .btn-outline-secondary,
-    .filter-toolbar .form-control,
-    .filter-toolbar .input-group-text {
-        background-color: #2b3035 !important; /* Dunkles Eingabefeld */
-        border-color: #495057 !important;
-        color: #e9ecef !important;
-    }
-
-    /* 3. Dropdown-Menü (das aufklappt) dunkel */
-    .filter-toolbar .dropdown-menu {
-        background-color: #343a40;
-        border-color: #495057;
-    }
-    .filter-toolbar .dropdown-menu .dropdown-item,
-    .filter-toolbar .dropdown-menu button {
-        color: #dee2e6;
-    }
-    .filter-toolbar .dropdown-menu .dropdown-item:hover,
-    .filter-toolbar .dropdown-menu button:hover {
-        background-color: #495057;
-    }
-
-    /* 4. Das Such-Icon im Input-Group-Text anpassen */
-    .filter-toolbar .input-group-text i {
-        color: #adb5bd;
-    }
-}
-
-/* ISERV-Style Buttons & Inputs */
-.btn-iserv {
-    background-color: var(--app-bg) !important;
-    border: 1px solid var(--app-border) !important;
-    color: var(--app-text) !important;
-    font-size: 0.9rem !important;
-    padding: 6px 14px !important;
-    border-radius: 4px !important;
-    transition: all 0.2s;
-}
-
-.btn-iserv:hover, .btn-iserv.active {
-    background-color: rgba(0,0,0,0.05) !important;
-    border-color: #aaa !important;
-}
-
-.form-control-iserv {
-    height: auto !important;
-    padding: 6px 12px !important;
-    font-size: 0.9rem !important;
-    border: 1px solid var(--app-border) !important;
-    border-radius: 4px !important;
-    background-color: var(--app-bg) !important;
-    color: var(--app-text) !important;
-}
-
-/* =========================================
-   2. TABELLEN-GRUNDGERÜST
+   2. TABELLEN-CONTAINER (Abgerundet & Schatten)
    ========================================= */
 .table-container {
-    /* Container für sauberes Scrollen */
     position: relative;
-    border: 1px solid var(--app-border, #dee2e6);
-    border-radius: 0 0 8px 8px; /* Nur unten abgerundet */
-    overflow: auto;
+    border: none; /* Rahmen weg, wir nutzen Schatten */
+    /* Unten abgerundet */
+    border-radius: 0 0 16px 16px; 
+    overflow: hidden; /* Wichtig, damit Ecken rund bleiben */
     background-color: var(--app-card-bg, #fff);
-    max-height: calc(100vh - 160px); /* Damit es nicht aus dem Screen läuft */
-}
-
-.table-results-compact {
-    width: 100%;
-    border-collapse: separate; /* Wichtig für Sticky Header */
-    border-spacing: 0;
-    table-layout: fixed; /* Feste Spaltenbreiten erzwingen */
-    margin-bottom: 0;
-}
-
-/* Standard Zellen-Styling */
-.table-results-compact th,
-.table-results-compact td {
-    padding: 8px; /* Luft zum Atmen */
-    vertical-align: middle;
-    border-bottom: 1px solid var(--app-border, #dee2e6);
-    border-right: 1px solid rgba(0,0,0,0.05); /* Zarte vertikale Linien */
-}
-
-.table-results-compact td:last-child {
-    border-right: none;
+    
+    /* Schöner "Schwebe"-Effekt Schatten */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    
+    max-height: calc(100vh - 180px);
 }
 
 /* =========================================
