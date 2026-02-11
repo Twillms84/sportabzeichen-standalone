@@ -372,6 +372,27 @@
     margin-top: 4px;
     color: #aaa; /* Standard Separator Farbe */
 }
+
+/* =========================================
+   UPDATE: BUTTONS IN DER TOOLBAR
+   ========================================= */
+
+/* Buttons (Ansicht / Gruppe) auf dem grünen Hintergrund */
+.filter-toolbar .btn-outline-secondary {
+    color: #fff;
+    border-color: rgba(255,255,255,0.4);
+    background-color: rgba(255,255,255,0.1); /* Leicht transparent */
+}
+
+.filter-toolbar .btn-outline-secondary:hover,
+.filter-toolbar .btn-outline-secondary:focus,
+.filter-toolbar .show > .btn-outline-secondary.dropdown-toggle {
+    background-color: #fff;
+    color: var(--sidebar-bg-color, #144018); /* Text wird grün beim Hover */
+    border-color: #fff;
+}
+
+
 .req-val-b { color: #d98a4e; }
 .req-val-s { color: #7f8c8d; } /* Etwas dunkler für Kontrast */
 .req-val-g { color: #b8860b; }
