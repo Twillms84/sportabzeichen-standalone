@@ -159,6 +159,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Event Listener
         groupContainer.addEventListener('change', updateParticipantFilter);
+
+        // "Alle" / "Keine" Buttons
+        document.querySelector('.js-view-all')?.addEventListener('click', () => {
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = true);
+            updateParticipantFilter();
+        });
+
+        document.querySelector('.js-view-none')?.addEventListener('click', () => {
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = false);
+            updateParticipantFilter();
+        });
+
         searchInput.addEventListener('keyup', updateParticipantFilter);
         searchInput.addEventListener('input', updateParticipantFilter);
 
