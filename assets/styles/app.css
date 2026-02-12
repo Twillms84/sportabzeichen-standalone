@@ -96,11 +96,6 @@ body {
     transition: all 0.2s;
 }
 
-.js-view-all, .js-view-none, 
-.js-group-all, .js-group-none {
-    cursor: pointer !important;
-}
-
 /* Hover-Effekt: Helles Aufleuchten */
 .dropdown-menu .dropdown-item:hover,
 .dropdown-menu-osa .dropdown-item:hover,
