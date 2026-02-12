@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const html = `
                 <div class="form-check">
                     <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="chk_grp_${grp}" checked>
-                    <label class="form-check-label w-100 stretched-link" for="chk_grp_${grp}" style="cursor: pointer;">
+                    <label class="form-check-label w-100" for="chk_grp_${grp}" style="cursor: pointer;">
                         ${grp}
                     </label>
                 </div>
