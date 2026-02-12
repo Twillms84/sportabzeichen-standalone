@@ -69,6 +69,11 @@
     border-color: #ccc !important;
 }
 
+/* Erzwingt den Zeiger für BEIDE Filter-Typen */
+.js-view-all, .js-view-none, 
+.js-group-all, .js-group-none {
+    cursor: pointer !important;
+}
 
 /* =========================================
    2. TABELLEN-CONTAINER (Wrapper)
