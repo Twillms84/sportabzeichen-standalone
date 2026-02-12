@@ -1,84 +1,102 @@
-/* results.css */
+/* results.css - Sortiert & Strukturiert */
 
 /* =========================================
-   1. FILTER TOOLBAR (Grüner Header Look)
+   1. FILTER TOOLBAR (Sticky Oben)
    ========================================= */
 .filter-toolbar {
-    /* Wir nutzen die Variable aus style.css */
     background-color: var(--sidebar-bg-color, #144018); 
-    /* Ein leichter Verlauf für den "Effekt" */
     background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.05) 100%);
-    
     border: none;
-    /* Oben stark abgerundet */
     border-radius: 16px 16px 0 0; 
     padding: 15px 20px;
-    
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    
     position: sticky;
     top: 0;
     z-index: 1040;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Kleiner Schatten nach unten */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-/* Text und Labels in der Toolbar weiß machen */
+/* Labels & Text in der Toolbar */
 .filter-toolbar label, 
 .filter-toolbar .input-group-text {
     color: #fff;
     border-color: rgba(255,255,255,0.3);
-    background-color: rgba(255,255,255,0.1); /* Halbtransparent */
+    background-color: rgba(255,255,255,0.1); 
 }
 
-/* Dropdowns & Inputs IN DER TOOLBAR (oben) */
+/* Dropdowns & Inputs in der Toolbar */
 .filter-toolbar .form-select,
 .filter-toolbar .form-control {
-    background-color: rgba(255, 255, 255, 0.9); /* Fast weiß, passt gut zu Grün */
+    background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid transparent;
-    color: #144018; /* Text in Grün */
+    color: #144018; 
     font-weight: 500;
 }
+
 .filter-toolbar .form-select:focus,
 .filter-toolbar .form-control:focus {
-    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.4); /* Hellgrüner Glow */
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.4); 
+}
+
+/* Buttons in der Toolbar */
+.filter-toolbar .btn-outline-secondary {
+    color: #fff;
+    border-color: rgba(255,255,255,0.4);
+    background-color: rgba(255,255,255,0.1); 
+}
+
+.filter-toolbar .btn-outline-secondary:hover,
+.filter-toolbar .btn-outline-secondary:focus,
+.filter-toolbar .show > .btn-outline-secondary.dropdown-toggle {
+    background-color: #fff;
+    color: var(--sidebar-bg-color, #144018); 
+    border-color: #fff;
+}
+
+/* Toolbar Utilities */
+.filter-dropdown-scroll {
+    min-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.search-container {
+    min-width: 200px;
+}
+.search-icon-box {
+    border-color: #ccc !important;
 }
 
 
 /* =========================================
-   2. TABELLEN-CONTAINER (Abgerundet & Schatten)
+   2. TABELLEN-CONTAINER (Wrapper)
    ========================================= */
 .table-container {
     position: relative;
-    border: none; /* Rahmen weg, wir nutzen Schatten */
-    /* Unten abgerundet */
+    border: none; 
     border-radius: 0 0 16px 16px; 
-    overflow: hidden; /* Wichtig, damit Ecken rund bleiben */
+    overflow: hidden; 
     background-color: var(--app-card-bg, #fff);
-    
-    /* Schöner "Schwebe"-Effekt Schatten */
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    
     max-height: calc(100vh - 180px);
 }
 
+
 /* =========================================
-   3. STICKY SPALTEN & HEADER (Grünes Design)
+   3. STICKY HEADERS & STRUKTUR
    ========================================= */
 
-/* A. Der Header (Oben) */
+/* A. Der Header (Oben - Grün) */
 .sticky-header th {
     position: sticky;
     top: 0;
-    /* HIER: Grün statt Grau */
     background-color: var(--sidebar-bg-color, #144018) !important; 
-    color: #fff !important; /* Weiße Schrift */
-    
+    color: #fff !important; 
     z-index: 100;
-    border-bottom: 4px solid rgba(0,0,0,0.2); /* Schatten-Linie nach unten */
-    border-right: 1px solid rgba(255,255,255,0.1); /* Feine Trennlinien */
+    border-bottom: 4px solid rgba(0,0,0,0.2); 
+    border-right: 1px solid rgba(255,255,255,0.1); 
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     font-weight: 600;
     text-transform: uppercase;
@@ -86,7 +104,7 @@
     letter-spacing: 0.5px;
 }
 
-/* B. Die Namens-Spalte (Links) - Bleibt hell (oder dunkel im Darkmode) */
+/* B. Die Namens-Spalte (Links - Fixiert) */
 .col-sticky-left {
     position: sticky !important;
     left: 0;
@@ -96,18 +114,25 @@
     box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 
-/* C. Die "Super-Ecke" (Oben Links: Name Header) */
+/* C. Die "Super-Ecke" (Oben Links - Grün & Fixiert) */
 .sticky-header th.col-sticky-left {
     z-index: 120 !important; 
-    /* Muss auch grün sein */
     background-color: var(--sidebar-bg-color, #144018) !important;
     color: #fff !important;
     border-right: 1px solid rgba(255,255,255,0.2) !important;
 }
 
-/* Dark Mode Anpassungen */
+/* D. Tabellen-Rahmen (Global) */
+.table-results-compact {
+    border-color: #cfd4da !important; 
+}
+.table-results-compact th,
+.table-results-compact td {
+    border-color: #cfd4da !important; 
+}
+
+/* Dark Mode: Sticky & Header */
 @media (prefers-color-scheme: dark) {
-    /* Header bleibt grün, wird aber etwas dunkler angepasst */
     .sticky-header th { 
         background-color: #0e2e11 !important; 
         color: #ecf0f1 !important; 
@@ -118,12 +143,19 @@
     .sticky-header th.col-sticky-left { 
         background-color: #0e2e11 !important; 
     }
+    .table-results-compact,
+    .table-results-compact th,
+    .table-results-compact td {
+        border-color: #495057 !important; 
+    }
 }
+
+
 /* =========================================
-   4. SPALTEN-BREITEN & INHALTE (Green Tint)
+   4. SPALTEN-DEFINITIONEN (Breite & Farbe)
    ========================================= */
 
-/* Spalte: Name */
+/* Namens-Spalte */
 .col-name {
     width: 240px;
     min-width: 240px;
@@ -133,7 +165,6 @@
     background-color: var(--app-card-bg, #fff); 
     z-index: 10; 
 }
-
 .name-container {
     display: flex;
     flex-direction: column;
@@ -143,17 +174,13 @@
 .name-main { font-size: 1.05rem; font-weight: 700; line-height: 1.2; color: var(--app-text); }
 .name-age { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
-/* DATENSPALTEN: Zartes Grün statt Grau */
+/* Disziplin & Schwimm Spalten (Heller Grünton) */
 .col-discipline, 
 .col-swimming {
-    /* HIER: Ganz leichtes Grün im Hintergrund */
     background-color: rgba(20, 64, 24, 0.03); 
-    
     border-right: 1px solid rgba(0,0,0,0.05); 
     vertical-align: middle; 
 }
-
-/* Spalten-Breiten */
 .col-discipline {
     width: 170px;
     min-width: 170px;
@@ -166,6 +193,7 @@
     padding: 4px !important;
 }
 
+/* Ergebnis Spalte */
 .col-result {
     width: 90px;
     min-width: 90px;
@@ -174,11 +202,10 @@
 }
 .col-hidden { display: none !important; }
 
-/* Dark Mode Spalten */
+/* Dark Mode: Spalten */
 @media (prefers-color-scheme: dark) {
     .col-name { background-color: #212529 !important; }
     
-    /* Dunkel: Hauch von Grün auf Schwarz */
     .col-discipline, 
     .col-swimming {
         background-color: rgba(46, 204, 113, 0.05) !important; 
@@ -187,101 +214,12 @@
     .col-result { background-color: #212529 !important; }
 }
 
-/* =========================================
-   5. TABELLEN RAHMEN & CLEANUP
-   ========================================= */
-
-/* --- A) Dunklere Rahmen für die Tabelle --- */
-.table-results-compact {
-    /* Setzt die Rahmenfarbe für die gesamte Tabelle */
-    border-color: #cfd4da !important; 
-}
-
-.table-results-compact th,
-.table-results-compact td {
-    /* Damit jede Zelle den dunkleren Rahmen bekommt */
-    border-color: #cfd4da !important; 
-}
-
-/* Dark Mode Rahmen Anpassung */
-@media (prefers-color-scheme: dark) {
-    .table-results-compact,
-    .table-results-compact th,
-    .table-results-compact td {
-        border-color: #495057 !important; /* Dunkelgrauer Rahmen im Darkmode */
-    }
-}
-
-
-/* --- B) Erstatz für Inline-Styles (Aufräumen) --- */
-
-/* Filter Toolbar (Sticky) */
-.filter-toolbar {
-    z-index: 1040; 
-    top: 0;
-}
-
-/* Dropdown Menüs (Scrollbar) */
-.filter-dropdown-scroll {
-    min-width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-/* Suchleiste Container */
-.search-container {
-    min-width: 200px;
-}
-
-/* Such-Icon Box */
-.search-icon-box {
-    border-color: #ccc !important; /* Erzwingt den Grauton */
-}
-
-/* Delete Button im Schwimmen (klein) */
-.btn-delete-swimming-custom {
-    font-size: 0.7rem;
-}
 
 /* =========================================
-   6. MEDAILLEN FARBEN (DEINE LOGIK - UNVERÄNDERT)
+   5. INPUT FIELDS & FORM ELEMENTS
    ========================================= */
 
-/* GOLD */
-.medal-gold, input.medal-gold, select.medal-gold { 
-    background-color: #ffdc2e !important; 
-    color: #4a3b00 !important; 
-    border: 1px solid #cca300 !important; 
-    font-weight: 700 !important; 
-}
-/* SILBER */
-.medal-silber, .medal-silver, input.medal-silber, select.medal-silber { 
-    background-color: #e9ecef !important; 
-    color: #495057 !important; 
-    border: 1px solid #adb5bd !important; 
-    font-weight: 700 !important; 
-}
-/* BRONZE */
-.medal-bronze, input.medal-bronze, select.medal-bronze { 
-    background-color: #d98a4e !important; 
-    color: #fff !important; 
-    border: 1px solid #a65e26 !important; 
-    font-weight: 700 !important; 
-}
-
-/* Hintergründe für Namen (Transparent) */
-.bg-gold-transparent { background-color: rgba(255, 220, 46, 0.15) !important; border-left: 4px solid #ffdc2e !important; }
-.bg-silver-transparent { background-color: rgba(233, 236, 239, 0.4) !important; border-left: 4px solid #adb5bd !important; }
-.bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.15) !important; border-left: 4px solid #d98a4e !important; }
-
-/* =========================================
-   6. FIX: HEADER CLEANUP & INPUT STYLES
-   ========================================= */
-
-/* Wir brauchen hier keine Header-Farben mehr setzen, 
-   da das jetzt zentral in Block 3 (Sticky Header) passiert ist. */
-
-/* --- Dropdowns & Inputs anpassen --- */
+/* Basis Styles für Inputs in den Zellen */
 .col-discipline .form-select,
 .col-discipline .form-control,
 .col-swimming .form-select {
@@ -291,16 +229,16 @@
     transition: all 0.2s ease-in-out;
 }
 
-/* --- HIER IST DER EFFEKT: Grüner Fokus --- */
+/* Grüner Fokus */
 .col-discipline .form-select:focus,
 .col-discipline .form-control:focus,
 .col-swimming .form-select:focus {
     background-color: #fff;
-    border-color: #2ecc71; /* Helles Grün */
-    box-shadow: 0 0 0 0.2rem rgba(46, 204, 113, 0.25); /* Grüner Schein */
+    border-color: #2ecc71; 
+    box-shadow: 0 0 0 0.2rem rgba(46, 204, 113, 0.25); 
 }
 
-/* --- Dark Mode Inputs --- */
+/* Dark Mode: Inputs */
 @media (prefers-color-scheme: dark) {
     .col-discipline .form-select,
     .col-discipline .form-control,
@@ -315,19 +253,51 @@
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
     }
 
-    /* Fokus im Dark Mode */
     .col-discipline .form-select:focus,
     .col-discipline .form-control:focus {
         background-color: #1a1d20;
-        border-color: #2ecc71; /* Auch hier Grün */
+        border-color: #2ecc71; 
         color: #fff;
     }
     
     .form-control::placeholder { color: #6c757d; }
 }
 
+
 /* =========================================
-   7. UI HELFER (Schwimmen & Hints)
+   6. MEDAILLEN LOGIK
+   ========================================= */
+
+/* Gold */
+.medal-gold, input.medal-gold, select.medal-gold { 
+    background-color: #ffdc2e !important; 
+    color: #4a3b00 !important; 
+    border: 1px solid #cca300 !important; 
+    font-weight: 700 !important; 
+}
+/* Silber */
+.medal-silber, .medal-silver, input.medal-silber, select.medal-silber { 
+    background-color: #e9ecef !important; 
+    color: #495057 !important; 
+    border: 1px solid #adb5bd !important; 
+    font-weight: 700 !important; 
+}
+/* Bronze */
+.medal-bronze, input.medal-bronze, select.medal-bronze { 
+    background-color: #d98a4e !important; 
+    color: #fff !important; 
+    border: 1px solid #a65e26 !important; 
+    font-weight: 700 !important; 
+}
+
+/* Hintergründe für Namen (Transparent) */
+.bg-gold-transparent { background-color: rgba(255, 220, 46, 0.15) !important; border-left: 4px solid #ffdc2e !important; }
+.bg-silver-transparent { background-color: rgba(233, 236, 239, 0.4) !important; border-left: 4px solid #adb5bd !important; }
+.bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.15) !important; border-left: 4px solid #d98a4e !important; }
+
+
+/* =========================================
+   7. UI HELFER (Schwimmen & Hinweise)
    ========================================= */
 
 /* Schwimm-Container */
@@ -357,26 +327,25 @@
 
 /* Mülleimer Icon */
 .btn-delete-swimming {
-    /* Reset */
     border: none;
-    background: transparent !important; /* Kein rotes Feld mehr */
-    
-    /* Farbe & Sichtbarkeit */
-    color: #dc3545 !important; /* Immer Rot */
-    opacity: 0.6;              /* Leicht transparent im Ruhezustand */
-    
+    background: transparent !important; 
+    color: #dc3545 !important; 
+    opacity: 0.6;              
     font-size: 0.9rem;
     cursor: pointer;
     padding: 2px 6px;
     margin-top: 4px;
     transition: all 0.2s;
 }
-
 .btn-delete-swimming:hover {
-    opacity: 1;           /* Volle Deckkraft bei Hover */
-    transform: scale(1.2); /* Kleiner Zoom Effekt */
-    background: rgba(220, 53, 69, 0.1) !important; /* Nur ganz leichter roter Hintergrund */
+    opacity: 1;           
+    transform: scale(1.2); 
+    background: rgba(220, 53, 69, 0.1) !important; 
     border-radius: 4px;
+}
+/* Kleiner Fix für Custom Größe */
+.btn-delete-swimming-custom {
+    font-size: 0.7rem;
 }
 
 /* Anforderungen (kleine Zahlen unter Input) */
@@ -387,31 +356,11 @@
     font-size: 0.85rem;
     font-weight: 600;
     margin-top: 4px;
-    color: #aaa; /* Standard Separator Farbe */
+    color: #aaa; 
 }
-
-/* =========================================
-   UPDATE: BUTTONS IN DER TOOLBAR
-   ========================================= */
-
-/* Buttons (Ansicht / Gruppe) auf dem grünen Hintergrund */
-.filter-toolbar .btn-outline-secondary {
-    color: #fff;
-    border-color: rgba(255,255,255,0.4);
-    background-color: rgba(255,255,255,0.1); /* Leicht transparent */
-}
-
-.filter-toolbar .btn-outline-secondary:hover,
-.filter-toolbar .btn-outline-secondary:focus,
-.filter-toolbar .show > .btn-outline-secondary.dropdown-toggle {
-    background-color: #fff;
-    color: var(--sidebar-bg-color, #144018); /* Text wird grün beim Hover */
-    border-color: #fff;
-}
-
 
 .req-val-b { color: #d98a4e; }
-.req-val-s { color: #7f8c8d; } /* Etwas dunkler für Kontrast */
+.req-val-s { color: #7f8c8d; } 
 .req-val-g { color: #b8860b; }
 .req-unit { font-weight: normal; font-size: 0.75rem; color: #aaa; margin-left: 2px; }
 
