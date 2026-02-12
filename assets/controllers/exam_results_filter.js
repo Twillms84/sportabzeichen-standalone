@@ -102,6 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 1. Gruppen sammeln
         allRows.forEach(row => {
+            // Prüfen auf data-class ODER data-group
             const rawVal = row.getAttribute('data-class') || row.getAttribute('data-group');
             if (rawVal && rawVal.trim() !== '') {
                 groups.add(rawVal.trim());
@@ -109,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // 2. Checkboxen rendern
-        // Hier merken wir uns keine Auswahl im LocalStorage (optional, falls gewünscht)
+        groupContainer.innerHTML = ''; // Container leeren, falls doppelt geladen
         Array.from(groups).sort().forEach(grp => {
             const html = `
                 <div class="form-check">
@@ -130,56 +131,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
             
+            // Wenn Anzahl der gecheckten gleich Gesamtanzahl ist -> Alles ausgewählt
             const allGroupsChecked = checkedGroups.length === checkboxes.length;
     
+            // B. Button Text fixieren (falls gewünscht, sonst Zeile löschen)
+            // groupBtn.textContent = 'Gruppen'; 
+
             // C. Suchbegriff
             const searchTerm = searchInput.value.toLowerCase().trim();
 
             // D. Zeilen filtern
-            let visibleCount = 0;
             allRows.forEach(row => {
                 const rowGroup = (row.getAttribute('data-class') || row.getAttribute('data-group') || '').trim();
-                const nameEl = row.querySelector('.name-main');
+                
+                // Name suchen (angepasst auf deine Struktur .name-main oder .col-name)
+                const nameEl = row.querySelector('.name-main') || row.querySelector('.col-name span'); 
                 const nameText = nameEl ? nameEl.textContent.toLowerCase() : ''; 
 
+                // Logik: Gruppe muss passen UND Suchbegriff muss passen
                 const matchGroup = (allGroupsChecked || checkedGroups.includes(rowGroup));
                 const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
 
                 if (matchGroup && matchSearch) {
-                    row.style.display = '';
-                    visibleCount++;
+                    row.style.display = ''; // Anzeigen
                 } else {
-                    row.style.display = 'none'; 
+                    row.style.display = 'none'; // Ausblenden
                 }
             });
 
-            // E. Druck-Button URL aktualisieren
-            updatePrintButtonUrl(allGroupsChecked ? [] : checkedGroups, searchInput.value.trim());
+            // E. Druck-Button URL aktualisieren (nur wenn Funktion existiert)
+            if (typeof updatePrintButtonUrl === 'function') {
+                updatePrintButtonUrl(allGroupsChecked ? [] : checkedGroups, searchInput.value.trim());
+            }
         };
 
-        // Event Listener
+        // Event Listener: Änderungen an Checkboxen
         groupContainer.addEventListener('change', updateParticipantFilter);
 
-        // "Alle" / "Keine" Buttons
-        document.querySelector('.js-view-all')?.addEventListener('click', () => {
-            groupContainer.querySelectorAll('input').forEach(el => el.checked = true);
-            updateParticipantFilter();
-        });
-
-        document.querySelector('.js-view-none')?.addEventListener('click', () => {
-            groupContainer.querySelectorAll('input').forEach(el => el.checked = false);
-            updateParticipantFilter();
-        });
-
+        // Event Listener: Suche
         searchInput.addEventListener('keyup', updateParticipantFilter);
         searchInput.addEventListener('input', updateParticipantFilter);
 
-        // "Alle" / "Keine" Buttons
-        document.querySelector('.js-group-all')?.addEventListener('click', () => {
+        // Event Listener: Dropdown nicht schließen beim Klicken
+        groupContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // --- HIER WAR DER FEHLER ---
+        // Du hattest hier .js-view-all (Disziplinen) abgefragt. 
+        // Es muss .js-group-all (Gruppen) sein:
+
+        // "Alle" Button (Gruppen)
+        document.querySelector('.js-group-all')?.addEventListener('click', (e) => {
+            e.preventDefault(); // Springen verhindern
+            e.stopPropagation();
             groupContainer.querySelectorAll('input').forEach(el => el.checked = true);
             updateParticipantFilter();
         });
-        document.querySelector('.js-group-none')?.addEventListener('click', () => {
+
+        // "Keine" Button (Gruppen)
+        document.querySelector('.js-group-none')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             groupContainer.querySelectorAll('input').forEach(el => el.checked = false);
             updateParticipantFilter();
         });
