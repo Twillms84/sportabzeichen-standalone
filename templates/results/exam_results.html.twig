@@ -13,25 +13,9 @@
 
 <div class="container-fluid mt-3">
     
-    {# --- 1. ACTION BUTTONS (Oben Rechts & Klein) --- #}
-    <div class="d-flex justify-content-end gap-2 mb-2">
-        {# ZURÜCK #}
-        <a href="{{ path('app_exams_dashboard') }}" 
-           class="btn btn-primary btn-sm d-flex align-items-center shadow-sm">
-            <i class="bi bi-arrow-left"></i> <span class="ms-2">{{ 'Zurück'|trans }}</span>
-        </a>
-
-        {# DRUCKEN #}
-        <a id="btn-print-groupcard" 
-             href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
-             class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
-            <i class="bi bi-printer"></i> <span class="ms-2">{{ 'Drucken'|trans }}</span>
-        </a>
-    </div>
-
-    {# --- 2. FILTER LEISTE (Card Design) --- #}
     <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
-        {# A) ANSICHT / DISZIPLINEN FILTER #}
+        
+        {# A) ANSICHT FILTER #}
         <div class="dropdown me-2"> 
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                 Ansicht: Alle
@@ -42,14 +26,13 @@
                     <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-view-all">Alle</button>
                     <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-view-none">Keine</button>
                 </div>
-                {# Checkboxen werden hier per JS eingefügt #}
                 <div id="view-checkbox-container"></div>
             </div>
         </div>
 
-        {# B) KLASSEN / GRUPPEN FILTER #}
+        {# B) GRUPPEN FILTER #}
         <div class="d-flex align-items-center me-3">
-            <span class="filter-label d-none d-md-inline me-2">Gruppe:</span>
+            <span class="filter-label d-none d-lg-inline me-2">Gruppe:</span>
             
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="groupFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -61,13 +44,12 @@
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
                     </div>
-                    {# Checkboxen werden hier per JS eingefügt #}
                     <div id="group-checkbox-container"></div>
                 </div>
             </div>
         </div>
 
-        {# C) SUCHLEISTE (Nimmt den restlichen Platz ein) #}
+        {# C) SUCHLEISTE (Nimmt verfügbaren Platz ein -> flex-grow-1) #}
         <div class="d-flex align-items-center flex-grow-1 search-container">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-white border-secondary text-secondary search-icon-box">
@@ -75,6 +57,23 @@
                 </span>
                 <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
             </div>
+        </div>
+        
+        {# D) ACTION BUTTONS (Jetzt hier rechts, Style angepasst) #}
+        <div class="d-flex gap-2 ms-2">
+            {# DRUCKEN #}
+            {# d-none d-md-block sorgt dafür, dass auf Handys nur das Icon zu sehen ist, um Platz zu sparen #}
+            <a id="btn-print-groupcard" 
+               href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+               class="btn btn-outline-secondary btn-sm d-flex align-items-center" target="_blank" title="Drucken">
+                <i class="bi bi-printer"></i> <span class="ms-2 d-none d-md-inline">{{ 'Drucken'|trans }}</span>
+            </a>
+
+            {# ZURÜCK #}
+            <a href="{{ path('app_exams_dashboard') }}" 
+               class="btn btn-outline-secondary btn-sm d-flex align-items-center" title="Zurück">
+                <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-md-inline">{{ 'Zurück'|trans }}</span>
+            </a>
         </div>
         
     </div>
