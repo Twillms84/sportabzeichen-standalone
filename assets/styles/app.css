@@ -122,6 +122,7 @@ body {
 /* Labels für Checkboxen */
 .dropdown-menu .form-check-label {
     color: #ffffff !important;
+    background-color: transparent
 }
 
 /* Die Checkbox selbst */
