@@ -26,8 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Sortieren und rendern
         Array.from(categories).sort().forEach(cat => {
-            // Label aufhübschen (erster Buchstabe groß)
-            const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+            // Standard-Label (erster Buchstabe groß)
+            let label = cat.charAt(0).toUpperCase() + cat.slice(1);
+
+            // SPEZIALFALL: Wenn die Klasse "swimming" heißt, nenne sie "Schwimmnachweis"
+            if (cat.toLowerCase() === 'swimming') {
+                label = 'Schwimmnachweis';
+            }
+
             const isChecked = savedViewSelection.length === 0 || savedViewSelection.includes(cat);
 
             const html = `
