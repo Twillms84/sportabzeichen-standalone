@@ -74,38 +74,75 @@ body {
 }
 
 /* =========================================
-   3. ISERV DROPDOWN STYLING (OPTIMIERT)
+   3. GLOBAL DROPDOWN STYLING (Dark/Green Theme)
    ========================================= */
-.dropdown-menu {
-    z-index: 2000 !important; 
+
+/* Basis-Container für ALLE Dropdowns + Speziell OSA */
+.dropdown-menu,
+.dropdown-menu-osa {
+    background-color: #144018 !important; /* Dein Sidebar-Dunkelgrün */
+    color: #ffffff !important;            /* Text immer weiß */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    z-index: 2000 !important;
 }
 
-/* Dropdown passt sich jetzt dem Modus an */
-.dropdown-menu-iserv {
-    background-color: var(--app-card-bg); 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--app-text);
-    border: 1px solid var(--app-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+/* Links und Texte im Dropdown */
+.dropdown-menu .dropdown-item,
+.dropdown-menu-osa .dropdown-item,
+.dropdown-menu button,
+.dropdown-menu a {
+    color: rgba(255, 255, 255, 0.85) !important; /* Leicht abgedunkeltes Weiß */
+    transition: all 0.2s;
 }
 
-.dropdown-menu-iserv .dropdown-item {
-    color: var(--app-text);
+/* Hover-Effekt: Helles Aufleuchten */
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu-osa .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15) !important; 
+    cursor: pointer;
 }
 
-.dropdown-menu-iserv .dropdown-item:hover {
-    background-color: rgba(128, 128, 128, 0.1);
+/* Trennlinien */
+.dropdown-menu .dropdown-divider,
+.dropdown-menu .border-bottom {
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-.dropdown-menu-iserv .form-check:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+/* --- FORM ELEMENTE (Checkboxen) --- */
+
+/* Checkbox-Container Hover */
+.dropdown-menu .form-check:hover,
+.dropdown-menu-osa .form-check:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.dropdown-menu-iserv .form-check-input {
-    background-color: rgba(128, 128, 128, 0.2);
-    border-color: var(--app-border);
+/* Labels für Checkboxen */
+.dropdown-menu .form-check-label {
+    color: #ffffff !important;
 }
+
+/* Die Checkbox selbst */
+.dropdown-menu .form-check-input,
+.dropdown-menu-osa .form-check-input {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Wenn angehakt -> Grün */
+.dropdown-menu .form-check-input:checked,
+.dropdown-menu-osa .form-check-input:checked {
+    background-color: #2ecc71 !important;
+    border-color: #2ecc71 !important;
+}
+
+/* Header Text */
+.dropdown-menu .dropdown-header {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
 
 /* =========================================
    4. LAYOUT LOGIK (DESKTOP VS MOBILE)
