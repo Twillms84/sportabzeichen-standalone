@@ -52,17 +52,7 @@
         </div>
     </div>
 
-        {# C) SUCHLEISTE (Nimmt verfügbaren Platz ein -> flex-grow-1) #}
-        <div class="d-flex align-items-center flex-grow-1 search-container">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white border-secondary text-secondary search-icon-box">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
-            </div>
-        </div>
-        
-        {# D) ACTION BUTTONS (Jetzt hier rechts, Style angepasst) #}
+        {# C) ACTION BUTTONS (Jetzt hier rechts, Style angepasst) #}
         <div class="d-flex gap-2 ms-2">
             {# DRUCKEN #}
             {# d-none d-md-block sorgt dafür, dass auf Handys nur das Icon zu sehen ist, um Platz zu sparen #}
@@ -77,6 +67,16 @@
                class="btn btn-outline-secondary btn-sm d-flex align-items-center" title="Zurück">
                 <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-md-inline">{{ 'Zurück'|trans }}</span>
             </a>
+        </div>
+
+        {# D) SUCHLEISTE (Nimmt verfügbaren Platz ein -> flex-grow-1) #}
+        <div class="d-flex align-items-center flex-grow-1 search-container">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-secondary text-secondary search-icon-box">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="client-search-input" class="form-control form-control-iserv" placeholder="Schüler suchen...">
+            </div>
         </div>
         
     </div>
