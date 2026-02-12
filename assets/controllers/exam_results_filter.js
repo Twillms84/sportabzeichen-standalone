@@ -51,9 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const noneChecked = checkedValues.length === 0;
 
             // Button Text Update
-            if (allChecked) viewBtn.textContent = 'Ansicht: Alle';
-            else if (noneChecked) viewBtn.textContent = 'Ansicht: Keine';
-            else viewBtn.textContent = `Ansicht: ${checkedValues.length} ausgewählt`;
+            viewBtn.textContent = 'Diziplin';
 
             // Spalten ein-/ausblenden
             categories.forEach(cat => {
@@ -135,10 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const allGroupsChecked = checkedGroups.length === checkboxes.length;
 
             // B. Button Text
-            if (allGroupsChecked) groupBtn.textContent = 'Alle Gruppen';
-            else if (checkedGroups.length === 0) groupBtn.textContent = 'Keine Gruppen';
-            else groupBtn.textContent = `${checkedGroups.length} Gruppen`;
-
+            groupBtn.textContent = 'Gruppen';
+            
             // C. Suchbegriff
             const searchTerm = searchInput.value.toLowerCase().trim();
 
