@@ -300,26 +300,29 @@ tr.bg-gold-transparent td.col-sticky-left { border-left: 5px solid #ffdc2e !impo
 tr.bg-silver-transparent td.col-sticky-left { border-left: 5px solid #adb5bd !important; }
 tr.bg-bronze-transparent td.col-sticky-left { border-left: 5px solid #d98a4e !important; }
 
-/* Gold */
-.medal-gold, input.medal-gold, select.medal-gold { 
-    background-color: #ffdc2e !important; 
-    color: #4a3b00 !important; 
-    border: 1px solid #cca300 !important; 
-    font-weight: 700 !important; 
+/* Gold Stempel */
+.medal-gold, .bg-gold-transparent { 
+    background: linear-gradient(180deg, #ffed85 0%, #ffdc2e 100%) !important; 
+    color: #5c4a00 !important; 
+    border: 1px solid #d4af37 !important; 
+    border-left: 4px solid #d4af37 !important; /* Betont den Stempel links */
 }
-/* Silber */
-.medal-silber, .medal-silver, input.medal-silber, select.medal-silber { 
-    background-color: #e9ecef !important; 
-    color: #495057 !important; 
+
+/* Silber Stempel */
+.medal-silber, .medal-silver, .bg-silver-transparent { 
+    background: linear-gradient(180deg, #ffffff 0%, #e9ecef 100%) !important; 
+    color: #343a40 !important; 
     border: 1px solid #adb5bd !important; 
-    font-weight: 700 !important; 
+    border-left: 4px solid #adb5bd !important;
 }
-/* Bronze */
-.medal-bronze, input.medal-bronze, select.medal-bronze { 
-    background-color: #d98a4e !important; 
+
+/* Bronze Stempel */
+.medal-bronze, .bg-bronze-transparent { 
+    background: linear-gradient(180deg, #f2b383 0%, #d98a4e 100%) !important; 
     color: #fff !important; 
     border: 1px solid #a65e26 !important; 
-    font-weight: 700 !important; 
+    border-left: 4px solid #a65e26 !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
 /* Hintergründe für Namen (Transparent) */
