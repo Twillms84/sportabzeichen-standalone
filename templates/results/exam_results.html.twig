@@ -99,9 +99,9 @@
                             {% set sortIcon = (currentSort == 'lastname') ? (currentOrder == 'asc' ? icon('arrow-down') : icon('arrow-up')) : '' %}
 
                             <a href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({'id': exam.id, 'sort': 'lastname', 'order': nextOrder})) }}" 
-                            class="sort-header d-flex justify-content-between align-items-center text-dark text-decoration-none">
+                            class="sort-header d-flex justify-content-between align-items-center text-white text-decoration-none">
                                 <span>Teilnehmer</span>
-                                <span>{{ sortIcon|raw }}</span>
+                                <span><i class="bi bi-filter"></i></span>
                             </a>
                         </th>
 
