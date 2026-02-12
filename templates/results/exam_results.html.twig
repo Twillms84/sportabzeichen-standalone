@@ -15,39 +15,44 @@
     
     <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
         
-        {# A) ANSICHT FILTER #}
-        <div class="dropdown me-2"> 
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                <i class="fas fa-eye me-2"></i> Disziplinen
+        {# A) ANSICHT FILTER (Disziplinen/Ansicht) #}
+    <div class="dropdown me-2"> 
+        {# UPDATE: Text fest auf "Ansicht", kein "Alle" mehr #}
+        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center" type="button" id="viewFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+            <i class="fas fa-eye me-2"></i> Ansicht
+        </button>
+        
+        <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="viewFilterBtn">
+            <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-view-all">Alle</button>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-view-none">Keine</button>
+            </div>
+            {# Hier werden die Checkboxen per JS reingeladen #}
+            <div id="view-checkbox-container"></div>
+        </div>
+    </div>
+
+    {# B) GRUPPEN FILTER #}
+    <div class="d-flex align-items-center me-3">
+        {# UPDATE: Label auf Handy ausblenden #}
+        <span class="filter-label d-none d-lg-inline me-2">Gruppe:</span>
+        
+        <div class="dropdown">
+            {# UPDATE: Text fest auf "Gruppen", kein "Alle Gruppen" mehr #}
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center" type="button" id="groupFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                <i class="fas fa-users me-2"></i> Gruppen
             </button>
             
-            <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="viewFilterBtn">
+            <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="groupFilterBtn">
                 <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-view-all">Alle</button>
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-view-none">Keine</button>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
                 </div>
-                <div id="view-checkbox-container"></div>
+                {# Hier werden die Checkboxen per JS reingeladen #}
+                <div id="group-checkbox-container"></div>
             </div>
         </div>
-
-        {# B) GRUPPEN FILTER #}
-        <div class="d-flex align-items-center me-3">
-            <span class="filter-label d-none d-lg-inline me-2">Gruppe:</span>
-            
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="groupFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                    <i class="fas fa-users me-2"></i> Gruppen
-                </button>
-                
-                <div class="dropdown-menu dropdown-menu-iserv p-3 shadow filter-dropdown-scroll" aria-labelledby="groupFilterBtn">
-                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
-                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
-                    </div>
-                    <div id="group-checkbox-container"></div>
-                </div>
-            </div>
-        </div>
+    </div>
 
         {# C) SUCHLEISTE (Nimmt verfügbaren Platz ein -> flex-grow-1) #}
         <div class="d-flex align-items-center flex-grow-1 search-container">
