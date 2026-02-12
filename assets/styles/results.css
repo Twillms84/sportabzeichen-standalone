@@ -267,65 +267,33 @@
    6. MEDAILLEN LOGIK
    ========================================= */
 
-.medal-gold, .medal-silber, .medal-silver, .medal-bronze {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50% !important; /* Macht es kreisrund */
-    width: 32px;  /* Feste Größe für Stempel-Optik */
-    height: 32px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15), inset 0 -2px 0 rgba(0,0,0,0.1); /* Tiefe */
-    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
-    transition: transform 0.2s ease;
-    padding: 0 !important;
-}
-
-/* Gold - Mit dezentem Metall-Verlauf */
+/* Gold */
 .medal-gold, input.medal-gold, select.medal-gold { 
-    background: linear-gradient(135deg, #ffdc2e 0%, #f1c40f 100%) !important; 
+    background-color: #ffdc2e !important; 
     color: #4a3b00 !important; 
     border: 1px solid #cca300 !important; 
-    font-weight: 800 !important; 
+    font-weight: 700 !important; 
 }
-
-/* Silber - Klarer, metallischer Look */
+/* Silber */
 .medal-silber, .medal-silver, input.medal-silber, select.medal-silber { 
-    background: linear-gradient(135deg, #ffffff 0%, #e9ecef 100%) !important; 
+    background-color: #e9ecef !important; 
     color: #495057 !important; 
     border: 1px solid #adb5bd !important; 
-    font-weight: 800 !important; 
+    font-weight: 700 !important; 
 }
-
-/* Bronze - Satter Kupferton */
+/* Bronze */
 .medal-bronze, input.medal-bronze, select.medal-bronze { 
-    background: linear-gradient(135deg, #e69d6a 0%, #d98a4e 100%) !important; 
+    background-color: #d98a4e !important; 
     color: #fff !important; 
     border: 1px solid #a65e26 !important; 
-    font-weight: 800 !important; 
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    font-weight: 700 !important; 
 }
 
-/* Hover-Effekt für Interaktivität */
-.medal-gold:hover, .medal-silber:hover, .medal-bronze:hover {
-    transform: scale(1.1);
-}
+/* Hintergründe für Namen (Transparent) */
+.bg-gold-transparent { background-color: rgba(255, 220, 46, 0.15) !important; border-left: 4px solid #ffdc2e !important; }
+.bg-silver-transparent { background-color: rgba(233, 236, 239, 0.4) !important; border-left: 4px solid #adb5bd !important; }
+.bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.15) !important; border-left: 4px solid #d98a4e !important; }
 
-/* Hintergründe für Namen (Transparent) - Jetzt etwas "weicher" */
-.bg-gold-transparent { 
-    background-color: rgba(255, 220, 46, 0.1) !important; 
-    border-left: 5px solid #ffdc2e !important; 
-    border-radius: 4px;
-}
-.bg-silver-transparent { 
-    background-color: rgba(173, 181, 189, 0.1) !important; 
-    border-left: 5px solid #adb5bd !important; 
-    border-radius: 4px;
-}
-.bg-bronze-transparent { 
-    background-color: rgba(217, 138, 78, 0.1) !important; 
-    border-left: 5px solid #d98a4e !important; 
-    border-radius: 4px;
-}
 
 /* =========================================
    7. UI HELFER (Schwimmen & Hinweise)
