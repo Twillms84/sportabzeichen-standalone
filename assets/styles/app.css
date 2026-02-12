@@ -8,28 +8,31 @@
     --sidebar-width: 180px;
 
     /* Dynamische App-Farben (Light Mode Standard) */
-    --app-bg: #f4f7f6; /* Sehr helles Grau für den Hintergrund */
+    --app-bg: #f4f7f6;      /* Sehr helles Grau für den Hintergrund */
     --app-card-bg: #ffffff;
     --app-text: #2c3e50;
     --app-border: #dee2e6;
+    --app-muted: #6c757d;   /* Hinzugefügt für sekundären Text */
 }
 
 /* Dark Mode Umschaltung der Variablen */
 @media (prefers-color-scheme: dark) {
     :root {
-        --app-bg: #1a1d20;    /* Dunkler Hintergrund */
+        --app-bg: #1a1d20;      /* Dunkler Hintergrund */
         --app-card-bg: #212529; /* Dunkle Karten/Container */
-        --app-text: #f8f9fa;   /* Heller Text */
-        --app-border: #495057; /* Dunklere Ränder */
+        --app-text: #f8f9fa;    /* Heller Text */
+        --app-border: #495057;  /* Dunklere Ränder */
+        --app-muted: #adb5bd;
     }
 }
 
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: var(--app-bg); /* Nutzt die Variable */
-    color: var(--app-text);          /* Nutzt die Variable */
+    background-color: var(--app-bg);
+    color: var(--app-text);
     transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* =========================================
@@ -87,7 +90,14 @@ body {
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Checkboxen im Dropdown */
+.dropdown-menu-iserv .dropdown-item {
+    color: var(--app-text);
+}
+
+.dropdown-menu-iserv .dropdown-item:hover {
+    background-color: rgba(128, 128, 128, 0.1);
+}
+
 .dropdown-menu-iserv .form-check:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
@@ -98,8 +108,10 @@ body {
 }
 
 /* =========================================
-   4. LAYOUT & DESKTOP
+   4. LAYOUT LOGIK (DESKTOP VS MOBILE)
    ========================================= */
+
+/* Desktop Ansicht (ab 992px) */
 @media (min-width: 992px) {
     .sidebar-wrapper {
         transform: none !important;
@@ -124,7 +136,138 @@ body {
     }
 }
 
+/* Mobile Ansicht (bis 991px) */
+@media (max-width: 991px) {
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+/* --- HIER IST DIE MOBILE OPTIMIERUNG (VOLLBILD TABELLE) --- */
+@media (max-width: 768px) {
+    /* Padding entfernen, damit alles an den Rand rutscht */
+    .main-content {
+        padding: 0 !important; 
+    }
+    
+    .container-fluid {
+        padding: 0 !important;
+    }
+
+    /* Karten auf dem Handy randlos machen */
+    .card {
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background-color: var(--app-card-bg); /* Sicherstellen, dass Hintergrund passt */
+    }
+
+    /* Etwas Abstand zum Header lassen, falls nötig */
+    .mobile-header {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+}
+
 /* Offcanvas Fix */
 .offcanvas.show {
     z-index: 1055 !important;
+}
+
+
+/* =========================================
+   5. SPORTABZEICHEN LISTE & MEDAILLEN STYLES (NEU)
+   ========================================= */
+
+/* --- A. Das Teilnehmerfeld (Namen) --- */
+/* Diese Klasse dem <th> und <td> des Namens geben */
+.col-participant {
+    width: 35%;             /* Zwingt die Spalte schmal zu sein (ca. 1/3) */
+    max-width: 130px;       /* Obergrenze, damit es auf Handy nicht explodiert */
+    
+    font-size: 0.85rem;     /* Kleinerer Text wie gewünscht */
+    line-height: 1.2;
+    
+    white-space: nowrap;    /* Verhindert Zeilenumbruch */
+    overflow: hidden;       /* Schneidet Überlänge ab */
+    text-overflow: ellipsis;/* Fügt "..." hinzu: "Max Musterm..." */
+    
+    vertical-align: middle !important;
+}
+
+/* --- B. Medaillen "Stempel" (Badges) --- */
+/* Nutze dies um das Icon herum: <span class="medal-badge gold">...</span> */
+
+.medal-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    width: 32px;            /* Quadratische Form */
+    height: 32px;
+    
+    border-radius: 6px;     /* Leicht abgerundete Ecken (Stempel-Look) */
+    font-weight: bold;
+    font-size: 1rem;
+    
+    /* 3D Effekt Schatten */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+    border: 1px solid rgba(255,255,255,0.3);
+    
+    color: #fff;            /* Weiße Schrift/Icon */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    
+    margin-right: 6px;      /* Abstand zu den Punkten */
+    transition: transform 0.2s;
+}
+
+.medal-badge:hover {
+    transform: scale(1.1);  /* Kleiner Zoom Effekt */
+}
+
+/* Die Farben (angepasst an JS Logik: gold, silver, bronze) */
+.medal-badge.gold {
+    background: linear-gradient(135deg, #ffd700 0%, #f1c40f 100%);
+    border-color: #e6c200;
+}
+
+.medal-badge.silver {
+    background: linear-gradient(135deg, #e0e0e0 0%, #bdc3c7 100%);
+    color: #495057; /* Dunkler Text bei Silber für Lesbarkeit */
+    text-shadow: none;
+    border-color: #aeb6bf;
+}
+
+.medal-badge.bronze {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    border-color: #a05a2c;
+}
+
+/* Fallback für "Keine Medaille" */
+.medal-badge.none {
+    background-color: transparent;
+    border: 1px dashed var(--app-border);
+    box-shadow: none;
+    color: var(--app-muted);
+}
+
+/* --- C. Punkte Box (Pill Shape) --- */
+/* Neben der Medaille: <span class="points-badge">12 Pkt.</span> */
+.points-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    
+    background-color: rgba(0,0,0,0.05);
+    border: 1px solid var(--app-border);
+    border-radius: 12px; /* Pillenform */
+    color: var(--app-muted);
+}
+
+/* Dark Mode Anpassung für Punkte */
+@media (prefers-color-scheme: dark) {
+    .points-badge {
+        background-color: rgba(255,255,255,0.1);
+        color: #e9ecef;
+    }
 }
