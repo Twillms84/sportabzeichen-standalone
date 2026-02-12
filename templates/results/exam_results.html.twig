@@ -18,14 +18,14 @@
         {# ZURÜCK #}
         <a href="{{ path('app_exams_dashboard') }}" 
            class="btn btn-primary btn-sm d-flex align-items-center shadow-sm">
-            {{ icon('arrow-left')|raw }} <span class="ms-2">{{ 'Zurück'|trans }}</span>
+            <i class="bi bi-arrow-left"></i> <span class="ms-2">{{ 'Zurück'|trans }}</span>
         </a>
 
         {# DRUCKEN #}
         <a id="btn-print-groupcard" 
              href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
              class="btn btn-primary btn-sm d-flex align-items-center shadow-sm" target="_blank">
-            {{ icon('print')|raw }} <span class="ms-2">{{ 'Drucken'|trans }}</span>
+            <i class="bi bi-printer"></i> <span class="ms-2">{{ 'Drucken'|trans }}</span>
         </a>
     </div>
 
