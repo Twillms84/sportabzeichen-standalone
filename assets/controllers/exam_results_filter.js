@@ -131,10 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .map(cb => cb.value);
             
             const allGroupsChecked = checkedGroups.length === checkboxes.length;
-
-            // B. Button Text
-            groupBtn.textContent = 'Gruppen';
-            
+    
             // C. Suchbegriff
             const searchTerm = searchInput.value.toLowerCase().trim();
 
