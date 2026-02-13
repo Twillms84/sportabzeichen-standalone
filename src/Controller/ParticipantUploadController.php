@@ -26,8 +26,7 @@ final class ParticipantUploadController extends AbstractController
         UserRepository $userRepo,
         GroupRepository $groupRepo,
         UserPasswordHasherInterface $passwordHasher
-    ): Response
-    {
+    ): Response {
         $imported = 0;
         $skipped  = 0;
         $error    = null;
@@ -38,170 +37,137 @@ final class ParticipantUploadController extends AbstractController
             $file = $request->files->get('csvFile');
             $strategy = $request->request->get('strategy', 'iserv_match');
 
-            // --- 1. Vorbereitungs-Check: Institution ---
             $admin = $this->getUser();
-            $institution = null;
-            
-            if ($admin && method_exists($admin, 'getInstitution')) {
-                $institution = $admin->getInstitution();
-            }
+            $institution = method_exists($admin, 'getInstitution') ? $admin->getInstitution() : null;
 
             if (!$institution) {
-                $error = 'Fehler: Du bist keiner Institution zugewiesen. Import abgebrochen.';
+                $error = 'Fehler: Du bist keiner Institution zugewiesen.';
             } elseif (!$file || strtolower($file->getClientOriginalExtension()) !== 'csv') {
                 $error = 'Bitte eine gültige CSV-Datei auswählen.';
             } else {
-                
-                $filePath = $file->getRealPath();
-                $firstLine = fgets(fopen($filePath, 'r'));
+                $handle = fopen($file->getRealPath(), 'r');
+                $firstLine = fgets($handle);
                 $separator = str_contains($firstLine, ';') ? ';' : ',';
-                
-                $handle = fopen($filePath, 'r');
+                rewind($handle);
                 fgetcsv($handle, 0, $separator); // Header überspringen
-                
-                $lineNumber = 1;
-                $groupCache = []; 
 
+                // --- OPTIMIERUNG: CACHING ---
+                $existingUsers = $userRepo->findBy(['institution' => $institution]);
+                $userCache = [];
+                foreach ($existingUsers as $u) {
+                    if ($u->getImportId()) $userCache[$u->getImportId()] = $u;
+                    if ($u->getUsername()) $userCache['uname_'.$u->getUsername()] = $u;
+                }
+
+                $existingGroups = $groupRepo->findBy(['institution' => $institution]);
+                $groupCache = [];
+                foreach ($existingGroups as $g) {
+                    $groupCache[$g->getName()] = $g;
+                }
+
+                $lineNumber = 1;
                 try {
                     while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
                         $lineNumber++;
+                        $row = array_map(fn($c) => mb_convert_encoding($c, 'UTF-8', 'Windows-1252'), $row);
 
-                        $row = array_map(function($cell) {
-                            return mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
-                        }, $row);
+                        if (count($row) < 5 || trim($row[0]) === '') continue;
 
-                        if (count($row) < 1 || (count($row) === 1 && trim($row[0]) === '')) {
-                            continue;
-                        }
+                        [$importIdRaw, $geschlechtRaw, $geburtsdatumRaw, $lastname, $firstname] = $row;
+                        $groupName = trim($row[5] ?? '');
+                        $importIdRaw = trim($importIdRaw);
 
-                        if (count($row) < 5) {
-                            $skipped++;
-                            $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten.";
-                            continue;
-                        }
-
-                        $importIdRaw   = trim($row[0]); 
-                        $geschlechtRaw = trim($row[1]); 
-                        $geburtsdatumRaw = trim($row[2]);
-                        $lastname      = trim($row[3]); 
-                        $firstname     = trim($row[4] ?? '');
-                        $groupName     = trim($row[5] ?? '');
-
-                        if ($importIdRaw === '') continue;
-
-                        // --- 2. User finden oder erstellen ---
-                        $user = $userRepo->findOneBy(['importId' => $importIdRaw]);
+                        // 1. User finden (Update-Check)
+                        $user = $userCache[$importIdRaw] ?? null;
 
                         if (!$user && $strategy === 'iserv_match') {
-                            $user = $userRepo->findOneBy(['act' => $importIdRaw]); // Oder 'username'
+                            $user = $userCache['uname_'.$importIdRaw] ?? null;
                             if ($user) {
                                 $user->setImportId($importIdRaw);
+                                $userCache[$importIdRaw] = $user;
                             }
                         }
 
                         if (!$user) {
+                            // NEUANLAGE
                             $user = new User();
-                            // WICHTIG: User der Institution zuweisen!
-                            $user->setInstitution($institution); 
-                            
+                            $user->setInstitution($institution);
                             $user->setImportId($importIdRaw);
-                            $user->setFirstname($firstname);
-                            $user->setLastname($lastname);
+                            $user->setSource('csv');
+                            $user->setPassword($passwordHasher->hashPassword($user, 'start123'));
                             
                             $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
-                            $genUsername = preg_replace('/[^a-z0-9.]/', '', $genUsername);
-                            $user->setUsername($genUsername);
-                            
-                            $user->setPassword($passwordHasher->hashPassword($user, 'start123')); 
-                            $user->setSource('csv');
-                            $user->setRoles([]);
-                            
+                            $user->setUsername(preg_replace('/[^a-z0-9.]/', '', $genUsername));
                             $em->persist($user);
-                        } else {
-                            $user->setFirstname($firstname);
-                            $user->setLastname($lastname);
-                            // Falls User existiert aber keine Schule hat:
-                            if (!$user->getInstitution()) {
-                                $user->setInstitution($institution);
-                            }
+                            $userCache[$importIdRaw] = $user;
                         }
 
-                        // --- 3. Gruppe (Klasse) verarbeiten ---
+                        // UPDATE der Stammdaten
+                        $user->setFirstname(trim($firstname));
+                        $user->setLastname(trim($lastname));
+
+                        // 2. Gruppe verarbeiten (mit Wechsel-Logik)
                         if ($groupName !== '') {
                             if (!isset($groupCache[$groupName])) {
-                                // WICHTIG: Suche Gruppe NUR innerhalb dieser Schule!
-                                $group = $groupRepo->findOneBy([
-                                    'name' => $groupName,
-                                    'institution' => $institution // <--- DAS HAT GEFEHLT
-                                ]);
-                                
-                                if (!$group) {
-                                    $group = new Group();
-                                    $group->setName($groupName);
-                                    // WICHTIG: Hier muss die Institution gesetzt werden (Pflichtfeld!)
-                                    $group->setInstitution($institution); // <--- HIER WAR DER FEHLER
-                                    $em->persist($group);
-                                }
+                                $group = new Group();
+                                $group->setName($groupName);
+                                $group->setInstitution($institution);
+                                $em->persist($group);
                                 $groupCache[$groupName] = $group;
                             }
                             
-                            $group = $groupCache[$groupName];
-                            $user->addGroup($group);
+                            $targetGroup = $groupCache[$groupName];
+                            
+                            // Alte Gruppen der gleichen Institution entfernen (Klassenwechsel)
+                            foreach ($user->getGroups() as $oldGroup) {
+                                if ($oldGroup->getInstitution() === $institution && $oldGroup !== $targetGroup) {
+                                    $user->removeGroup($oldGroup);
+                                }
+                            }
+                            $user->addGroup($targetGroup);
                         }
 
-                        // --- 4. Participant (Sportdaten) ---
-                        $geschlecht = match (strtolower($geschlechtRaw)) {
+                        // 3. Participant (Sportdaten) aktualisieren
+                        $geburtsdatum = self::parseDate($geburtsdatumRaw);
+                        $geschlecht = match (strtolower(trim($geschlechtRaw))) {
                             'm', 'male', 'männlich' => 'MALE',
                             'w', 'f', 'female', 'weiblich' => 'FEMALE',
-                            'd', 'diverse', 'divers' => 'DIVERSE',
-                            default => null, 
+                            default => 'DIVERSE',
                         };
 
-                        $geburtsdatum = self::parseDate($geburtsdatumRaw);
-
-                        if (!$geschlecht || !$geburtsdatum) {
+                        if (!$geburtsdatum) {
                             $skipped++;
-                            $detailedErrors[] = "Zeile $lineNumber ($lastname): Ungültiges Datum/Geschlecht.";
+                            $detailedErrors[] = "Zeile $lineNumber: Ungültiges Datum ($geburtsdatumRaw)";
                             continue;
                         }
 
-                        $participant = $user->getParticipant();
-
-                        if (!$participant) {
-                            $participant = new Participant();
+                        $participant = $user->getParticipant() ?? new Participant();
+                        if (!$participant->getUser()) {
                             $participant->setUser($user);
-                            $participant->setInstitution($institution); // Hier war es schon korrekt
+                            $participant->setInstitution($institution);
                             $user->setParticipant($participant);
                         }
 
                         $participant->setGender($geschlecht);
                         $participant->setBirthdate($geburtsdatum);
-                        $participant->setUsername($firstname . ' ' . $lastname);
-                        $participant->setGroupName($groupName);
+                        $participant->setUsername($user->getFirstname() . ' ' . $user->getLastname());
+                        $participant->setGroupName($groupName); // Text-Feld für die Anzeige
                         $participant->setUpdatedAt(new \DateTime());
-
                         $em->persist($participant);
 
-                        if ($imported % 50 === 0) {
+                        $imported++;
+
+                        if ($imported % 100 === 0) {
                             $em->flush();
                         }
-
-                        $imported++;
                     }
-                    
                     $em->flush();
+                    $message = "Verarbeitung abgeschlossen: $imported Teilnehmer importiert/aktualisiert.";
 
                 } catch (\Exception $e) {
                     $error = 'Systemfehler beim Import: ' . $e->getMessage();
                 }
-
                 fclose($handle);
-                
-                if ($imported > 0) {
-                    $message = "Import erfolgreich: $imported User verarbeitet.";
-                } elseif ($skipped > 0 && !$error) {
-                    $error = "Import abgeschlossen, aber $skipped Zeilen übersprungen.";
-                }
             }
         }
 
@@ -214,6 +180,7 @@ final class ParticipantUploadController extends AbstractController
             'detailedErrors' => $detailedErrors,
         ]);
     }
+
     
     private static function parseDate(?string $input): ?\DateTime
     {
