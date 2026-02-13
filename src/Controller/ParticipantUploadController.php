@@ -26,119 +26,143 @@ final class ParticipantUploadController extends AbstractController
         UserRepository $userRepo,
         GroupRepository $groupRepo,
         UserPasswordHasherInterface $passwordHasher,
-        \Psr\Log\LoggerInterface $logger // Logger hinzugefügt
+        \Psr\Log\LoggerInterface $logger
     ): Response {
         $imported = 0;
-        $updated  = 0; // Zähler für Updates
+        $updated  = 0;
         $skipped  = 0;
-        $error    = null;
-        $message  = null;
+        $identical = 0;
         $detailedErrors = [];
 
         if ($request->isMethod('POST')) {
             $file = $request->files->get('csvFile');
-            $strategy = $request->request->get('strategy', 'iserv_match');
             $admin = $this->getUser();
             $institution = method_exists($admin, 'getInstitution') ? $admin->getInstitution() : null;
 
-            if (!$institution) {
-                $error = 'Keine Institution gefunden.';
-            } elseif (!$file) {
-                $error = 'Keine Datei empfangen.';
+            if (!$institution || !$file) {
+                $error = 'Fehler: Institution oder Datei fehlt.';
             } else {
-                $handle = fopen($file->getRealPath(), 'r');
-                $separator = str_contains(fgets($handle), ';') ? ';' : ',';
-                rewind($handle);
-                fgetcsv($handle, 0, $separator); // Skip Header
+                $filePath = $file->getRealPath();
+                $content = file_get_contents($filePath);
+                
+                // --- 1. ENCODING FIX ---
+                // Prüfen, ob Datei UTF-8 ist, sonst konvertieren
+                if (!mb_check_encoding($content, 'UTF-8')) {
+                    $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+                }
+                
+                $lines = explode("\n", str_replace("\r", "", $content));
+                $firstLine = $lines[0] ?? '';
+                $separator = str_contains($firstLine, ';') ? ';' : ',';
 
-                // Caching wie gehabt
+                // --- 2. CACHING ---
                 $existingUsers = $userRepo->findBy(['institution' => $institution]);
                 $userCache = [];
                 foreach ($existingUsers as $u) {
                     if ($u->getImportId()) $userCache[trim((string)$u->getImportId())] = $u;
                 }
+                
+                $existingGroups = $groupRepo->findBy(['institution' => $institution]);
+                $groupCache = [];
+                foreach ($existingGroups as $g) { $groupCache[$g->getName()] = $g; }
 
-                $lineNumber = 1;
-                try {
-                    while (($row = fgetcsv($handle, 1000, $separator)) !== false) {
-                        $lineNumber++;
-                        $row = array_map(fn($c) => mb_convert_encoding($c, 'UTF-8', 'Windows-1252'), $row);
-                        
-                        if (count($row) < 5) {
-                            $detailedErrors[] = "Zeile $lineNumber: Zu wenig Spalten (" . count($row) . ")";
-                            continue;
-                        }
+                // --- 3. PROCESSING ---
+                foreach ($lines as $index => $line) {
+                    if ($index === 0 || empty(trim($line))) continue; // Header & Leerzeilen skip
+                    
+                    $row = str_getcsv($line, $separator);
+                    if (count($row) < 5) continue;
 
-                        $importIdRaw = trim((string)$row[0]);
-                        $lastname    = trim($row[3]);
-                        $firstname   = trim($row[4]);
+                    $importIdRaw = trim($row[0]);
+                    $geschlechtRaw = trim($row[1]);
+                    $geburtsdatumRaw = trim($row[2]);
+                    $lastname = trim($row[3]);
+                    $firstname = trim($row[4]);
+                    $groupName = trim($row[5] ?? '');
 
-                        // DEBUG LOG
-                        $logger->info("Verarbeite Zeile $lineNumber: ID $importIdRaw - $firstname $lastname");
+                    // Falls Datum im Namen klebt (Fix für "Gröneweg-23.03.2013")
+                    if (str_contains($lastname, '-') && empty($geburtsdatumRaw)) {
+                        $parts = explode('-', $lastname);
+                        $geburtsdatumRaw = array_pop($parts);
+                        $lastname = implode('-', $parts);
+                    }
 
-                        // 1. Suche Match
-                        $user = $userCache[$importIdRaw] ?? null;
-                        $isNew = false;
+                    $geburtsdatum = self::parseDate($geburtsdatumRaw);
+                    $user = $userCache[$importIdRaw] ?? null;
+                    $isNew = ($user === null);
+                    $hasChanges = false;
 
-                        if (!$user) {
-                            $logger->debug("-> User nicht im Cache. Erstelle neu.");
-                            $user = new User();
-                            $user->setInstitution($institution);
-                            $user->setImportId($importIdRaw);
-                            $user->setSource('csv');
-                            $user->setUsername('u' . $importIdRaw . uniqid()); // Provisorisch
-                            $user->setPassword('dummy'); 
-                            $em->persist($user);
-                            $isNew = true;
-                            $imported++;
-                        } else {
-                            $logger->debug("-> User gefunden (ID: {$user->getId()}). Update gestartet.");
-                            $updated++;
-                        }
+                    if ($isNew) {
+                        $user = new User();
+                        $user->setInstitution($institution);
+                        $user->setImportId($importIdRaw);
+                        $user->setSource('csv');
+                        $user->setPassword($passwordHasher->hashPassword($user, 'start123'));
+                        $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
+                        $user->setUsername(preg_replace('/[^a-z0-9.]/', '', $genUsername));
+                        $em->persist($user);
+                        $hasChanges = true;
+                    }
 
-                        // 2. Daten setzen
+                    // Vergleich für Statistik
+                    $participant = $user->getParticipant() ?? new Participant();
+                    
+                    if ($user->getFirstname() !== $firstname || 
+                        $user->getLastname() !== $lastname ||
+                        $participant->getGroupName() !== $groupName ||
+                        ($participant->getBirthdate() ? $participant->getBirthdate()->format('Y-m-d') : null) !== ($geburtsdatum ? $geburtsdatum->format('Y-m-d') : null)
+                    ) {
+                        $hasChanges = true;
+                    }
+
+                    if ($hasChanges) {
                         $user->setFirstname($firstname);
                         $user->setLastname($lastname);
 
-                        // 3. Participant Logik
-                        $geburtsdatum = self::parseDate($row[2]);
-                        if (!$geburtsdatum) {
-                            $detailedErrors[] = "Zeile $lineNumber ($firstname $lastname): Datum fehlerhaft: '{$row[2]}'";
-                            $skipped++;
-                            continue;
+                        // Gruppe verarbeiten
+                        if ($groupName !== '') {
+                            if (!isset($groupCache[$groupName])) {
+                                $group = new Group();
+                                $group->setName($groupName);
+                                $group->setInstitution($institution);
+                                $em->persist($group);
+                                $groupCache[$groupName] = $group;
+                            }
+                            $targetGroup = $groupCache[$groupName];
+                            foreach ($user->getGroups() as $oldG) {
+                                if ($oldG->getInstitution() === $institution) $user->removeGroup($oldG);
+                            }
+                            $user->addGroup($targetGroup);
                         }
 
-                        $participant = $user->getParticipant() ?? new Participant();
                         $participant->setUser($user);
                         $participant->setInstitution($institution);
                         $participant->setBirthdate($geburtsdatum);
+                        $participant->setGender(match(strtolower($geschlechtRaw)){'m','male'=>'MALE','w','f','female'=>'FEMALE',default=>'DIVERSE'});
+                        $participant->setGroupName($groupName);
                         $participant->setUpdatedAt(new \DateTime());
                         $em->persist($participant);
 
-                        if ($lineNumber % 50 === 0) {
-                            $em->flush();
-                            $logger->notice("Batch Flush bei Zeile $lineNumber");
-                        }
+                        $isNew ? $imported++ : $updated++;
+                    } else {
+                        $identical++;
                     }
-                    $em->flush();
-                    $message = "Erfolg: $imported neu, $updated aktualisiert, $skipped übersprungen.";
 
-                } catch (\Exception $e) {
-                    $logger->error("Abbruch in Zeile $lineNumber: " . $e->getMessage());
-                    $error = "Fehler in Zeile $lineNumber: " . $e->getMessage();
+                    if (($imported + $updated) % 100 === 0) $em->flush();
                 }
-                fclose($handle);
+                $em->flush();
+                $message = "Ergebnis: $imported neu, $updated aktualisiert, $identical identisch.";
             }
         }
 
         return $this->render('admin/upload_participants.html.twig', [
             'activeTab' => 'participants_upload',
-            'imported'  => $imported,
-            'updated'   => $updated, // Im Twig ausgeben!
-            'skipped'   => $skipped,
-            'error'     => $error,
-            'message'   => $message,
-            'detailedErrors' => $detailedErrors,
+            'imported' => $imported,
+            'updated' => $updated,
+            'identical' => $identical,
+            'error' => $error ?? null,
+            'message' => $message ?? null,
+            'detailedErrors' => $detailedErrors
         ]);
     }
 
