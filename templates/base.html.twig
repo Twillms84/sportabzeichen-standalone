@@ -5,154 +5,119 @@
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
+    {# --- CSS --- #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     {% block stylesheets %}
-    <style>
-        :root {
-            --osa-main-green: #144018;
-            --osa-bg-dark: #121212;
-            --osa-sidebar-dark: #1a1d21;
-        }
-
-        body { 
-            background-color: var(--osa-bg-dark); 
-            color: #e9ecef;
-            min-height: 100vh;
-        }
-
-        /* Sidebar Fixes */
-        .sidebar-wrapper {
-            border-right: 1px solid #333;
-            width: 280px;
-        }
-
-        /* Verhindert das Überlappen: Der Content braucht links Platz, wenn Sidebar sichtbar */
-        @media (min-width: 992px) {
-            body { display: flex; }
-            .sidebar-wrapper { 
-                position: sticky; 
-                top: 0; 
-                height: 100vh; 
-                flex-shrink: 0; 
-            }
-            .main-content { 
-                flex-grow: 1; 
-                min-width: 0; /* Wichtig für responsive Tabellen */
-            }
-        }
-
-        /* Dark-Style für die Results-Dropdowns & Bootstrap-Select */
-        .dropdown-menu-osa, .bootstrap-select .dropdown-menu {
-            background-color: #2b3035 !important;
-            border: 1px solid #495057 !important;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
-        }
-        .dropdown-item { color: #eee !important; }
-        .dropdown-item:hover { background-color: var(--osa-main-green) !important; color: #fff !important; }
-
-        /* Bootstrap Select Button Style */
-        .bootstrap-select .btn.dropdown-toggle {
-            background-color: #2b3035 !important;
-            color: #fff !important;
-            border: 1px solid #495057 !important;
-        }
-
-        /* Sidebar Nav Active State */
-        .nav-link.active { background-color: var(--osa-main-green) !important; }
-    </style>
     {% endblock %}
 
     {% block javascripts %}
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
         {{ importmap('app') }}
-        
-        <script>
-            $(document).ready(function() {
-                // Initialisiert Bootstrap-Select nur dort, wo die Klasse vorhanden ist
-                if ($.fn.selectpicker) {
-                    $('.selectpicker').selectpicker();
-                }
-            });
-        </script>
     {% endblock %}
 </head>
 <body>
 
+    {# --- LAYOUT BLOCK START --- #}
+    {# Dieser Block enthält das Standard-Layout (Sidebar + Content). #}
+    {# Auf der Login-Seite überschreiben wir diesen Block, um die Sidebar auszublenden. #}
     {% block layout %}
-        {# 1. MOBILE HEADER #}
-        <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top w-100">
+
+        {# 1. MOBILE HEADER (Nur sichtbar auf kleinen Screens) #}
+        <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
-                <i class="fas fa-bars"></i>
+                <i class="fas fa-bars"></i> Menü
             </button>
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
         {# 2. SIDEBAR CONTAINER #}
         <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
+            
+            {# Mobile: Schließen-Button #}
             <div class="offcanvas-header d-lg-none border-bottom border-secondary">
                 <h5 class="offcanvas-title text-white">Menü</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
             </div>
 
+            {# Sidebar Inhalt #}
             <div class="sidebar d-flex flex-column h-100">
+                
+                {# Logo / Brand #}
                 <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
                      <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
                 </a>
+
                 <hr class="my-0 border-secondary">
 
+                {# Navigation Links #}
                 <ul class="nav flex-column mb-auto mt-3 px-2">
                     <li class="nav-item mb-1">
                         {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
                         <a href="{{ path('app_exams_dashboard') }}" 
-                           class="nav-link text-white {% if is_exam %}active{% endif %} rounded">
+                           class="nav-link text-white {% if is_exam %}active bg-primary{% endif %} rounded">
                             <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                         </a>
                     </li>
+                    
+                    {# Nur anzeigen, wenn User ADMIN Rechte hat (optional) #}
                     {% if is_granted('ROLE_ADMIN') %}
                     <li class="nav-item mb-1">
-                        <a href="{{ path('admin_dashboard') }}" class="nav-link text-white opacity-75 rounded">
+                        {% set is_admin = app.request.attributes.get('_route') starts with 'admin_' %}
+                        {# Hinweis: Pfad muss existieren, sonst Fehler. Ggf. anpassen #}
+                        <a href="{{ path('admin_dashboard') }}" class="nav-link text-white opacity-75 {% if is_admin %}active bg-primary{% endif %} rounded">
                             <i class="fas fa-tools me-2"></i> Verwaltung
                         </a>
                     </li>
                     {% endif %}
                 </ul>
                 
+                {# Footer: User Info & Logout #}
                 <div class="mt-auto p-3 border-top border-secondary bg-black bg-opacity-25">
                     <div class="d-flex align-items-center justify-content-between">
+                        
+                        {# Linke Seite: User Name #}
                         <div class="d-flex align-items-center overflow-hidden">
                             <i class="fas fa-user-circle fs-4 text-secondary me-2"></i>
-                            <div class="lh-1 text-truncate">
+                            <div class="lh-1 text-truncate" style="max-width: 130px;">
+                                <span class="d-block text-white-50 small" style="font-size: 0.75rem;">Angemeldet als</span>
                                 <span class="text-white fw-bold small text-truncate d-block">
                                     {{ app.user ? (app.user.firstname|default(app.user.username)) : 'Gast' }}
                                 </span>
                             </div>
                         </div>
-                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger border-0"><i class="fas fa-sign-out-alt"></i></a>
+
+                        {# Rechte Seite: Logout Button #}
+                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger border-0" title="Abmelden">
+                            <i class="fas fa-sign-out-alt fs-5"></i>
+                        </a>
+
                     </div>
                 </div>
+
             </div>
         </div>
 
         {# 3. MAIN CONTENT #}
+        {# Der Inhalt schiebt sich neben die Sidebar #}
         <main class="main-content p-4">
+            {# Flash Messages (Erfolgs-/Fehlermeldungen) #}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endfor %}
 
+            {# Hier kommt der eigentliche Seiteninhalt rein #}
             {% block body %}{% endblock %}
         </main>
+
     {% endblock %} 
+    {# --- LAYOUT BLOCK ENDE --- #}
 
 </body>
 </html>
