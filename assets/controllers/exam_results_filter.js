@@ -75,87 +75,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =========================================================
-    // 2. GRUPPEN FILTER (Korrigiert & mit Debugging)
+    // 2. TEILNEHMER / GRUPPEN FILTER
     // =========================================================
-    const groupContainer = document.getElementById('group-checkbox-container');
-    
     if (groupContainer) {
-        console.log('🔍 Gruppen-Filter wird initialisiert...');
-        
+        const allRows = document.querySelectorAll('.participant-row');
         const groups = new Set();
-        // Wir nutzen jQuery Selektoren, die sind oft fehlertoleranter
-        const $rows = $('.participant-row');
+        const searchInput = document.getElementById('client-search-input');
 
-        console.log('Anzahl gefundener Zeilen:', $rows.length);
-
-        $rows.each(function() {
-            // Wir versuchen beide Attribut-Namen
-            let val = $(this).data('class');
-            if (!val) val = $(this).data('group'); // Fallback
-            
-            // Debugging für die erste Zeile, damit wir sehen was passiert
-            if (groups.size === 0 && val) {
-                console.log('Erster gefundener Wert:', val);
-            }
-
-            if (val && String(val).trim() !== '') {
-                groups.add(String(val).trim());
-            }
+        // Gruppen sammeln
+        allRows.forEach(row => {
+            const rawVal = row.getAttribute('data-class') || row.getAttribute('data-group');
+            if (rawVal && rawVal.trim() !== '') groups.add(rawVal.trim());
         });
 
-        console.log('Gefundene Gruppen (Set):', Array.from(groups));
-
-        // HTML neu bauen
+        // Checkboxen bauen
         groupContainer.innerHTML = '';
-        
-        if (groups.size === 0) {
-            groupContainer.innerHTML = '<div class="text-muted p-2 small">Keine Gruppen gefunden.<br>Prüfe HTML Attribute (data-class).</div>';
-        } else {
-            Array.from(groups).sort().forEach(grp => {
-                const html = `
-                    <div class="form-check mb-1">
-                        <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="chk_grp_${grp.replace(/\s+/g, '_')}" checked>
-                        <label class="form-check-label w-100" for="chk_grp_${grp.replace(/\s+/g, '_')}" style="cursor:pointer;">${grp}</label>
-                    </div>`;
-                groupContainer.insertAdjacentHTML('beforeend', html);
-            });
-        }
+        Array.from(groups).sort().forEach(grp => {
+            const html = `
+                <div class="form-check mb-1">
+                    <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="chk_grp_${grp}" checked>
+                    <label class="form-check-label w-100" for="chk_grp_${grp}">${grp}</label>
+                </div>`;
+            groupContainer.insertAdjacentHTML('beforeend', html);
+        });
 
-        // --- Update Logik ---
+        // Update Logik
         const updateParticipantFilter = () => {
-            const $checkboxes = $(groupContainer).find('.group-checkbox');
-            const checkedGroups = $checkboxes.filter(':checked').map((_, el) => el.value).get();
-            const allGroupsChecked = checkedGroups.length === $checkboxes.length;
-            const searchTerm = $('#client-search-input').val()?.toLowerCase().trim() || '';
+            const checkboxes = groupContainer.querySelectorAll('.group-checkbox');
+            const checkedGroups = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+            const allGroupsChecked = checkedGroups.length === checkboxes.length;
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-            $rows.each(function() {
-                const $row = $(this);
-                let rowGroup = $row.data('class');
-                if (!rowGroup) rowGroup = $row.data('group');
-                rowGroup = String(rowGroup || '').trim();
-
-                // Namen finden (sucht in gängigen Klassen)
-                const nameText = $row.find('.name-main, .col-name, td:nth-child(1), td:nth-child(2)').text().toLowerCase();
+            allRows.forEach(row => {
+                const rowGroup = (row.getAttribute('data-class') || row.getAttribute('data-group') || '').trim();
+                const nameEl = row.querySelector('.name-main') || row.querySelector('.col-name span'); 
+                const nameText = nameEl ? nameEl.textContent.toLowerCase() : ''; 
 
                 const matchGroup = (allGroupsChecked || checkedGroups.includes(rowGroup));
                 const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
 
-                // Zeile anzeigen/verstecken
-                if (matchGroup && matchSearch) {
-                    $row.show(); // jQuery show
-                } else {
-                    $row.hide(); // jQuery hide
-                }
+                row.style.display = (matchGroup && matchSearch) ? '' : 'none';
             });
-
-            // Update Print Button URL (Falls vorhanden)
-            const $printBtn = $('#btn-print-groupcard');
-            if ($printBtn.length) {
+            
+            // Print URL Update (optional)
+            if (typeof $ !== 'undefined' && $('#btn-print-groupcard').length) {
+                 const $printBtn = $('#btn-print-groupcard');
                  if (!$printBtn.data('base-href')) $printBtn.data('base-href', $printBtn.attr('href'));
                  const baseUrl = $printBtn.data('base-href');
-                 // Wenn NICHT alle gewählt sind, nimm die erste gewählte Gruppe für den Link (einfache Logik)
                  const selGrp = (checkedGroups.length > 0 && !allGroupsChecked) ? checkedGroups[0] : '';
-                 
                  const sep = baseUrl.includes('?') ? '&' : '?';
                  let newUrl = baseUrl + sep + 'class_filter=' + encodeURIComponent(selGrp);
                  if (searchTerm) newUrl += '&search_query=' + encodeURIComponent(searchTerm);
@@ -163,22 +130,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Event Listener (jQuery Style)
-        $(groupContainer).on('change', updateParticipantFilter);
-        $('#client-search-input').on('keyup input', updateParticipantFilter);
+        // Listener
+        groupContainer.addEventListener('change', updateParticipantFilter);
+        if (searchInput) {
+            searchInput.addEventListener('keyup', updateParticipantFilter);
+            searchInput.addEventListener('input', updateParticipantFilter);
+        }
 
-        $('.js-group-all').on('click', function(e) { 
-            e.preventDefault(); 
-            $(groupContainer).find('input').prop('checked', true); 
-            updateParticipantFilter(); 
+        // Buttons Alle/Keine
+        document.querySelector('.js-group-all')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = true);
+            updateParticipantFilter();
         });
-        $('.js-group-none').on('click', function(e) { 
-            e.preventDefault(); 
-            $(groupContainer).find('input').prop('checked', false); 
-            updateParticipantFilter(); 
+        document.querySelector('.js-group-none')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = false);
+            updateParticipantFilter();
         });
         
-        // Einmal initial ausführen
+        // Initialer Run
         updateParticipantFilter();
     }
 });
