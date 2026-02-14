@@ -5,27 +5,24 @@
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    {# --- 1. EXTERNE LIBRARIES --- #}
-    {# jQuery (Wichtig: Muss VOR Bootstrap geladen werden für Legacy-Support) #}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    {# CSS Frameworks #}
+    {# --- 1. CSS LIBRARIES --- #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {# Legacy Support #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     {% block stylesheets %}
     <style>
-        /* --- GLOBAL THEME VARIABLES --- */
+        /* --- GLOBAL THEME --- */
         :root {
-            --osa-bg: #121212;          /* Hintergrund Seite */
-            --osa-card-bg: #1e1e1e;     /* Hintergrund Karte */
-            --osa-border: #333333;      /* Rahmenfarbe */
-            --osa-green: #2c5e32;       /* Hauptfarbe (Dunkelgrün) */
-            --osa-green-hover: #1e4223; /* Hover Farbe */
-            --osa-text: #e9ecef;        /* Textfarbe */
-            --osa-input-bg: #2b3035;    /* Input Felder */
+            --osa-bg: #121212;
+            --osa-card-bg: #1e1e1e;
+            --osa-border: #333333;
+            --osa-green: #2c5e32;       /* Dein Dunkelgrün */
+            --osa-green-hover: #1e4223;
+            --osa-text: #e9ecef;
+            --osa-input-bg: #2b3035;
         }
 
         body { 
@@ -34,7 +31,7 @@
             min-height: 100vh;
         }
 
-        /* --- BUTTONS (Erzwinge Dunkelgrün) --- */
+        /* --- BUTTONS (Global Dunkelgrün) --- */
         .btn-primary, .btn-success, .btn-osa-primary, .btn-osa-success {
             background-color: var(--osa-green) !important;
             border-color: var(--osa-green) !important;
@@ -46,25 +43,29 @@
         }
         
         .btn-outline-secondary {
-            color: #adb5bd; border-color: #495057;
+            color: #adb5bd; 
+            border-color: #495057;
         }
         .btn-outline-secondary:hover {
-            background-color: #343a40; color: #fff; border-color: #6c757d;
+            background-color: #343a40; 
+            color: #fff; 
+            border-color: #6c757d;
         }
 
-        /* --- CARDS (Dark Mode Fix) --- */
+        /* --- CARDS & LISTS --- */
         .card, .osa-card {
             background-color: var(--osa-card-bg) !important;
             border: 1px solid var(--osa-border) !important;
             color: var(--osa-text) !important;
         }
         .card-header, .osa-card-header {
-            background-color: var(--osa-green) !important; /* Header Grün */
+            background-color: var(--osa-green) !important;
             color: #fff !important;
             border-bottom: 1px solid var(--osa-border) !important;
             padding: 0.75rem 1.25rem;
             border-top-left-radius: var(--bs-card-border-radius);
             border-top-right-radius: var(--bs-card-border-radius);
+            font-weight: bold;
         }
         .list-group-item {
             background-color: var(--osa-card-bg) !important;
@@ -72,19 +73,22 @@
             color: var(--osa-text) !important;
         }
 
-        /* --- DROPDOWNS & FORMULARE --- */
+        /* --- DROPDOWNS & INPUTS --- */
         .dropdown-menu {
             background-color: var(--osa-input-bg) !important;
             border: 1px solid #495057 !important;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
+            z-index: 1055 !important; /* WICHTIG: Damit es über allem liegt */
         }
-        .dropdown-item { color: #dee2e6 !important; }
+        .dropdown-item { 
+            color: #dee2e6 !important; 
+            cursor: pointer;
+        }
         .dropdown-item:hover, .dropdown-item:focus {
             background-color: var(--osa-green) !important;
             color: #fff !important;
         }
         
-        /* Inputs */
         .form-control, .form-select {
             background-color: var(--osa-input-bg);
             border: 1px solid #495057;
@@ -97,43 +101,31 @@
             box-shadow: 0 0 0 0.25rem rgba(44, 94, 50, 0.25);
         }
 
-        /* Helper Classes für dein JS */
-        .cursor-pointer, .js-view-all, .js-view-none, .js-group-all, .js-group-none {
-            cursor: pointer;
-        }
+        /* Helper Classes */
+        .cursor-pointer { cursor: pointer; }
         .col-hidden { display: none !important; }
     </style>
     {% endblock %}
 
     {% block javascripts %}
-        {# JS Libraries #}
+        {# 1. jQuery (Muss als erstes kommen für Legacy Plugins) #}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        
+        {# 2. Bootstrap Bundle (Enthält Popper.js - ZWINGEND für Dropdowns) #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
+        {# 3. Bootstrap Select (Nur für alte Elemente) #}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
         
-        {# Deine App-Logik #}
+        {# 4. Deine App-Logik #}
         {{ importmap('app') }}
-
-        {# --- DER CRITICAL FIX FÜR DROPDOWNS --- #}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initialisiert alle Dropdowns, die NICHT Bootstrap-Select sind
-                // Das repariert deine Results-Filter und das Edit-Menü
-                var dropdownList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
-                dropdownList.map(function (dropdownToggleEl) {
-                    if (!dropdownToggleEl.classList.contains('selectpicker')) {
-                        return new bootstrap.Dropdown(dropdownToggleEl);
-                    }
-                });
-            });
-        </script>
     {% endblock %}
 </head>
 <body>
 
-    {# --- LAYOUT BLOCK START --- #}
     {% block layout %}
 
-        {# 1. MOBILE HEADER #}
+        {# MOBILE HEADER #}
         <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top border-bottom border-secondary">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
                 <i class="fas fa-bars"></i> Menü
@@ -141,7 +133,7 @@
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
-        {# 2. SIDEBAR CONTAINER #}
+        {# SIDEBAR #}
         <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
             
             <div class="offcanvas-header d-lg-none border-bottom border-secondary">
@@ -151,14 +143,12 @@
 
             <div class="sidebar d-flex flex-column h-100" style="border-right: 1px solid var(--osa-border);">
                 
-                {# Logo #}
                 <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
                      <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
                 </a>
 
                 <hr class="my-0 border-secondary">
 
-                {# Navigation #}
                 <ul class="nav flex-column mb-auto mt-3 px-2">
                     <li class="nav-item mb-1">
                         {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
@@ -178,13 +168,12 @@
                     {% endif %}
                 </ul>
                 
-                {# Footer #}
                 <div class="mt-auto p-3 border-top border-secondary bg-black bg-opacity-25">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center overflow-hidden">
                             <i class="fas fa-user-circle fs-4 text-secondary me-2"></i>
                             <div class="lh-1 text-truncate" style="max-width: 130px;">
-                                <span class="d-block text-white-50 small" style="font-size: 0.75rem;">Angemeldet als</span>
+                                <span class="d-block text-white-50 small">Angemeldet als</span>
                                 <span class="text-white fw-bold small text-truncate d-block">
                                     {{ app.user ? (app.user.firstname|default(app.user.username)) : 'Gast' }}
                                 </span>
@@ -195,13 +184,11 @@
                         </a>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        {# 3. MAIN CONTENT #}
+        {# MAIN CONTENT #}
         <main class="main-content p-4" style="flex-grow: 1;">
-            {# Flash Messages #}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
@@ -211,7 +198,6 @@
                 {% endfor %}
             {% endfor %}
 
-            {# Content #}
             {% block body %}{% endblock %}
         </main>
 
