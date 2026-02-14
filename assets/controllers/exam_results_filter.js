@@ -1,54 +1,16 @@
 import $ from 'jquery';
 
 document.addEventListener('DOMContentLoaded', function() {
-
-    // =========================================================
-    // HELPER: Dropdown Schutz & Cursor Fix
-    // =========================================================
-    // Diese Funktion verhindert das Schließen des Menüs und repariert den Mauszeiger
-    function setupDropdownBehavior(containerElement, btnAllSelector, btnNoneSelector, onUpdateCallback) {
-        if (!containerElement) return;
-
-        // 1. Das gesamte Dropdown-Menü gegen Zuklappen schützen
-        const dropdownMenu = containerElement.closest('.dropdown-menu');
-        if (dropdownMenu) {
-            dropdownMenu.addEventListener('click', function(e) {
-                e.stopPropagation(); // Stoppt das Signal an Bootstrap
-            });
-        }
-
-        // 2. Buttons konfigurieren (Mauszeiger + Klick)
-        const btnAll = document.querySelector(btnAllSelector);
-        const btnNone = document.querySelector(btnNoneSelector);
-
-        if (btnAll) {
-            btnAll.style.cursor = 'pointer'; // CSS-Notfall-Fix
-            btnAll.addEventListener('click', (e) => {
-                e.preventDefault();
-                // Checkboxen im Container suchen und setzen
-                containerElement.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = true);
-                onUpdateCallback(); // Filter-Funktion aufrufen
-            });
-        }
-
-        if (btnNone) {
-            btnNone.style.cursor = 'pointer'; // CSS-Notfall-Fix
-            btnNone.addEventListener('click', (e) => {
-                e.preventDefault();
-                containerElement.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
-                onUpdateCallback(); // Filter-Funktion aufrufen
-            });
-        }
-    }
-
-    // =========================================================
-    // 1. ANSICHT FILTER (Spalten ein/ausblenden)
-    // =========================================================
-    const viewContainer = document.getElementById('view-checkbox-container');
-    const viewBtn = document.getElementById('viewFilterBtn');
     
-    if (viewContainer && viewBtn) {
-        // 1. Kategorien automatisch aus dem DOM ermitteln
+    // --- KONFIGURATION ---
+    const viewContainer = document.getElementById('view-checkbox-container');
+    const groupContainer = document.getElementById('group-checkbox-container');
+    
+    // =========================================================
+    // 1. ANSICHT FILTER (Spalten)
+    // =========================================================
+    if (viewContainer) {
+        // Kategorien sammeln
         const categories = new Set();
         document.querySelectorAll('[class*="col-cat-"]').forEach(el => {
             el.classList.forEach(cls => {
@@ -58,35 +20,30 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // 2. Checkboxen rendern
+        // Checkboxen bauen
         const savedViewSelection = JSON.parse(localStorage.getItem('sportabzeichen_view_selection') || '[]');
         
+        // HTML leeren & neu befüllen
+        viewContainer.innerHTML = '';
         Array.from(categories).sort().forEach(cat => {
             let label = cat.charAt(0).toUpperCase() + cat.slice(1);
             if (cat.toLowerCase() === 'swimming') label = 'Schwimmnachweis';
 
             const isChecked = savedViewSelection.length === 0 || savedViewSelection.includes(cat);
-
             const html = `
-                <div class="form-check"> 
+                <div class="form-check mb-1"> 
                     <input class="form-check-input view-checkbox" type="checkbox" value="${cat}" id="chk_view_${cat}" ${isChecked ? 'checked' : ''}>
-                    <label class="form-check-label w-100" for="chk_view_${cat}" style="cursor: pointer;">
-                        ${label}
-                    </label>
-                </div>
-            `;
+                    <label class="form-check-label w-100" for="chk_view_${cat}">${label}</label>
+                </div>`;
             viewContainer.insertAdjacentHTML('beforeend', html);
         });
 
-        // 3. Logik Funktion
+        // Update Logik
         const updateViewFilter = () => {
             const checkboxes = viewContainer.querySelectorAll('.view-checkbox');
             const checkedValues = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
             const allChecked = checkedValues.length === checkboxes.length;
 
-            viewBtn.textContent = 'Diziplin'; // Text fixieren
-
-            // Spalten ein-/ausblenden
             categories.forEach(cat => {
                 const cells = document.querySelectorAll('.col-cat-' + cat);
                 if (allChecked || checkedValues.includes(cat)) {
@@ -95,59 +52,59 @@ document.addEventListener('DOMContentLoaded', function() {
                     cells.forEach(cell => cell.classList.add('col-hidden'));
                 }
             });
-
             localStorage.setItem('sportabzeichen_view_selection', JSON.stringify(allChecked ? [] : checkedValues));
         };
 
-        // Event Listener für Änderungen
+        // Event Listener (Change)
         viewContainer.addEventListener('change', updateViewFilter);
-        
-        // Initiale Ausführung
-        updateViewFilter();
 
-        // FIX: Dropdown-Schutz & Buttons aktivieren
-        setupDropdownBehavior(viewContainer, '.js-view-all', '.js-view-none', updateViewFilter);
+        // Buttons Alle/Keine
+        document.querySelector('.js-view-all')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            viewContainer.querySelectorAll('input').forEach(el => el.checked = true);
+            updateViewFilter();
+        });
+        document.querySelector('.js-view-none')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            viewContainer.querySelectorAll('input').forEach(el => el.checked = false);
+            updateViewFilter();
+        });
+
+        // Initialer Run
+        updateViewFilter();
     }
 
     // =========================================================
-    // 2. TEILNEHMER / GRUPPEN FILTER & SUCHE
+    // 2. TEILNEHMER / GRUPPEN FILTER
     // =========================================================
-    const groupContainer = document.getElementById('group-checkbox-container');
-    const groupBtn = document.getElementById('groupFilterBtn');
-    const searchInput = document.getElementById('client-search-input');
-    
-    if (groupContainer && groupBtn && searchInput) {
+    if (groupContainer) {
         const allRows = document.querySelectorAll('.participant-row');
-        const groups = new Set(); 
+        const groups = new Set();
+        const searchInput = document.getElementById('client-search-input');
 
-        // 1. Gruppen sammeln
+        // Gruppen sammeln
         allRows.forEach(row => {
             const rawVal = row.getAttribute('data-class') || row.getAttribute('data-group');
-            if (rawVal && rawVal.trim() !== '') {
-                groups.add(rawVal.trim());
-            }
+            if (rawVal && rawVal.trim() !== '') groups.add(rawVal.trim());
         });
 
-        // 2. Checkboxen rendern
-        groupContainer.innerHTML = ''; 
+        // Checkboxen bauen
+        groupContainer.innerHTML = '';
         Array.from(groups).sort().forEach(grp => {
             const html = `
-                <div class="form-check">
+                <div class="form-check mb-1">
                     <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="chk_grp_${grp}" checked>
-                    <label class="form-check-label w-100" for="chk_grp_${grp}" style="cursor: pointer;">
-                        ${grp}
-                    </label>
-                </div>
-            `;
+                    <label class="form-check-label w-100" for="chk_grp_${grp}">${grp}</label>
+                </div>`;
             groupContainer.insertAdjacentHTML('beforeend', html);
         });
 
-        // 3. Filter Logik
+        // Update Logik
         const updateParticipantFilter = () => {
             const checkboxes = groupContainer.querySelectorAll('.group-checkbox');
             const checkedGroups = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
             const allGroupsChecked = checkedGroups.length === checkboxes.length;
-            const searchTerm = searchInput.value.toLowerCase().trim();
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
             allRows.forEach(row => {
                 const rowGroup = (row.getAttribute('data-class') || row.getAttribute('data-group') || '').trim();
@@ -159,40 +116,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 row.style.display = (matchGroup && matchSearch) ? '' : 'none';
             });
-
-            if (typeof updatePrintButtonUrl === 'function') {
-                updatePrintButtonUrl(allGroupsChecked ? [] : checkedGroups, searchInput.value.trim());
+            
+            // Print URL Update (optional)
+            if (typeof $ !== 'undefined' && $('#btn-print-groupcard').length) {
+                 const $printBtn = $('#btn-print-groupcard');
+                 if (!$printBtn.data('base-href')) $printBtn.data('base-href', $printBtn.attr('href'));
+                 const baseUrl = $printBtn.data('base-href');
+                 const selGrp = (checkedGroups.length > 0 && !allGroupsChecked) ? checkedGroups[0] : '';
+                 const sep = baseUrl.includes('?') ? '&' : '?';
+                 let newUrl = baseUrl + sep + 'class_filter=' + encodeURIComponent(selGrp);
+                 if (searchTerm) newUrl += '&search_query=' + encodeURIComponent(searchTerm);
+                 $printBtn.attr('href', newUrl);
             }
         };
 
-        // Event Listener
+        // Listener
         groupContainer.addEventListener('change', updateParticipantFilter);
-        searchInput.addEventListener('keyup', updateParticipantFilter);
-        searchInput.addEventListener('input', updateParticipantFilter);
-
-        // Initiale Ausführung
-        updateParticipantFilter();
-
-        // FIX: Dropdown-Schutz & Buttons aktivieren
-        setupDropdownBehavior(groupContainer, '.js-group-all', '.js-group-none', updateParticipantFilter);
-    }
-
-    // Helper: Print URL
-    function updatePrintButtonUrl(selectedGroups, rawSearchTerm) {
-        const $printBtn = $('#btn-print-groupcard'); 
-        if (!$printBtn.length) return;
-
-        if (!$printBtn.data('base-href')) {
-            $printBtn.data('base-href', $printBtn.attr('href'));
+        if (searchInput) {
+            searchInput.addEventListener('keyup', updateParticipantFilter);
+            searchInput.addEventListener('input', updateParticipantFilter);
         }
-        const baseUrl = $printBtn.data('base-href');
-        const selectedGroupParam = (selectedGroups.length > 0) ? selectedGroups[0] : '';
-        const separator = baseUrl.includes('?') ? '&' : '?';
-        let newUrl = baseUrl + separator + 'class_filter=' + encodeURIComponent(selectedGroupParam);
+
+        // Buttons Alle/Keine
+        document.querySelector('.js-group-all')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = true);
+            updateParticipantFilter();
+        });
+        document.querySelector('.js-group-none')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            groupContainer.querySelectorAll('input').forEach(el => el.checked = false);
+            updateParticipantFilter();
+        });
         
-        if (rawSearchTerm) {
-            newUrl += '&search_query=' + encodeURIComponent(rawSearchTerm);
-        }
-        $printBtn.attr('href', newUrl);
+        // Initialer Run
+        updateParticipantFilter();
     }
 });
