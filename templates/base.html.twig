@@ -154,23 +154,5 @@
         </main>
     {% endblock %} 
 
-    <script>
-        // Dieser Block stellt sicher, dass beides funktioniert
-        $(document).ready(function() {
-            // Initialisierung NUR für echte Select-Felder mit der Klasse .selectpicker
-            // Das verhindert, dass das Plugin die Bootstrap-Dropdowns in results.html stört
-            if ($('.selectpicker').length > 0) {
-                $('.selectpicker').selectpicker();
-            }
-
-            // Manuelles Aktivieren der Bootstrap 5 Dropdowns als Fallback, 
-            // falls das Plugin das Event-Bubbling stoppt
-            var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'))
-            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-                return new bootstrap.Dropdown(dropdownToggleEl)
-            });
-        });
-    </script>
-
 </body>
 </html>
