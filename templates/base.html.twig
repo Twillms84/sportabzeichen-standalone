@@ -5,39 +5,84 @@
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    {# --- CSS --- #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     {% block stylesheets %}
     <style>
-        /* GLOBALER DARK MODE LOOK */
-        body { background-color: #121212; color: #e9ecef; }
-        
-        /* SIDEBAR FIX FÜR DESKTOP */
-        @media (min-width: 992px) {
-            body { display: flex; }
-            .sidebar-wrapper { width: 280px; height: 100vh; position: sticky; top: 0; flex-shrink: 0; }
-            .main-content { flex-grow: 1; }
+        :root {
+            --osa-bg: #121212;
+            --osa-card-bg: #1e1e1e;
+            --osa-sidebar: #1a1d21;
+            --osa-green: #2c5e32;
+            --osa-green-hover: #387840;
+            --osa-border: #333333;
+            --osa-text: #e9ecef;
         }
 
-        /* VORLAGE: DROP-DOWN STIL (Wie in Results) */
+        body { 
+            background-color: var(--osa-bg); 
+            color: var(--osa-text); 
+            min-height: 100vh;
+        }
+
+        /* Sidebar & Layout */
+        @media (min-width: 992px) {
+            body { display: flex; }
+            .sidebar-wrapper { width: 280px; height: 100vh; position: sticky; top: 0; flex-shrink: 0; border-right: 1px solid var(--osa-border); }
+            .main-content { flex-grow: 1; overflow-x: hidden; }
+        }
+
+        /* Harmonische Karten & Header */
+        .osa-card { background-color: var(--osa-card-bg); border: 1px solid var(--osa-border); border-radius: 8px; }
+        .osa-card-header { 
+            background-color: var(--osa-green); 
+            color: white; 
+            padding: 0.75rem 1.25rem; 
+            border-top-left-radius: 8px; 
+            border-top-right-radius: 8px; 
+            font-weight: bold;
+        }
+
+        /* Buttons im einheitlichen Stil */
+        .btn-osa-primary { background-color: #0d6efd; color: white; border: none; }
+        .btn-osa-primary:hover { background-color: #0b5ed7; color: white; }
+        .btn-osa-success { background-color: var(--osa-green); color: white; border: none; }
+        .btn-osa-success:hover { background-color: var(--osa-green-hover); color: white; }
+        .btn-outline-secondary { border-color: #495057; color: #adb5bd; }
+        .btn-outline-secondary:hover { background-color: #333; color: white; border-color: #666; }
+
+        /* Dropdown Styling */
         .dropdown-menu-dark-custom {
             background-color: #2b3035;
             border: 1px solid #495057;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            padding: 0.5rem;
         }
-        .dropdown-menu-dark-custom .dropdown-item { color: #eee; }
-        .dropdown-menu-dark-custom .dropdown-item:hover { background-color: #144018; color: #fff; }
+        .dropdown-item { color: #dee2e6 !important; border-radius: 4px; }
+        .dropdown-item:hover { background-color: var(--osa-green) !important; color: #fff !important; }
         
-        /* Hover-Effekt für die Sidebar Links */
-        .nav-link:hover { background-color: rgba(255,255,255,0.1); }
+        /* Form-Elemente im Dark Mode */
+        .form-control, .form-select {
+            background-color: #2b3035;
+            border: 1px solid #495057;
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #33393f;
+            border-color: var(--osa-green);
+            color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(44, 94, 50, 0.25);
+        }
+
+        .list-group-item { background-color: transparent; border-color: var(--osa-border); color: var(--osa-text); }
+        .text-dark { color: #fff !important; } /* Korrektur für Überschriften */
     </style>
     {% endblock %}
 
     {% block javascripts %}
-        {# Bootstrap 5 braucht nur das Bundle für Dropdowns (enthält Popper) #}
+        {# WICHTIG: Bootstrap Bundle muss geladen sein #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         {{ importmap('app') }}
     {% endblock %}
@@ -46,57 +91,31 @@
 
     {% block layout %}
         {# 1. MOBILE HEADER #}
-        <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top w-100">
+        <nav class="navbar navbar-dark bg-dark px-3 d-lg-none sticky-top w-100 border-bottom border-secondary">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
                 <i class="fas fa-bars"></i>
             </button>
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
-        {# 2. SIDEBAR CONTAINER #}
+        {# 2. SIDEBAR #}
         <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
-            <div class="offcanvas-header d-lg-none border-bottom border-secondary">
-                <h5 class="offcanvas-title text-white">Menü</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
-            </div>
-
             <div class="sidebar d-flex flex-column h-100">
-                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
+                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-4 d-block">
                      <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
                 </a>
                 <hr class="my-0 border-secondary">
-
-                <ul class="nav flex-column mb-auto mt-3 px-2">
-                    <li class="nav-item mb-1">
-                        {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
-                        <a href="{{ path('app_exams_dashboard') }}" 
-                           class="nav-link text-white {% if is_exam %}active bg-primary{% endif %} rounded">
+                <ul class="nav flex-column mb-auto mt-3 px-3">
+                    <li class="nav-item mb-2">
+                        <a href="{{ path('app_exams_dashboard') }}" class="nav-link text-white rounded {% if app.request.attributes.get('_route') starts with 'app_exams_' %}bg-success{% endif %}">
                             <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                         </a>
                     </li>
-                    {% if is_granted('ROLE_ADMIN') %}
-                    <li class="nav-item mb-1">
-                        <a href="{{ path('admin_dashboard') }}" class="nav-link text-white opacity-75 rounded">
-                            <i class="fas fa-tools me-2"></i> Verwaltung
-                        </a>
-                    </li>
-                    {% endif %}
                 </ul>
-                
                 <div class="mt-auto p-3 border-top border-secondary bg-black bg-opacity-25">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center overflow-hidden">
-                            <i class="fas fa-user-circle fs-4 text-secondary me-2"></i>
-                            <div class="lh-1 text-truncate" style="max-width: 130px;">
-                                <span class="d-block text-white-50 small" style="font-size: 0.75rem;">Angemeldet als</span>
-                                <span class="text-white fw-bold small text-truncate d-block">
-                                    {{ app.user ? (app.user.firstname|default(app.user.username)) : 'Gast' }}
-                                </span>
-                            </div>
-                        </div>
-                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger border-0" title="Abmelden">
-                            <i class="fas fa-sign-out-alt fs-5"></i>
-                        </a>
+                        <span class="small text-truncate me-2">{{ app.user ? app.user.firstname : 'Gast' }}</span>
+                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger border-0"><i class="fas fa-sign-out-alt"></i></a>
                     </div>
                 </div>
             </div>
@@ -104,18 +123,18 @@
 
         {# 3. MAIN CONTENT #}
         <main class="main-content p-4">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endfor %}
-
             {% block body %}{% endblock %}
         </main>
-    {% endblock %} 
+    {% endblock %}
 
+    <script>
+        // Sicherstellen, dass Dropdowns auch nach dynamischen Änderungen funktionieren
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'))
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl)
+            });
+        });
+    </script>
 </body>
 </html>
