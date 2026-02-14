@@ -76,9 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // =========================================================
     // 2. GRUPPEN FILTER (Forensik-Modus)
-    // =========================================================
-    const groupContainer = document.getElementById('group-checkbox-container');
-    
+    // =========================================================    
     if (!groupContainer) {
         console.error('❌ FEHLER: Container <div id="group-checkbox-container"> nicht gefunden!');
     } else {
