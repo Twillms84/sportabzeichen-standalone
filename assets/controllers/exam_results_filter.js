@@ -97,11 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Bereinigen
             let val = (rawClass || rawGroup || '').trim();
 
-            // Debugging für die ersten 3 Zeilen
-            if (index < 3) {
-                console.log(`Zeile ${index + 1}: data-class="${rawClass}", data-group="${rawGroup}" -> Erkannt: "${val}"`);
-            }
-
             if (val !== '') {
                 groups.add(val);
             }
@@ -168,11 +163,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         $('.js-group-all').on('click', function(e) { 
             e.preventDefault(); 
+            // WICHTIG: stopPropagation verhindert, dass der Klick das Dropdown schließt
+            e.stopPropagation();
             $(groupContainer).find('input').prop('checked', true); 
             updateParticipantFilter(); 
         });
         $('.js-group-none').on('click', function(e) { 
             e.preventDefault(); 
+            e.stopPropagation();
             $(groupContainer).find('input').prop('checked', false); 
             updateParticipantFilter(); 
         });
@@ -180,4 +178,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Init
         updateParticipantFilter();
     }
+
+    // =========================================================
+    // 3. UX HELPER (Damit Dropdown beim Klicken offen bleibt)
+    // =========================================================
+    // Verhindert, dass Klicks innerhalb des Menüs das Dropdown schließen.
+    // Das arbeitet mit Bootstrap 'data-bs-auto-close="outside"' zusammen.
+    $('.dropdown-menu').on('click', function(e) {
+        e.stopPropagation();
+    });
 });

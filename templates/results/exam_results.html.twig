@@ -35,26 +35,28 @@
     </div>
 
     {# B) GRUPPEN FILTER #}
-    <div class="dropdown d-inline-block mb-3" style="position: relative;">
+    <div class="dropdown d-inline-block mb-3">
         <button class="btn btn-outline-secondary dropdown-toggle" 
                 type="button" 
-                id="groupFilterBtn">
+                id="groupFilterBtn"
+                data-bs-toggle="dropdown" 
+                data-bs-auto-close="outside" 
+                aria-expanded="false">
             Gruppen/Klassen
         </button>
         
-        <ul class="dropdown-menu p-3 shadow" id="groupFilterMenu" style="min-width: 250px;">
+        <ul class="dropdown-menu p-3 shadow" aria-labelledby="groupFilterBtn" style="min-width: 250px;">
             <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
                 <span class="fw-bold small text-muted">Filter</span>
                 <div>
-                    <a href="#" class="text-decoration-none small js-group-all">Alle</a> | 
-                    <a href="#" class="text-decoration-none small js-group-none">Keine</a>
+                    <button class="btn btn-sm btn-link text-decoration-none js-group-all p-0 border-0">Alle</button> | 
+                    <button class="btn btn-sm btn-link text-decoration-none js-group-none p-0 border-0">Keine</button>
                 </div>
             </div>
             
             <input type="text" id="client-search-input" class="form-control form-control-sm mb-2" placeholder="Namen suchen...">
 
-            <div id="group-checkbox-container" style="max-height: 300px; overflow-y: auto;">
-                </div>
+            <div id="group-checkbox-container" style="max-height: 300px; overflow-y: auto;"></div>
         </ul>
     </div>
 
