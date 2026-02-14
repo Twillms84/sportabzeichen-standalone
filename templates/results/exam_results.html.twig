@@ -35,23 +35,20 @@
     </div>
 
     {# B) GRUPPEN FILTER #}
-    <div class="d-flex align-items-center me-3">
-        {# UPDATE: Label auf Handy ausblenden #}        
-        <div class="dropdown">
-            {# UPDATE: Text fest auf "Gruppen", kein "Alle Gruppen" mehr #}
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center" type="button" id="groupFilterBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                <i class="fas fa-users me-2"></i> Gruppen
-            </button>
-            
-            <div class="dropdown-menu dropdown-menu-osa p-3 shadow filter-dropdown-scroll" aria-labelledby="groupFilterBtn">
-                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 js-group-all">Alle</button>
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted js-group-none">Keine</button>
-                </div>
-                {# Hier werden die Checkboxen per JS reingeladen #}
-                <div id="group-checkbox-container"></div>
+    <div class="dropdown d-inline-block mb-3">
+        <button class="btn btn-outline-secondary dropdown-toggle" 
+                type="button" 
+                id="groupFilterBtn">
+            Gruppen/Klassen
+        </button>
+        
+        <ul class="dropdown-menu p-3" id="groupFilterMenu" style="min-width: 250px;">
+            <div class="d-flex justify-content-between mb-2">
+                <button class="btn btn-sm btn-link text-decoration-none js-group-all">Alle</button>
+                <button class="btn btn-sm btn-link text-decoration-none js-group-none">Keine</button>
             </div>
-        </div>
+            <div id="group-checkbox-container" style="max-height: 300px; overflow-y: auto;"></div>
+        </ul>
     </div>
 
         {# C) ACTION BUTTONS (Jetzt hier rechts, Style angepasst) #}
