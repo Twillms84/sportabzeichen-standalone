@@ -1,77 +1,74 @@
 {% extends "base.html.twig" %}
 
-{% block page_title %}{{ 'Neue Prüfung anlegen'|trans }}{% endblock %}
+{% block title %}{{ 'Neue Prüfung anlegen'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="content">
-        <a href="{{ path('app_exams_dashboard') }}" class="btn btn-default mb-3">
-            {{ icon('arrow-left') }} {{ 'Zurück'|trans }}
-        </a>
-
-        <h2>{{ 'Neue Prüfung anlegen'|trans }}</h2>
-
-        {# Flash Messages #}
-        {% for label, messages in app.flashes %}
-            {% for message in messages %}
-                <div class="alert alert-{{ label == 'error' ? 'danger' : label }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endfor %}
+    <div class="container-fluid">
+        <div class="mb-4">
+            <a href="{{ path('app_exams_dashboard') }}" class="btn btn-link text-decoration-none text-muted p-0">
+                <i class="fas fa-chevron-left me-1"></i> {{ 'Zurück zum Dashboard'|trans }}
+            </a>
+            <h2 class="fw-bold mt-2">{{ 'Neue Prüfung anlegen'|trans }}</h2>
+        </div>
 
         <form method="post">
-            {# --- TEIL 1: Stammdaten --- #}
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{{ 'Stammdaten'|trans }}</h3>
-                </div>
-                <div class="panel-body">
-                    <div class="mb-3">
-                        <label class="form-label" for="exam_name">{{ 'Bezeichnung (optional)'|trans }}</label>
-                        <input type="text" id="exam_name" name="exam_name" class="form-control" placeholder="z.B. Sommerfest">
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="exam_year">{{ 'Jahr'|trans }} *</label>
-                            <input type="number" id="exam_year" name="exam_year" class="form-control" required value="{{ 'now'|date('Y') }}">
+            <div class="row">
+                {# Stammdaten #}
+                <div class="col-lg-6 mb-4">
+                    <div class="card osa-card h-100">
+                        <div class="osa-card-header">
+                            <i class="fas fa-edit me-2"></i>{{ '1. Stammdaten'|trans }}
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="exam_date">{{ 'Datum'|trans }}</label>
-                            <input type="date" id="exam_date" name="exam_date" class="form-control">
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" for="exam_name">{{ 'Bezeichnung'|trans }}</label>
+                                <input type="text" id="exam_name" name="exam_name" class="form-control form-control-lg" placeholder="z.B. Sportfest 2026">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold" for="exam_year">{{ 'Prüfungsjahr'|trans }} *</label>
+                                    <input type="number" id="exam_year" name="exam_year" class="form-control" required value="{{ 'now'|date('Y') }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold" for="exam_date">{{ 'Datum (optional)'|trans }}</label>
+                                    <input type="date" id="exam_date" name="exam_date" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Gruppen Import #}
+                <div class="col-lg-6 mb-4">
+                    <div class="card osa-card h-100">
+                        <div class="osa-card-header" style="background-color: #2c5e32 !important;">
+                            <i class="fas fa-file-import me-2"></i>{{ '2. Teilnehmer importieren'|trans }}
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="text-muted small">
+                                {{ 'Wählen Sie eine oder mehrere Gruppen. Alle Mitglieder dieser Gruppen werden automatisch als Teilnehmer angelegt.'|trans }}
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ 'Gruppen auswählen'|trans }}</label>
+                                <select name="groups[]" id="groups" class="form-select osa-select-multiple" multiple size="8">
+                                    {% for name, id in groups %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="alert alert-info py-2 px-3 small border-0 shadow-sm">
+                                <i class="fas fa-info-circle me-2"></i>{{ 'Mehrfacheinträge werden automatisch gefiltert.'|trans }}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {# --- TEIL 2: Import (Nur noch Gruppen) --- #}
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{{ 'Teilnehmer importieren'|trans }}</h3>
-                </div>
-                <div class="panel-body">
-                    <p class="text-muted">
-                        {{ 'Wähle hier die Gruppen aus, die an der Prüfung teilnehmen sollen. Alle Mitglieder werden importiert.'|trans }}
-                    </p>
-
-                    <div class="mb-3">
-                        <label class="form-label" for="groups">{{ 'Gruppen'|trans }}</label>
-                        {# groups[] ist wichtig für PHP #}
-                        <select name="groups[]" id="groups" class="form-control select2" multiple="multiple" data-placeholder="{{ 'Gruppe wählen...'|trans }}">
-                            {# groups ist ein assoziatives Array: key=account, value=Name #}
-                            {% for name, id in groups %}
-                                <option value="{{ id }}">{{ name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <small class="text-muted d-block mt-2">
-                        {{ icon('info-sign') }} {{ 'Ist ein Benutzer in mehreren der ausgewählten Gruppen, wird er nur einmal importiert.'|trans }}
-                    </small>
-                </div>
+            <div class="text-center mt-2">
+                <button type="submit" class="btn btn-osa-primary btn-lg px-5 shadow">
+                    <i class="fas fa-check-circle me-2"></i>{{ 'Prüfung jetzt anlegen'|trans }}
+                </button>
             </div>
-
-            <button type="submit" class="btn btn-primary">{{ icon('floppy-disk') }} {{ 'Speichern & Anlegen'|trans }}</button>
         </form>
     </div>
 {% endblock %}
