@@ -75,93 +75,96 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =========================================================
-    // 2. GRUPPEN FILTER (Korrigiert & mit Debugging)
+    // 2. GRUPPEN FILTER (Forensik-Modus)
     // =========================================================
-    if (groupContainer) {
-        console.log('🔍 Gruppen-Filter wird initialisiert...');
+    const groupContainer = document.getElementById('group-checkbox-container');
+    
+    if (!groupContainer) {
+        console.error('❌ FEHLER: Container <div id="group-checkbox-container"> nicht gefunden!');
+    } else {
+        console.log('✅ Container gefunden. Starte Gruppen-Analyse...');
         
         const groups = new Set();
-        // Wir nutzen jQuery Selektoren, die sind oft fehlertoleranter
         const $rows = $('.participant-row');
 
-        console.log('Anzahl gefundener Zeilen:', $rows.length);
+        console.log(`📊 Anzahl gefundener Zeilen (.participant-row): ${$rows.length}`);
 
-        $rows.each(function() {
-            // Wir versuchen beide Attribut-Namen
-            let val = $(this).data('class');
-            if (!val) val = $(this).data('group'); // Fallback
+        $rows.each(function(index) {
+            const $row = $(this);
             
-            // Debugging für die erste Zeile, damit wir sehen was passiert
-            if (groups.size === 0 && val) {
-                console.log('Erster gefundener Wert:', val);
+            // WICHTIG: Wir nutzen .attr(), das liest den echten HTML-Text
+            let rawClass = $row.attr('data-class');
+            let rawGroup = $row.attr('data-group');
+            
+            // Bereinigen
+            let val = (rawClass || rawGroup || '').trim();
+
+            // Debugging für die ersten 3 Zeilen
+            if (index < 3) {
+                console.log(`Zeile ${index + 1}: data-class="${rawClass}", data-group="${rawGroup}" -> Erkannt: "${val}"`);
             }
 
-            if (val && String(val).trim() !== '') {
-                groups.add(String(val).trim());
+            if (val !== '') {
+                groups.add(val);
             }
         });
 
-        console.log('Gefundene Gruppen (Set):', Array.from(groups));
+        const sortedGroups = Array.from(groups).sort();
+        console.log('🏁 Gefundene eindeutige Gruppen:', sortedGroups);
 
         // HTML neu bauen
         groupContainer.innerHTML = '';
         
-        if (groups.size === 0) {
-            groupContainer.innerHTML = '<div class="text-muted p-2 small">Keine Gruppen gefunden.<br>Prüfe HTML Attribute (data-class).</div>';
+        if (sortedGroups.length === 0) {
+            groupContainer.innerHTML = '<div class="text-danger p-2 small">Keine Gruppen-Daten gefunden.<br>(Attribute data-class/group sind leer)</div>';
         } else {
-            Array.from(groups).sort().forEach(grp => {
+            // "Alle" / "Keine" Buttons sichtbar machen falls nötig
+            $('.js-group-all, .js-group-none').show();
+
+            sortedGroups.forEach(grp => {
+                // ID sicher machen (Leerzeichen zu Unterstrichen)
+                const safeId = 'chk_grp_' + grp.replace(/[^a-zA-Z0-9-_]/g, '_');
+                
                 const html = `
                     <div class="form-check mb-1">
-                        <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="chk_grp_${grp.replace(/\s+/g, '_')}" checked>
-                        <label class="form-check-label w-100" for="chk_grp_${grp.replace(/\s+/g, '_')}" style="cursor:pointer;">${grp}</label>
+                        <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="${safeId}" checked>
+                        <label class="form-check-label w-100 text-break" for="${safeId}" style="cursor:pointer;">
+                            ${grp}
+                        </label>
                     </div>`;
                 groupContainer.insertAdjacentHTML('beforeend', html);
             });
         }
 
-        // --- Update Logik ---
+        // --- Update Logik (Filter anwenden) ---
         const updateParticipantFilter = () => {
             const $checkboxes = $(groupContainer).find('.group-checkbox');
+            // Welche Werte sind angehakt?
             const checkedGroups = $checkboxes.filter(':checked').map((_, el) => el.value).get();
             const allGroupsChecked = checkedGroups.length === $checkboxes.length;
             const searchTerm = $('#client-search-input').val()?.toLowerCase().trim() || '';
 
             $rows.each(function() {
                 const $row = $(this);
-                let rowGroup = $row.data('class');
-                if (!rowGroup) rowGroup = $row.data('group');
-                rowGroup = String(rowGroup || '').trim();
+                // Auch hier attr() nutzen für Konsistenz
+                let rowVal = ($row.attr('data-class') || $row.attr('data-group') || '').trim();
+                
+                // Namenssuche
+                const nameText = $row.find('.name-main').text().toLowerCase() + ' ' + 
+                                 $row.find('.col-name').text().toLowerCase();
 
-                // Namen finden (sucht in gängigen Klassen)
-                const nameText = $row.find('.name-main, .col-name, td:nth-child(1), td:nth-child(2)').text().toLowerCase();
-
-                const matchGroup = (allGroupsChecked || checkedGroups.includes(rowGroup));
+                const matchGroup = (groups.size === 0) || (allGroupsChecked || checkedGroups.includes(rowVal));
                 const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
 
-                // Zeile anzeigen/verstecken
                 if (matchGroup && matchSearch) {
-                    $row.show(); // jQuery show
+                    $row.show();
                 } else {
-                    $row.hide(); // jQuery hide
+                    $row.hide();
                 }
             });
-
-            // Update Print Button URL (Falls vorhanden)
-            const $printBtn = $('#btn-print-groupcard');
-            if ($printBtn.length) {
-                 if (!$printBtn.data('base-href')) $printBtn.data('base-href', $printBtn.attr('href'));
-                 const baseUrl = $printBtn.data('base-href');
-                 // Wenn NICHT alle gewählt sind, nimm die erste gewählte Gruppe für den Link (einfache Logik)
-                 const selGrp = (checkedGroups.length > 0 && !allGroupsChecked) ? checkedGroups[0] : '';
-                 
-                 const sep = baseUrl.includes('?') ? '&' : '?';
-                 let newUrl = baseUrl + sep + 'class_filter=' + encodeURIComponent(selGrp);
-                 if (searchTerm) newUrl += '&search_query=' + encodeURIComponent(searchTerm);
-                 $printBtn.attr('href', newUrl);
-            }
         };
 
-        // Event Listener (jQuery Style)
+        // Event Listener
         $(groupContainer).on('change', updateParticipantFilter);
         $('#client-search-input').on('keyup input', updateParticipantFilter);
 
@@ -176,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateParticipantFilter(); 
         });
         
-        // Einmal initial ausführen
+        // Init
         updateParticipantFilter();
     }
 });
