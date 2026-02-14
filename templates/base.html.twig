@@ -5,130 +5,124 @@
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    {# --- CSS --- #}
+    {# --- 1. EXTERNE LIBRARIES --- #}
+    {# jQuery (Wichtig: Muss VOR Bootstrap geladen werden für Legacy-Support) #}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    {# CSS Frameworks #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    {# Bootstrap Select lassen wir drin, falls du es für alte Module brauchst, aber wir stylen es um #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     {% block stylesheets %}
     <style>
-        /* --- 1. FARBPALETTE (Dunkelgrün & Dark Mode) --- */
+        /* --- GLOBAL THEME VARIABLES --- */
         :root {
-            --osa-bg-dark: #121212;
-            --osa-card-bg: #1e1e1e;
-            --osa-border: #333;
-            /* Dein gewünschtes Dunkelgrün */
-            --osa-green-main: #144018; 
-            --osa-green-hover: #1b5220;
-            --osa-text: #e9ecef;
+            --osa-bg: #121212;          /* Hintergrund Seite */
+            --osa-card-bg: #1e1e1e;     /* Hintergrund Karte */
+            --osa-border: #333333;      /* Rahmenfarbe */
+            --osa-green: #2c5e32;       /* Hauptfarbe (Dunkelgrün) */
+            --osa-green-hover: #1e4223; /* Hover Farbe */
+            --osa-text: #e9ecef;        /* Textfarbe */
+            --osa-input-bg: #2b3035;    /* Input Felder */
         }
 
-        body {
-            background-color: var(--osa-bg-dark);
-            color: var(--osa-text);
+        body { 
+            background-color: var(--osa-bg); 
+            color: var(--osa-text); 
+            min-height: 100vh;
         }
 
-        /* --- 2. LAYOUT FIXES (Sidebar Sticky) --- */
-        @media (min-width: 992px) {
-            body { display: flex; min-height: 100vh; }
-            .sidebar-wrapper {
-                width: 280px;
-                height: 100vh;
-                position: sticky;
-                top: 0;
-                flex-shrink: 0;
-                overflow-y: auto;
-                border-right: 1px solid var(--osa-border);
-            }
-            .main-content {
-                flex-grow: 1;
-                overflow-x: hidden;
-                width: 100%; /* Verhindert Umbruch-Probleme */
-            }
-        }
-
-        /* --- 3. BUTTONS (Dunkelgrün Style) --- */
-        /* Wir überschreiben Primary & Success für einheitlichen Look */
-        .btn-primary, .btn-success, .btn-osa-primary {
-            background-color: var(--osa-green-main) !important;
-            border-color: var(--osa-green-main) !important;
+        /* --- BUTTONS (Erzwinge Dunkelgrün) --- */
+        .btn-primary, .btn-success, .btn-osa-primary, .btn-osa-success {
+            background-color: var(--osa-green) !important;
+            border-color: var(--osa-green) !important;
             color: #fff !important;
         }
-        .btn-primary:hover, .btn-success:hover, .btn-osa-primary:hover {
+        .btn-primary:hover, .btn-success:hover, .btn-osa-primary:hover, .btn-osa-success:hover {
             background-color: var(--osa-green-hover) !important;
             border-color: var(--osa-green-hover) !important;
         }
         
-        /* Outline Buttons für Dark Mode anpassen */
         .btn-outline-secondary {
-            color: #adb5bd;
-            border-color: #495057;
+            color: #adb5bd; border-color: #495057;
         }
         .btn-outline-secondary:hover {
-            background-color: #343a40;
-            color: #fff;
+            background-color: #343a40; color: #fff; border-color: #6c757d;
         }
 
-        /* --- 4. NEUE DROP DOWNS (Das Template) --- */
-        /* Nutze die Klasse .osa-dropdown-menu für neue Menüs */
-        .dropdown-menu, .osa-dropdown-menu {
-            background-color: #2b3035 !important; /* Dunkles Grau */
+        /* --- CARDS (Dark Mode Fix) --- */
+        .card, .osa-card {
+            background-color: var(--osa-card-bg) !important;
+            border: 1px solid var(--osa-border) !important;
+            color: var(--osa-text) !important;
+        }
+        .card-header, .osa-card-header {
+            background-color: var(--osa-green) !important; /* Header Grün */
+            color: #fff !important;
+            border-bottom: 1px solid var(--osa-border) !important;
+            padding: 0.75rem 1.25rem;
+            border-top-left-radius: var(--bs-card-border-radius);
+            border-top-right-radius: var(--bs-card-border-radius);
+        }
+        .list-group-item {
+            background-color: var(--osa-card-bg) !important;
+            border-color: var(--osa-border) !important;
+            color: var(--osa-text) !important;
+        }
+
+        /* --- DROPDOWNS & FORMULARE --- */
+        .dropdown-menu {
+            background-color: var(--osa-input-bg) !important;
             border: 1px solid #495057 !important;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
-            padding: 0.5rem 0;
-            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
         }
-
-        .dropdown-item {
-            color: #dee2e6 !important;
-        }
-
+        .dropdown-item { color: #dee2e6 !important; }
         .dropdown-item:hover, .dropdown-item:focus {
-            background-color: var(--osa-green-main) !important; /* Hover wird grün */
+            background-color: var(--osa-green) !important;
             color: #fff !important;
         }
-
-        .dropdown-divider {
-            border-top-color: #495057 !important;
-        }
-
-        /* Fix für Bootstrap-Select im Dark Mode, falls genutzt */
-        .bootstrap-select .dropdown-menu { background-color: #2b3035; }
-        .bootstrap-select .dropdown-toggle { background-color: #2b3035; color: #fff; border: 1px solid #495057; }
         
-        /* Formularelemente dunkel */
+        /* Inputs */
         .form-control, .form-select {
-            background-color: #212529;
+            background-color: var(--osa-input-bg);
             border: 1px solid #495057;
             color: #fff;
         }
         .form-control:focus, .form-select:focus {
-            background-color: #2b3035;
-            border-color: var(--osa-green-main);
+            background-color: #33393f;
+            border-color: var(--osa-green);
             color: #fff;
-            box-shadow: 0 0 0 0.25rem rgba(20, 64, 24, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(44, 94, 50, 0.25);
         }
+
+        /* Helper Classes für dein JS */
+        .cursor-pointer, .js-view-all, .js-view-none, .js-group-all, .js-group-none {
+            cursor: pointer;
+        }
+        .col-hidden { display: none !important; }
     </style>
     {% endblock %}
 
     {% block javascripts %}
-        {# Zuerst jQuery (falls benötigt) #}
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        {# Dann Bootstrap Bundle (WICHTIG für Dropdowns) #}
+        {# JS Libraries #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        {# Dann Bootstrap Select #}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
         
+        {# Deine App-Logik #}
         {{ importmap('app') }}
 
+        {# --- DER CRITICAL FIX FÜR DROPDOWNS --- #}
         <script>
-            // Initialisierung aller Dropdowns sicherstellen
-            document.addEventListener('DOMContentLoaded', function () {
-                var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'))
-                var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-                    return new bootstrap.Dropdown(dropdownToggleEl)
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialisiert alle Dropdowns, die NICHT Bootstrap-Select sind
+                // Das repariert deine Results-Filter und das Edit-Menü
+                var dropdownList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+                dropdownList.map(function (dropdownToggleEl) {
+                    if (!dropdownToggleEl.classList.contains('selectpicker')) {
+                        return new bootstrap.Dropdown(dropdownToggleEl);
+                    }
                 });
             });
         </script>
@@ -140,7 +134,7 @@
     {% block layout %}
 
         {# 1. MOBILE HEADER #}
-        <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top">
+        <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top border-bottom border-secondary">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
                 <i class="fas fa-bars"></i> Menü
             </button>
@@ -155,7 +149,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
             </div>
 
-            <div class="sidebar d-flex flex-column h-100">
+            <div class="sidebar d-flex flex-column h-100" style="border-right: 1px solid var(--osa-border);">
                 
                 {# Logo #}
                 <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
@@ -168,7 +162,6 @@
                 <ul class="nav flex-column mb-auto mt-3 px-2">
                     <li class="nav-item mb-1">
                         {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
-                        {# Hier nutzen wir bg-success (was wir oben auf dunkelgrün umgebogen haben) #}
                         <a href="{{ path('app_exams_dashboard') }}" 
                            class="nav-link text-white {% if is_exam %}active bg-success{% endif %} rounded">
                             <i class="fas fa-tachometer-alt me-2"></i> Dashboard
@@ -207,7 +200,8 @@
         </div>
 
         {# 3. MAIN CONTENT #}
-        <main class="main-content p-4">
+        <main class="main-content p-4" style="flex-grow: 1;">
+            {# Flash Messages #}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
@@ -217,6 +211,7 @@
                 {% endfor %}
             {% endfor %}
 
+            {# Content #}
             {% block body %}{% endblock %}
         </main>
 
