@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Group;
 use App\Entity\Institution;
+use App\Entity\Exam;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
