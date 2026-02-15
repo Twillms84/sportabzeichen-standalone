@@ -47,10 +47,14 @@ class GroupRepository extends ServiceEntityRepository
      */
     public function findGroupIdsUsedInYear(Institution $institution, int $year): array
     {
-        // Wir holen nur die IDs, das ist performanter
-        $result = $this->createQueryBuilder('g')
-            ->select('g.id')
-            ->join('g.exams', 'e') // HINWEIS: Stelle sicher, dass die Relation in Group "exams" heißt!
+        // LÖSUNG: Wir fragen nicht die Gruppe ab, sondern starten beim Exam!
+        // Da das Exam die Relation "groups" besitzt, können wir von dort joinen.
+        
+        $qb = $this->getEntityManager()->createQueryBuilder();
+
+        $result = $qb->select('g.id')
+            ->from(Exam::class, 'e')    // Wir starten bei Exam
+            ->join('e.groups', 'g')     // Und gehen zu den Gruppen (das Feld 'groups' existiert im Exam)
             ->where('e.institution = :institution')
             ->andWhere('e.year = :year')
             ->setParameter('institution', $institution)
