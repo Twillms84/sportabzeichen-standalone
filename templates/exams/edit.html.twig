@@ -20,6 +20,9 @@
                     </div>
                     <div class="card-body p-4">
                         <form method="post">
+                            {# NEU: Ein Hidden-Field zur Identifikation #}
+                            <input type="hidden" name="update_exam_data" value="1">
+
                             <div class="mb-3">
                                 <label class="form-label fw-bold">{{ 'Bezeichnung'|trans }}</label>
                                 <input type="text" name="exam_name" class="form-control" value="{{ exam.name }}">
