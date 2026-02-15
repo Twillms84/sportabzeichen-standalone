@@ -41,4 +41,23 @@ class GroupRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    /**
+     * Findet IDs von Gruppen, die in einem bestimmten Jahr bereits einer Prüfung zugewiesen sind.
+     * @return int[]
+     */
+    public function findGroupIdsUsedInYear(Institution $institution, int $year): array
+    {
+        // Wir holen nur die IDs, das ist performanter
+        $result = $this->createQueryBuilder('g')
+            ->select('g.id')
+            ->join('g.exams', 'e') // HINWEIS: Stelle sicher, dass die Relation in Group "exams" heißt!
+            ->where('e.institution = :institution')
+            ->andWhere('e.year = :year')
+            ->setParameter('institution', $institution)
+            ->setParameter('year', $year)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($result, 'id');
+    }
 }
