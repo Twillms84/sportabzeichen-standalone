@@ -197,19 +197,6 @@ final class ExamController extends AbstractController
         ]);
     }
 
-    Das sieht schon sehr gut aus! Die Logik ist strukturiert und sicher (Access Checks sind da).
-
-Es gibt jedoch 3 kleine Lücken, die dazu führen würden, dass der Code abstürzt oder nicht ganz das tut, was du willst:
-
-Datum speichern: Du hast den Teil // ... Datum etc ... auskommentiert. Das muss implementiert werden, sonst wird das Datum nicht aktualisiert.
-
-Fehlende Methoden: Du rufst $this->importParticipantsFromGroup(...) und $this->isGroupInExam(...) auf. Diese Methoden existieren in deinem Snippet nicht. Ich habe sie unten ergänzt bzw. die Prüfung vereinfacht.
-
-View-Logik für "Verfügbare Gruppen": Die Logik ist etwas kompliziert ("Ist nicht hier UND ist nicht woanders"). Das habe ich etwas aufgeräumt.
-
-Hier ist der fertige, korrigierte Code für deinen Controller. Du kannst ihn so übernehmen:
-
-PHP
 #[Route('/{id}/edit', name: 'app_exams_edit', methods: ['GET', 'POST'])]
 public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
 {
