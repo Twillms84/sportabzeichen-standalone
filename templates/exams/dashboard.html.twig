@@ -8,186 +8,132 @@
 {% endblock %}
 
 {% block body %}
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <h1 class="h3 m-0">Sportabzeichen Dashboard</h1>
-            <a href="{{ path('app_exams_new') }}" class="btn btn-primary">
+    <div class="row mb-5 align-items-center">
+        <div class="col">
+            <h1 class="h3 m-0 fw-bold text-dark">Sportabzeichen Dashboard</h1>
+            <p class="text-muted small mb-0">Verwalten Sie hier Ihre Prüfungstermine und Ergebnisse.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_exams_new') }}" class="btn btn-primary shadow-sm">
                 <span class="icon icon-plus"></span> Neue Prüfung anlegen
             </a>
         </div>
     </div>
 
     {% if yearlyStats is empty %}
-        <div class="alert alert-info">
-            Noch keine Prüfungen angelegt. Starten Sie mit "Neue Prüfung anlegen".
+        <div class="alert alert-light border text-center py-5">
+            <div class="mb-3">
+                <span class="icon icon-info-circle text-muted" style="font-size: 2rem;"></span>
+            </div>
+            <h4>Noch keine Daten</h4>
+            <p class="text-muted">Starten Sie, indem Sie eine neue Prüfung anlegen.</p>
+            <a href="{{ path('app_exams_new') }}" class="btn btn-outline-primary mt-2">Jetzt anlegen</a>
         </div>
     {% else %}
 
         {% for year, data in yearlyStats %}
-            <div class="panel panel-default mb-4">
-                <div class="panel-heading exam-panel-heading">
-                    <h3 class="panel-title exam-panel-title">
-                        <span class="icon icon-calendar"></span> Jahrgang {{ year }}
-                    </h3>
-                    <span class="badge">{{ data.exams|length }} Termine</span>
+            
+            {# --- JAHRES SEKTION --- #}
+            <div class="mb-5">
+                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
+                    <h2 class="h4 me-3 mb-0 text-dark fw-bold">
+                        <span class="icon icon-calendar text-primary"></span> Jahrgang {{ year }}
+                    </h2>
+                    <span class="badge bg-secondary rounded-pill">{{ data.exams|length }} Termine</span>
                 </div>
+
+                {# --- STATISTIK BALKEN (Zusammenfassung) --- #}
+                {% set total_participants = data.unique_users|length %}
                 
-                <div class="panel-body">
-                    <div class="row">
-                        {# --- LINKS: LISTE --- #}
-                        <div class="col-md-8">
-                            <h5 class="text-muted text-uppercase font-weight-bold mb-3">Prüfungstermine</h5>
-                            <div class="list-group">
-                                {% for exam in data.exams %}
-                                    <div class="list-group-item clearfix list-item-flex">
-                                        
-                                        {# Name und Datum #}
-                                        <div>
-                                            <h4 class="list-group-item-heading mt-0 mb-1">
-                                                <a href="{{ path('results_index', {id: exam.id}) }}" class="text-primary font-weight-bold">
-                                                    {{ exam.exam_name }}
-                                                </a>
-                                            </h4>
-                                            <p class="list-group-item-text text-muted small">
-                                                <span class="icon icon-calendar"></span> 
-                                                {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
-                                            </p>
-                                        </div>
-
-                                        {# Buttons Toolbar #}
-                                        <div class="btn-toolbar-custom">
-                                            <a href="{{ path('results_index', {id: exam.id}) }}" class="btn btn-sm btn-primary" title="Ergebnisse erfassen">
-                                                <span class="icon icon-pencil"></span> Ergebnisse
-                                            </a>
-                                            <a href="{{ path('app_exams_stats', {id: exam.id}) }}" class="btn btn-sm btn-default" title="Detaillierte Statistik">
-                                                <span class="icon icon-chart-bar"></span> Statistik
-                                            </a>
-                                            <a href="{{ path('app_exams_edit', {id: exam.id}) }}" class="btn btn-sm btn-default" title="Einstellungen bearbeiten">
-                                                <span class="icon icon-cog"></span> Ändern
-                                            </a>
-                                            
-                                            {# LÖSCHEN BUTTON (Sauber für CSP & JS) #}
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-danger btn-delete-exam" 
-                                                    data-name="{{ exam.exam_name }}"
-                                                    data-form-id="form-del-{{ exam.id }}"
-                                                    title="Prüfung löschen">
-                                                <span class="icon icon-trash"></span> Löschen
-                                            </button>
-
-                                            {# Verstecktes Formular für CSRF-Schutz #}
-                                            <form id="form-del-{{ exam.id }}" 
-                                                  action="{{ path('app_exams_delete', {id: exam.id}) }}" 
-                                                  method="post" 
-                                                  style="display:none;">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
-                                            </form>
-                                        </div>
-                                    </div>
-                                {% endfor %}
+                {% if total_participants > 0 %}
+                    <div class="medal-progress-container">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 mb-2 mb-md-0">
+                                <div class="small text-uppercase text-muted fw-bold">Gesamt</div>
+                                <div class="h5 mb-0">{{ total_participants }} <small class="text-muted text-lowercase">Teilnehmer</small></div>
                             </div>
-                        </div>
-
-                        {# --- RECHTS: STATISTIK BALKEN --- #}
-                        <div class="col-md-4 border-left">
-                            <h5 class="text-center text-muted mb-4">Medaillenspiegel {{ year }}</h5>
-                            
-                            {% set total_participants = data.unique_users|length %}
-                            
-                            {% if total_participants > 0 %}
-                                {# Berechnungen #}
+                            <div class="col-md-10">
                                 {% set p_gold = (data.stats.Gold / total_participants * 100) %}
                                 {% set p_silver = (data.stats.Silber / total_participants * 100) %}
                                 {% set p_bronze = (data.stats.Bronze / total_participants * 100) %}
                                 {% set count_none = total_participants - data.stats.Total %}
                                 {% set p_none = (count_none / total_participants * 100) %}
 
-                                {# Balken Diagramm #}
-                                <div class="progress medal-progress">
-                                    {% if data.stats.Gold > 0 %}
-                                        <div class="progress-bar bg-gold" style="width: {{ p_gold }}%" title="Gold: {{ data.stats.Gold }}">
-                                            {{ data.stats.Gold }}
-                                        </div>
-                                    {% endif %}
-                                    {% if data.stats.Silber > 0 %}
-                                        <div class="progress-bar bg-silver" style="width: {{ p_silver }}%" title="Silber: {{ data.stats.Silber }}">
-                                            {{ data.stats.Silber }}
-                                        </div>
-                                    {% endif %}
-                                    {% if data.stats.Bronze > 0 %}
-                                        <div class="progress-bar bg-bronze" style="width: {{ p_bronze }}%" title="Bronze: {{ data.stats.Bronze }}">
-                                            {{ data.stats.Bronze }}
-                                        </div>
-                                    {% endif %}
-                                    {% if count_none > 0 %}
-                                        <div class="progress-bar bg-none" style="width: {{ p_none }}%" title="Ohne Medaille: {{ count_none }}">
-                                            {{ count_none }}
-                                        </div>
-                                    {% endif %}
+                                <div class="progress progress-custom mb-2">
+                                    {% if data.stats.Gold > 0 %}<div class="progress-bar bg-gold" style="width: {{ p_gold }}%">{{ data.stats.Gold }}</div>{% endif %}
+                                    {% if data.stats.Silber > 0 %}<div class="progress-bar bg-silver" style="width: {{ p_silver }}%">{{ data.stats.Silber }}</div>{% endif %}
+                                    {% if data.stats.Bronze > 0 %}<div class="progress-bar bg-bronze" style="width: {{ p_bronze }}%">{{ data.stats.Bronze }}</div>{% endif %}
+                                    {% if count_none > 0 %}<div class="progress-bar bg-none" style="width: {{ p_none }}%">{{ count_none }}</div>{% endif %}
                                 </div>
-
-                                {# Legende #}
-                                <div class="mt-3 small">
-                                    <ul class="list-unstyled">
-                                        <li><span class="badge bg-gold">&nbsp;</span> Gold: <strong>{{ data.stats.Gold }}</strong></li>
-                                        <li><span class="badge bg-silver">&nbsp;</span> Silber: <strong>{{ data.stats.Silber }}</strong></li>
-                                        <li><span class="badge bg-bronze">&nbsp;</span> Bronze: <strong>{{ data.stats.Bronze }}</strong></li>
-                                        <li><span class="badge bg-none" style="border: 1px solid #ccc">&nbsp;</span> Ohne: <strong>{{ count_none }}</strong></li>
-                                        <li class="mt-2 border-top pt-2">
-                                            <strong>Gesamt: {{ total_participants }} Teilnehmer</strong>
-                                        </li>
-                                    </ul>
+                                <div class="d-flex gap-3 small text-muted">
+                                    <span><span class="badge bg-gold rounded-circle p-1 me-1"> </span> Gold: {{ data.stats.Gold }}</span>
+                                    <span><span class="badge bg-silver rounded-circle p-1 me-1"> </span> Silber: {{ data.stats.Silber }}</span>
+                                    <span><span class="badge bg-bronze rounded-circle p-1 me-1"> </span> Bronze: {{ data.stats.Bronze }}</span>
+                                    <span><span class="badge bg-none rounded-circle p-1 me-1" style="border:1px solid #ccc"> </span> Offen: {{ count_none }}</span>
                                 </div>
-
-                                <div class="text-center mt-3 text-success font-weight-bold">
-                                    Erfolgsquote: {{ ((data.stats.Total / total_participants) * 100)|round(1) }}%
-                                </div>
-
-                            {% else %}
-                                <div class="alert alert-warning text-center">
-                                    Noch keine Teilnehmerdaten.
-                                </div>
-                            {% endif %}
+                            </div>
                         </div>
                     </div>
+                {% endif %}
+
+                {# --- GRID VIEW (CARDS) --- #}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for exam in data.exams %}
+                        <div class="col">
+                            <div class="card h-100 exam-card">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="text-decoration-none text-dark fw-bold">
+                                            {{ exam.exam_name }}
+                                        </a>
+                                    </h5>
+                                    
+                                    <p class="card-text text-muted small mb-3">
+                                        <span class="icon icon-calendar"></span> 
+                                        {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
+                                    </p>
+
+                                    <div class="mt-auto">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="btn btn-primary w-100 btn-sm">
+                                            <span class="icon icon-pencil"></span> Ergebnisse erfassen
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ path('app_exams_stats', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Detail-Statistik">
+                                            <span class="icon icon-chart-bar"></span>
+                                        </a>
+                                        <a href="{{ path('app_exams_edit', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Einstellungen">
+                                            <span class="icon icon-cog"></span>
+                                        </a>
+                                    </div>
+
+                                    {# DELETE BUTTON #}
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm border-0 btn-delete-exam" 
+                                            data-name="{{ exam.exam_name }}"
+                                            data-form-id="form-del-{{ exam.id }}"
+                                            title="Prüfung löschen">
+                                        <span class="icon icon-trash"></span>
+                                    </button>
+
+                                    {# Hidden Form #}
+                                    <form id="form-del-{{ exam.id }}" 
+                                          action="{{ path('app_exams_delete', {id: exam.id}) }}" 
+                                          method="post" 
+                                          style="display:none;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         {% endfor %}
-
     {% endif %}
-
-<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Test-Ausgabe: Muss in der Konsole erscheinen!
-            console.log('✅ INLINE-JS geladen!'); 
-
-            const deleteButtons = document.querySelectorAll('.btn-delete-exam');
-            
-            if (deleteButtons.length === 0) {
-                console.error('❌ Keine Löschen-Buttons gefunden!');
-            }
-
-            deleteButtons.forEach(function(button) {
-                button.addEventListener('click', function(event) {
-                    event.preventDefault(); // Stoppt den Link/Button
-
-                    const examName = this.getAttribute('data-name');
-                    const formId = this.getAttribute('data-form-id');
-
-                    console.log('🗑 Löschen geklickt für:', examName);
-
-                    if (confirm('ACHTUNG: Möchten Sie die Prüfung "' + examName + '" wirklich löschen?')) {
-                        const form = document.getElementById(formId);
-                        if (form) {
-                            form.submit();
-                        } else {
-                            alert('Fehler: Das versteckte Lösch-Formular wurde nicht gefunden (ID: ' + formId + ')');
-                        }
-                    }
-                });
-            });
-        });
-    </script>
 
 {% endblock %}
 

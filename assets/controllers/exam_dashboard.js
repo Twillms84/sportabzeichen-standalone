@@ -1,32 +1,33 @@
-// assets/js/dashboard.js
+// assets/js/exam_dashboard.js
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Alle Löschen-Buttons suchen (erkennbar an der Klasse .btn-delete-exam)
     const deleteButtons = document.querySelectorAll('.btn-delete-exam');
 
     deleteButtons.forEach(function(button) {
         button.addEventListener('click', function(event) {
-            // Standard-Verhalten (Formular absenden) verhindern
+            // 1. Verhindern, dass Links gefolgt werden
             event.preventDefault();
+            
+            // 2. Verhindern, dass der Klick an Elternelemente (z.B. die Card) weitergegeben wird
+            event.stopPropagation();
 
-            // Daten aus den Data-Attributen lesen
             const examName = button.dataset.name;
             const formId = button.dataset.formId;
 
-            // Die deutliche Sicherheitsabfrage
+            // Sicherheitsabfrage
             const message = 
                 `ACHTUNG: Möchten Sie die Prüfung "${examName}" wirklich löschen?\n\n` +
                 `Das löscht auch ALLE bisher eingegebenen Ergebnisse und Teilnehmerdaten dieser Prüfung.\n` +
                 `Dieser Schritt kann nicht rückgängig gemacht werden!`;
 
             if (confirm(message)) {
-                // Wenn bestätigt, das versteckte Formular suchen und absenden
                 const form = document.getElementById(formId);
                 if (form) {
                     form.submit();
                 } else {
                     console.error('Lösch-Formular nicht gefunden: ' + formId);
+                    alert('Fehler: Das Lösch-Formular wurde nicht gefunden.');
                 }
             }
         });
