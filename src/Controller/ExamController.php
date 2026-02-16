@@ -290,27 +290,23 @@ final class ExamController extends AbstractController
 
             // 3. GRUPPE ENTFERNEN
             if ($request->request->has('remove_group')) {
-                // Im Twig sendest du value="{{ grp.act }}"? Besser wäre die ID. 
-                // Falls du ID sendest (empfohlen):
                 $groupId = $request->request->get('remove_group');
                 
-                // Falls du 'act' sendest, musst du findOneBy(['act' => ...]) machen.
-                // Ich gehe hier mal von ID aus, da das sicherer ist:
-                $group = $groupRepo->find($groupId); // Oder findOneBy(['act' => ...])
-                
-                if ($group && $group->getInstitution() === $institution) {
-                    $exam->removeGroup($group);
+                // FIX: Erst prüfen, ob die ID nicht leer ist und numerisch ist
+                if (!empty($groupId) && is_numeric($groupId)) {
                     
-                    // OPTIONAL: Hier müsstest du ggf. auch die Teilnehmer entfernen, 
-                    // die zu dieser Gruppe gehören, sonst hast du "Leichen" in der Prüfung.
-                    // $this->removeParticipantsByGroup($exam, $group);
+                    $group = $groupRepo->find((int)$groupId); 
+                    
+                    if ($group && $group->getInstitution() === $institution) {
+                        $exam->removeGroup($group);
+                        
+                        // Optional: Teilnehmer entfernen logik hier...
 
-                    $this->em->flush();
-                    $this->addFlash('success', 'Gruppe entfernt.');
+                        $this->em->flush();
+                        $this->addFlash('success', 'Gruppe entfernt.');
+                    }
                 }
-                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
-        }
 
         // --- VIEW DATEN ---
         
