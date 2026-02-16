@@ -307,6 +307,7 @@ final class ExamController extends AbstractController
                     }
                 }
             }
+        }
 
         // --- VIEW DATEN ---
         
