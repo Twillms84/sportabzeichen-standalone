@@ -197,153 +197,153 @@ final class ExamController extends AbstractController
         ]);
     }
 
-#[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
-public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
-{
-    $exam = $examRepo->find($id);
-    if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
+    #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
+    public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
+    {
+        $exam = $examRepo->find($id);
+        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
 
-    $user = $this->getUser();
-    $institution = $user ? $user->getInstitution() : null;
+        $user = $this->getUser();
+        $institution = $user ? $user->getInstitution() : null;
 
-    // Sicherheitscheck: Gehört die Prüfung zur Institution des Users?
-    if (!$institution || $exam->getInstitution() !== $institution) {
-        throw $this->createAccessDeniedException('Du darfst diese Prüfung nicht bearbeiten.');
-    }
-
-    // --- POST HANDLING ---
-    if ($request->isMethod('POST')) {
-        
-        // 1. STAMMDATEN SPEICHERN (Hier habe ich das hidden field 'update_exam_data' genutzt, das wir vorhin eingebaut haben)
-        if ($request->request->has('update_exam_data')) {
-             $exam->setName($request->request->get('exam_name'));
-             $exam->setYear((int)$request->request->get('exam_year'));
-             
-             // Datum verarbeiten
-             $dateStr = $request->request->get('exam_date');
-             if ($dateStr) {
-                 $exam->setDate(new \DateTime($dateStr));
-             }
-
-             $this->em->flush();
-             $this->addFlash('success', 'Stammdaten gespeichert.');
-             
-             return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
+        // Sicherheitscheck: Gehört die Prüfung zur Institution des Users?
+        if (!$institution || $exam->getInstitution() !== $institution) {
+            throw $this->createAccessDeniedException('Du darfst diese Prüfung nicht bearbeiten.');
         }
 
-        // 2. GRUPPEN HINZUFÜGEN
-        if ($request->request->has('add_groups')) {
+        // --- POST HANDLING ---
+        if ($request->isMethod('POST')) {
             
-            // Eingaben normalisieren (Array oder einzelne ID)
-            $groupIds = $request->request->all('group_ids', []); // Achtung: Name im Twig war group_ids[]
+            // 1. STAMMDATEN SPEICHERN (Hier habe ich das hidden field 'update_exam_data' genutzt, das wir vorhin eingebaut haben)
+            if ($request->request->has('update_exam_data')) {
+                $exam->setName($request->request->get('exam_name'));
+                $exam->setYear((int)$request->request->get('exam_year'));
+                
+                // Datum verarbeiten
+                $dateStr = $request->request->get('exam_date');
+                if ($dateStr) {
+                    $exam->setDate(new \DateTime($dateStr));
+                }
 
-            $addedCountTotal = 0;
-            
-            // Welche Gruppen sind in diesem Jahr generell schon vergeben?
-            $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
+                $this->em->flush();
+                $this->addFlash('success', 'Stammdaten gespeichert.');
+                
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
+            }
 
-            foreach ($groupIds as $gId) {
-                $gId = (int)$gId;
+            // 2. GRUPPEN HINZUFÜGEN
+            if ($request->request->has('add_groups')) {
+                
+                // Eingaben normalisieren (Array oder einzelne ID)
+                $groupIds = $request->request->all('group_ids', []); // Achtung: Name im Twig war group_ids[]
 
-                // Check 1: Ist die Gruppe schon in DIESER Prüfung? (Verhindert Duplikate)
-                // Wir prüfen das direkt über die Collection, brauchen keine Hilfsmethode
-                $groupAlreadyInExam = false;
-                foreach ($exam->getGroups() as $existingGroup) {
-                    if ($existingGroup->getId() === $gId) {
-                        $groupAlreadyInExam = true; 
-                        break;
+                $addedCountTotal = 0;
+                
+                // Welche Gruppen sind in diesem Jahr generell schon vergeben?
+                $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
+
+                foreach ($groupIds as $gId) {
+                    $gId = (int)$gId;
+
+                    // Check 1: Ist die Gruppe schon in DIESER Prüfung? (Verhindert Duplikate)
+                    // Wir prüfen das direkt über die Collection, brauchen keine Hilfsmethode
+                    $groupAlreadyInExam = false;
+                    foreach ($exam->getGroups() as $existingGroup) {
+                        if ($existingGroup->getId() === $gId) {
+                            $groupAlreadyInExam = true; 
+                            break;
+                        }
+                    }
+
+                    if ($groupAlreadyInExam) {
+                        continue; // Nächste Gruppe
+                    }
+
+                    // Check 2: Ist die Gruppe schon in einer ANDEREN Prüfung dieses Jahres?
+                    if (in_array($gId, $usedGroupIds)) {
+                        $this->addFlash('warning', "Gruppe ID $gId ist bereits in einer anderen Prüfung vergeben.");
+                        continue;
+                    }
+
+                    // Gruppe laden und hinzufügen
+                    $group = $groupRepo->findOneBy(['id' => $gId, 'institution' => $institution]);
+                    
+                    if ($group) {
+                        $exam->addGroup($group);
+                        
+                        // WICHTIG: Hier Teilnehmer importieren. 
+                        // Da ich deine Methode nicht kenne, hier der Aufruf deiner privaten Methode (siehe unten)
+                        $addedCountTotal += $this->importParticipantsFromGroup($exam, $group);
                     }
                 }
 
-                if ($groupAlreadyInExam) {
-                    continue; // Nächste Gruppe
-                }
-
-                // Check 2: Ist die Gruppe schon in einer ANDEREN Prüfung dieses Jahres?
-                if (in_array($gId, $usedGroupIds)) {
-                    $this->addFlash('warning', "Gruppe ID $gId ist bereits in einer anderen Prüfung vergeben.");
-                    continue;
-                }
-
-                // Gruppe laden und hinzufügen
-                $group = $groupRepo->findOneBy(['id' => $gId, 'institution' => $institution]);
-                
-                if ($group) {
-                    $exam->addGroup($group);
-                    
-                    // WICHTIG: Hier Teilnehmer importieren. 
-                    // Da ich deine Methode nicht kenne, hier der Aufruf deiner privaten Methode (siehe unten)
-                    $addedCountTotal += $this->importParticipantsFromGroup($exam, $group);
-                }
-            }
-
-            $this->em->flush();
-            
-            if ($addedCountTotal > 0) {
-                 $this->addFlash('success', "$addedCountTotal Teilnehmer wurden importiert.");
-            } else {
-                 $this->addFlash('info', "Gruppen wurden zugeordnet.");
-            }
-            
-            return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
-        }
-
-        // 3. GRUPPE ENTFERNEN
-        if ($request->request->has('remove_group')) {
-            // Im Twig sendest du value="{{ grp.act }}"? Besser wäre die ID. 
-            // Falls du ID sendest (empfohlen):
-            $groupId = $request->request->get('remove_group');
-            
-            // Falls du 'act' sendest, musst du findOneBy(['act' => ...]) machen.
-            // Ich gehe hier mal von ID aus, da das sicherer ist:
-            $group = $groupRepo->find($groupId); // Oder findOneBy(['act' => ...])
-            
-            if ($group && $group->getInstitution() === $institution) {
-                $exam->removeGroup($group);
-                
-                // OPTIONAL: Hier müsstest du ggf. auch die Teilnehmer entfernen, 
-                // die zu dieser Gruppe gehören, sonst hast du "Leichen" in der Prüfung.
-                // $this->removeParticipantsByGroup($exam, $group);
-
                 $this->em->flush();
-                $this->addFlash('success', 'Gruppe entfernt.');
+                
+                if ($addedCountTotal > 0) {
+                    $this->addFlash('success', "$addedCountTotal Teilnehmer wurden importiert.");
+                } else {
+                    $this->addFlash('info', "Gruppen wurden zugeordnet.");
+                }
+                
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
-            return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
+
+            // 3. GRUPPE ENTFERNEN
+            if ($request->request->has('remove_group')) {
+                // Im Twig sendest du value="{{ grp.act }}"? Besser wäre die ID. 
+                // Falls du ID sendest (empfohlen):
+                $groupId = $request->request->get('remove_group');
+                
+                // Falls du 'act' sendest, musst du findOneBy(['act' => ...]) machen.
+                // Ich gehe hier mal von ID aus, da das sicherer ist:
+                $group = $groupRepo->find($groupId); // Oder findOneBy(['act' => ...])
+                
+                if ($group && $group->getInstitution() === $institution) {
+                    $exam->removeGroup($group);
+                    
+                    // OPTIONAL: Hier müsstest du ggf. auch die Teilnehmer entfernen, 
+                    // die zu dieser Gruppe gehören, sonst hast du "Leichen" in der Prüfung.
+                    // $this->removeParticipantsByGroup($exam, $group);
+
+                    $this->em->flush();
+                    $this->addFlash('success', 'Gruppe entfernt.');
+                }
+                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
+            }
         }
+
+        // --- VIEW DATEN ---
+        
+        // 1. Bereits zugewiesene Gruppen
+        $assignedGroups = $exam->getGroups();
+        
+        // 2. Alle Gruppen der Schule laden
+        $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
+
+        // 3. IDs von Gruppen, die IRGENDWO in diesem Jahr benutzt werden
+        $usedGroupIdsInYear = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
+
+        // 4. Verfügbare Gruppen berechnen
+        $availableGroups = [];
+            foreach ($allGroups as $g) {
+                $gId = $g->getId();
+                $isInThisExam = $assignedGroups->contains($g);
+                $isUsed = in_array($gId, $usedGroupIdsInYear);
+
+                if (!$isUsed && !$isInThisExam) {
+                    // WICHTIG: Das ganze Objekt übergeben, nicht nur den Namen!
+                    // Vorher: $availableGroups[$gId] = $g->getName();
+                    $availableGroups[] = $g; 
+                }
+            }
+
+            return $this->render('exams/edit.html.twig', [
+                'exam' => $exam,
+                'assigned_groups' => $assignedGroups,
+                'available_groups' => $availableGroups, // Jetzt ein Array von Objekten
+                'missing_students' => [],
+            ]);
     }
-
-    // --- VIEW DATEN ---
-    
-    // 1. Bereits zugewiesene Gruppen
-    $assignedGroups = $exam->getGroups();
-    
-    // 2. Alle Gruppen der Schule laden
-    $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
-
-    // 3. IDs von Gruppen, die IRGENDWO in diesem Jahr benutzt werden
-    $usedGroupIdsInYear = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
-
-    // 4. Verfügbare Gruppen berechnen
-    $availableGroups = [];
-        foreach ($allGroups as $g) {
-            $gId = $g->getId();
-            $isInThisExam = $assignedGroups->contains($g);
-            $isUsed = in_array($gId, $usedGroupIdsInYear);
-
-            if (!$isUsed && !$isInThisExam) {
-                // WICHTIG: Das ganze Objekt übergeben, nicht nur den Namen!
-                // Vorher: $availableGroups[$gId] = $g->getName();
-                $availableGroups[] = $g; 
-            }
-        }
-
-        return $this->render('exams/edit.html.twig', [
-            'exam' => $exam,
-            'assigned_groups' => $assignedGroups,
-            'available_groups' => $availableGroups, // Jetzt ein Array von Objekten
-            'missing_students' => [],
-        ]);
-}
 
     // Helper um schnell zu prüfen, ob Gruppe schon im Exam Objekt ist (ohne DB Query)
     private function isGroupInExam(Exam $exam, int $groupId): bool 
