@@ -197,7 +197,7 @@ final class ExamController extends AbstractController
         ]);
     }
 
-#[Route('/{id}/edit', name: 'app_exams_edit', methods: ['GET', 'POST'])]
+#[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
 public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
 {
     $exam = $examRepo->find($id);
