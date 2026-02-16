@@ -325,30 +325,24 @@ public function edit(int $id, Request $request, ExamRepository $examRepo, GroupR
 
     // 4. Verfügbare Gruppen berechnen
     $availableGroups = [];
-    foreach ($allGroups as $g) {
-        $gId = $g->getId();
+        foreach ($allGroups as $g) {
+            $gId = $g->getId();
+            $isInThisExam = $assignedGroups->contains($g);
+            $isUsed = in_array($gId, $usedGroupIdsInYear);
 
-        // Ist die Gruppe schon in DIESER Prüfung?
-        $isInThisExam = $assignedGroups->contains($g);
-
-        // Ist die Gruppe in einer ANDEREN Prüfung?
-        // (usedGroupIdsInYear enthält AUCH die Gruppen dieser Prüfung, 
-        // deshalb reicht "in_array", um sie rauszufiltern)
-        $isUsed = in_array($gId, $usedGroupIdsInYear);
-
-        // Wir zeigen sie nur an, wenn sie NICHT benutzt wird (weder hier noch woanders)
-        // ODER: Du möchtest Gruppen anzeigen, die noch gar nicht benutzt werden.
-        if (!$isUsed && !$isInThisExam) {
-             $availableGroups[$gId] = $g->getName(); // Key = ID, Value = Name für das Twig Array
+            if (!$isUsed && !$isInThisExam) {
+                // WICHTIG: Das ganze Objekt übergeben, nicht nur den Namen!
+                // Vorher: $availableGroups[$gId] = $g->getName();
+                $availableGroups[] = $g; 
+            }
         }
-    }
 
-    return $this->render('exams/edit.html.twig', [
-        'exam' => $exam, // Du kannst das Entity direkt übergeben, Twig kann $exam.name aufrufen
-        'assigned_groups' => $assignedGroups,
-        'available_groups' => $availableGroups,
-        'missing_students' => [], // Platzhalter
-    ]);
+        return $this->render('exams/edit.html.twig', [
+            'exam' => $exam,
+            'assigned_groups' => $assignedGroups,
+            'available_groups' => $availableGroups, // Jetzt ein Array von Objekten
+            'missing_students' => [],
+        ]);
 }
 
     // Helper um schnell zu prüfen, ob Gruppe schon im Exam Objekt ist (ohne DB Query)
