@@ -4,6 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FontAwesome für die Icons laden (falls nicht schon im base.html.twig) #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
 {% endblock %}
 
@@ -15,42 +17,45 @@
         </div>
         <div class="col-auto">
             <a href="{{ path('app_exams_new') }}" class="btn btn-primary shadow-sm">
-                <span class="icon icon-plus"></span> Neue Prüfung anlegen
+                <i class="fas fa-plus-circle"></i> Neue Prüfung
             </a>
         </div>
     </div>
 
     {% if yearlyStats is empty %}
-        <div class="alert alert-light border text-center py-5">
+        <div class="alert alert-light border text-center py-5 shadow-sm">
             <div class="mb-3">
-                <span class="icon icon-info-circle text-muted" style="font-size: 2rem;"></span>
+                <i class="fas fa-info-circle text-muted fa-3x"></i>
             </div>
             <h4>Noch keine Daten</h4>
             <p class="text-muted">Starten Sie, indem Sie eine neue Prüfung anlegen.</p>
-            <a href="{{ path('app_exams_new') }}" class="btn btn-outline-primary mt-2">Jetzt anlegen</a>
+            <a href="{{ path('app_exams_new') }}" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-plus"></i> Jetzt anlegen
+            </a>
         </div>
     {% else %}
 
         {% for year, data in yearlyStats %}
             
-            {# --- JAHRES SEKTION --- #}
             <div class="mb-5">
+                {# --- JAHRGANG ÜBERSCHRIFT --- #}
                 <div class="d-flex align-items-center mb-3 border-bottom pb-2">
                     <h2 class="h4 me-3 mb-0 text-dark fw-bold">
-                        <span class="icon icon-calendar text-primary"></span> Jahrgang {{ year }}
+                        <i class="far fa-calendar-alt text-primary"></i> Jahrgang {{ year }}
                     </h2>
                     <span class="badge bg-secondary rounded-pill">{{ data.exams|length }} Termine</span>
                 </div>
 
-                {# --- STATISTIK BALKEN (Zusammenfassung) --- #}
+                {# --- STATISTIK BALKEN --- #}
                 {% set total_participants = data.unique_users|length %}
                 
                 {% if total_participants > 0 %}
                     <div class="medal-progress-container">
                         <div class="row align-items-center">
-                            <div class="col-md-2 mb-2 mb-md-0">
+                            <div class="col-md-2 mb-2 mb-md-0 text-center text-md-start">
                                 <div class="small text-uppercase text-muted fw-bold">Gesamt</div>
-                                <div class="h5 mb-0">{{ total_participants }} <small class="text-muted text-lowercase">Teilnehmer</small></div>
+                                <div class="h4 mb-0 fw-bold">{{ total_participants }}</div>
+                                <div class="small text-muted">Teilnehmer</div>
                             </div>
                             <div class="col-md-10">
                                 {% set p_gold = (data.stats.Gold / total_participants * 100) %}
@@ -59,54 +64,55 @@
                                 {% set count_none = total_participants - data.stats.Total %}
                                 {% set p_none = (count_none / total_participants * 100) %}
 
-                                <div class="progress progress-custom mb-2">
+                                <div class="progress progress-custom">
                                     {% if data.stats.Gold > 0 %}<div class="progress-bar bg-gold" style="width: {{ p_gold }}%">{{ data.stats.Gold }}</div>{% endif %}
                                     {% if data.stats.Silber > 0 %}<div class="progress-bar bg-silver" style="width: {{ p_silver }}%">{{ data.stats.Silber }}</div>{% endif %}
                                     {% if data.stats.Bronze > 0 %}<div class="progress-bar bg-bronze" style="width: {{ p_bronze }}%">{{ data.stats.Bronze }}</div>{% endif %}
                                     {% if count_none > 0 %}<div class="progress-bar bg-none" style="width: {{ p_none }}%">{{ count_none }}</div>{% endif %}
                                 </div>
-                                <div class="d-flex gap-3 small text-muted">
-                                    <span><span class="badge bg-gold rounded-circle p-1 me-1"> </span> Gold: {{ data.stats.Gold }}</span>
-                                    <span><span class="badge bg-silver rounded-circle p-1 me-1"> </span> Silber: {{ data.stats.Silber }}</span>
-                                    <span><span class="badge bg-bronze rounded-circle p-1 me-1"> </span> Bronze: {{ data.stats.Bronze }}</span>
-                                    <span><span class="badge bg-none rounded-circle p-1 me-1" style="border:1px solid #ccc"> </span> Offen: {{ count_none }}</span>
+                                
+                                <div class="d-flex flex-wrap gap-3 small text-muted justify-content-between justify-content-md-start">
+                                    <span><i class="fas fa-medal text-warning"></i> Gold: <strong>{{ data.stats.Gold }}</strong></span>
+                                    <span><i class="fas fa-medal text-secondary"></i> Silber: <strong>{{ data.stats.Silber }}</strong></span>
+                                    <span><i class="fas fa-medal" style="color: #CD7F32;"></i> Bronze: <strong>{{ data.stats.Bronze }}</strong></span>
+                                    <span><i class="far fa-circle"></i> Offen: <strong>{{ count_none }}</strong></span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 {% endif %}
 
-                {# --- GRID VIEW (CARDS) --- #}
+                {# --- CARDS GRID --- #}
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                     {% for exam in data.exams %}
                         <div class="col">
                             <div class="card h-100 exam-card">
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title mb-1">
-                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="text-decoration-none text-dark fw-bold">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="fw-bold">
                                             {{ exam.exam_name }}
                                         </a>
                                     </h5>
                                     
                                     <p class="card-text text-muted small mb-3">
-                                        <span class="icon icon-calendar"></span> 
+                                        <i class="far fa-clock"></i> 
                                         {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
                                     </p>
 
                                     <div class="mt-auto">
                                         <a href="{{ path('results_index', {id: exam.id}) }}" class="btn btn-primary w-100 btn-sm">
-                                            <span class="icon icon-pencil"></span> Ergebnisse erfassen
+                                            <i class="fas fa-edit"></i> Ergebnisse erfassen
                                         </a>
                                     </div>
                                 </div>
                                 
                                 <div class="card-footer d-flex justify-content-between align-items-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{{ path('app_exams_stats', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Detail-Statistik">
-                                            <span class="icon icon-chart-bar"></span>
+                                        <a href="{{ path('app_exams_stats', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Statistik ansehen">
+                                            <i class="fas fa-chart-bar"></i>
                                         </a>
-                                        <a href="{{ path('app_exams_edit', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Einstellungen">
-                                            <span class="icon icon-cog"></span>
+                                        <a href="{{ path('app_exams_edit', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Einstellungen bearbeiten">
+                                            <i class="fas fa-cog"></i>
                                         </a>
                                     </div>
 
@@ -116,10 +122,9 @@
                                             data-name="{{ exam.exam_name }}"
                                             data-form-id="form-del-{{ exam.id }}"
                                             title="Prüfung löschen">
-                                        <span class="icon icon-trash"></span>
+                                        <i class="fas fa-trash-alt"></i> Löschen
                                     </button>
 
-                                    {# Hidden Form #}
                                     <form id="form-del-{{ exam.id }}" 
                                           action="{{ path('app_exams_delete', {id: exam.id}) }}" 
                                           method="post" 
