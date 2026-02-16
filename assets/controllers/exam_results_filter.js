@@ -2,12 +2,19 @@ import $ from 'jquery';
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // --- KONFIGURATION ---
+    // --- CONTAINER DEFINITIONEN ---
+    // 1. Für Ansicht (Spalten ein/ausblenden)
     const viewContainer = document.getElementById('view-checkbox-container');
-    const groupContainer = document.getElementById('group-checkbox-container');
     
+    // 2. Für Ergebnisseiten (Forensik-Modus: liest Tabelle aus)
+    const resultGroupContainer = document.getElementById('group-checkbox-container');
+    
+    // 3. Für Bearbeitenseite (Edit-Modus: einfache Liste filtern)
+    const editGroupList = document.getElementById('available-groups-list');
+    const editSearchInput = document.getElementById('group-dropdown-search');
+
     // =========================================================
-    // 1. ANSICHT FILTER (Spalten)
+    // MODUS A: ANSICHT FILTER (Spalten) - Bleibt unverändert
     // =========================================================
     if (viewContainer) {
         // Kategorien sammeln
@@ -23,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Checkboxen bauen
         const savedViewSelection = JSON.parse(localStorage.getItem('sportabzeichen_view_selection') || '[]');
         
-        // HTML leeren & neu befüllen
         viewContainer.innerHTML = '';
         Array.from(categories).sort().forEach(cat => {
             let label = cat.charAt(0).toUpperCase() + cat.slice(1);
@@ -55,10 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('sportabzeichen_view_selection', JSON.stringify(allChecked ? [] : checkedValues));
         };
 
-        // Event Listener (Change)
         viewContainer.addEventListener('change', updateViewFilter);
 
-        // Buttons Alle/Keine
         document.querySelector('.js-view-all')?.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             viewContainer.querySelectorAll('input').forEach(el => el.checked = true);
@@ -70,120 +74,140 @@ document.addEventListener('DOMContentLoaded', function() {
             updateViewFilter();
         });
 
-        // Initialer Run
         updateViewFilter();
     }
 
     // =========================================================
-    // 2. GRUPPEN FILTER (Forensik-Modus)
-    // =========================================================    
-    if (!groupContainer) {
-        console.error('❌ FEHLER: Container <div id="group-checkbox-container"> nicht gefunden!');
-    } else {
-        console.log('✅ Container gefunden. Starte Gruppen-Analyse...');
-        
-        const groups = new Set();
-        const $rows = $('.participant-row');
+    // MODUS B: EDIT-SEITE (Einfache Suche in vorhandener Liste)
+    // =========================================================
+    if (editGroupList && editSearchInput) {
+        console.log('✅ Edit-Modus erkannt: Aktiviere Suchfunktion für Gruppen.');
 
-        console.log(`📊 Anzahl gefundener Zeilen (.participant-row): ${$rows.length}`);
+        // Event Listener für das Suchfeld
+        editSearchInput.addEventListener('keyup', function() {
+            const filterValue = this.value.toLowerCase();
+            const items = editGroupList.querySelectorAll('li'); // Alle Listen-Elemente
 
-        $rows.each(function(index) {
-            const $row = $(this);
-            
-            // WICHTIG: Wir nutzen .attr(), das liest den echten HTML-Text
-            let rawClass = $row.attr('data-class');
-            let rawGroup = $row.attr('data-group');
-            
-            // Bereinigen
-            let val = (rawClass || rawGroup || '').trim();
-
-            if (val !== '') {
-                groups.add(val);
-            }
-        });
-
-        const sortedGroups = Array.from(groups).sort();
-        console.log('🏁 Gefundene eindeutige Gruppen:', sortedGroups);
-
-        // HTML neu bauen
-        groupContainer.innerHTML = '';
-        
-        if (sortedGroups.length === 0) {
-            groupContainer.innerHTML = '<div class="text-danger p-2 small">Keine Gruppen-Daten gefunden.<br>(Attribute data-class/group sind leer)</div>';
-        } else {
-            // "Alle" / "Keine" Buttons sichtbar machen falls nötig
-            $('.js-group-all, .js-group-none').show();
-
-            sortedGroups.forEach(grp => {
-                // ID sicher machen (Leerzeichen zu Unterstrichen)
-                const safeId = 'chk_grp_' + grp.replace(/[^a-zA-Z0-9-_]/g, '_');
+            items.forEach(function(item) {
+                // Wir suchen im Text oder im data-search Attribut
+                const text = item.textContent || item.innerText;
+                const searchAttr = item.getAttribute('data-search') || '';
                 
-                const html = `
-                    <div class="form-check mb-1">
-                        <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="${safeId}" checked>
-                        <label class="form-check-label w-100 text-break" for="${safeId}" style="cursor:pointer;">
-                            ${grp}
-                        </label>
-                    </div>`;
-                groupContainer.insertAdjacentHTML('beforeend', html);
-            });
-        }
-
-        // --- Update Logik (Filter anwenden) ---
-        const updateParticipantFilter = () => {
-            const $checkboxes = $(groupContainer).find('.group-checkbox');
-            // Welche Werte sind angehakt?
-            const checkedGroups = $checkboxes.filter(':checked').map((_, el) => el.value).get();
-            const allGroupsChecked = checkedGroups.length === $checkboxes.length;
-            const searchTerm = $('#client-search-input').val()?.toLowerCase().trim() || '';
-
-            $rows.each(function() {
-                const $row = $(this);
-                // Auch hier attr() nutzen für Konsistenz
-                let rowVal = ($row.attr('data-class') || $row.attr('data-group') || '').trim();
-                
-                // Namenssuche
-                const nameText = $row.find('.name-main').text().toLowerCase() + ' ' + 
-                                 $row.find('.col-name').text().toLowerCase();
-
-                const matchGroup = (groups.size === 0) || (allGroupsChecked || checkedGroups.includes(rowVal));
-                const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
-
-                if (matchGroup && matchSearch) {
-                    $row.show();
+                if (text.toLowerCase().indexOf(filterValue) > -1 || searchAttr.indexOf(filterValue) > -1) {
+                    item.style.display = ""; // Anzeigen
                 } else {
-                    $row.hide();
+                    item.style.display = "none"; // Verstecken
                 }
             });
-        };
-
-        // Event Listener
-        $(groupContainer).on('change', updateParticipantFilter);
-        $('#client-search-input').on('keyup input', updateParticipantFilter);
-
-        $('.js-group-all').on('click', function(e) { 
-            e.preventDefault(); 
-            // WICHTIG: stopPropagation verhindert, dass der Klick das Dropdown schließt
-            e.stopPropagation();
-            $(groupContainer).find('input').prop('checked', true); 
-            updateParticipantFilter(); 
         });
-        $('.js-group-none').on('click', function(e) { 
-            e.preventDefault(); 
+
+        // Verhindern, dass Klick ins Suchfeld das Dropdown schließt
+        editSearchInput.addEventListener('click', function(e) {
             e.stopPropagation();
-            $(groupContainer).find('input').prop('checked', false); 
-            updateParticipantFilter(); 
         });
-        
-        // Init
-        updateParticipantFilter();
     }
 
     // =========================================================
-    // 3. UX HELPER (Damit Dropdown beim Klicken offen bleibt)
+    // MODUS C: ERGEBNIS-SEITE (Forensik / Tabellen-Scan)
+    // =========================================================    
+    // Wir führen das nur aus, wenn der Container da ist UND wir NICHT im Edit-Modus sind
+    if (resultGroupContainer && !editGroupList) {
+        
+        const $rows = $('.participant-row');
+
+        // Nur starten, wenn auch wirklich Schüler-Zeilen da sind
+        if ($rows.length > 0) {
+            console.log('✅ Ergebnis-Modus: Starte Gruppen-Analyse aus Tabelle...');
+            
+            const groups = new Set();
+
+            $rows.each(function(index) {
+                const $row = $(this);
+                // Werte auslesen
+                let rawClass = $row.attr('data-class');
+                let rawGroup = $row.attr('data-group');
+                let val = (rawClass || rawGroup || '').trim();
+
+                if (val !== '') {
+                    groups.add(val);
+                }
+            });
+
+            const sortedGroups = Array.from(groups).sort();
+            console.log('🏁 Gefundene Gruppen:', sortedGroups);
+
+            // HTML neu bauen (Container leeren und neu befüllen)
+            resultGroupContainer.innerHTML = '';
+            
+            if (sortedGroups.length === 0) {
+                resultGroupContainer.innerHTML = '<div class="text-danger p-2 small">Keine Gruppen-Daten gefunden.<br>(Attribute data-class/group fehlen)</div>';
+            } else {
+                $('.js-group-all, .js-group-none').show();
+
+                sortedGroups.forEach(grp => {
+                    const safeId = 'chk_grp_' + grp.replace(/[^a-zA-Z0-9-_]/g, '_');
+                    
+                    const html = `
+                        <div class="form-check mb-1">
+                            <input class="form-check-input group-checkbox" type="checkbox" value="${grp}" id="${safeId}" checked>
+                            <label class="form-check-label w-100 text-break" for="${safeId}" style="cursor:pointer;">
+                                ${grp}
+                            </label>
+                        </div>`;
+                    resultGroupContainer.insertAdjacentHTML('beforeend', html);
+                });
+            }
+
+            // --- Filter Logik für Tabelle ---
+            const updateParticipantFilter = () => {
+                const $checkboxes = $(resultGroupContainer).find('.group-checkbox');
+                const checkedGroups = $checkboxes.filter(':checked').map((_, el) => el.value).get();
+                const allGroupsChecked = checkedGroups.length === $checkboxes.length;
+                const searchTerm = $('#client-search-input').val()?.toLowerCase().trim() || '';
+
+                $rows.each(function() {
+                    const $row = $(this);
+                    let rowVal = ($row.attr('data-class') || $row.attr('data-group') || '').trim();
+                    
+                    const nameText = $row.find('.name-main').text().toLowerCase() + ' ' + 
+                                     $row.find('.col-name').text().toLowerCase();
+
+                    const matchGroup = (groups.size === 0) || (allGroupsChecked || checkedGroups.includes(rowVal));
+                    const matchSearch = (searchTerm === '' || nameText.includes(searchTerm));
+
+                    if (matchGroup && matchSearch) {
+                        $row.show();
+                    } else {
+                        $row.hide();
+                    }
+                });
+            };
+
+            // Event Listener
+            $(resultGroupContainer).on('change', updateParticipantFilter);
+            $('#client-search-input').on('keyup input', updateParticipantFilter);
+
+            $('.js-group-all').on('click', function(e) { 
+                e.preventDefault(); e.stopPropagation();
+                $(resultGroupContainer).find('input').prop('checked', true); 
+                updateParticipantFilter(); 
+            });
+            $('.js-group-none').on('click', function(e) { 
+                e.preventDefault(); e.stopPropagation();
+                $(resultGroupContainer).find('input').prop('checked', false); 
+                updateParticipantFilter(); 
+            });
+            
+            // Init
+            updateParticipantFilter();
+        } else {
+            console.log('ℹ️ Keine Teilnehmer-Zeilen gefunden. Gruppen-Filter inaktiv.');
+        }
+    }
+
     // =========================================================
-    // Verhindert, dass Klicks innerhalb des Menüs das Dropdown schließen.
-    // Das arbeitet mit Bootstrap 'data-bs-auto-close="outside"' zusammen.
+    // 4. UX HELPER (Dropdown offen halten)
+    // =========================================================
     $('.dropdown-menu').on('click', function(e) {
         e.stopPropagation();
     });
