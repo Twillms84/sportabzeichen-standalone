@@ -75,49 +75,30 @@
                         <form method="post">
                             <label class="form-label fw-bold">{{ 'Neue Gruppen hinzufügen'|trans }}</label>
                             
-                            <div class="dropdown mb-3">
-                                <button class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center dropdown-toggle" 
-                                        type="button" 
-                                        id="groupDropdown" 
-                                        data-bs-toggle="dropdown" 
-                                        data-bs-auto-close="outside" 
-                                        aria-expanded="false"
-                                        style="background-color: #2b3035; color: #fff; border-color: #495057;">
-                                    <span>{{ 'Gruppen auswählen...'|trans }}</span>
-                                </button>
-
-                                {# ID für das JS-Script #}
-                                <ul class="dropdown-menu dropdown-menu-dark-custom w-100 p-2" 
-                                    id="group-checkbox-container"
-                                    aria-labelledby="groupDropdown" 
-                                    style="max-height: 300px; overflow-y: auto;">
+                            <ul class="dropdown-menu dropdown-menu-dark-custom w-100 p-2" 
+                                id="group-checkbox-container"
+                                aria-labelledby="groupDropdown" 
+                                style="max-height: 300px; overflow-y: auto;">
+                            
+                                {% for grp in available_groups %}
                                     
-                                    {# WICHTIG: Wir loopen jetzt über 'grp' (das Objekt), nicht 'id, name' #}
-                                    {% for grp in available_groups %}
+                                    <li class="px-2 py-1" 
+                                        data-group="{{ grp.name }}" 
+                                        data-search="{{ grp.name|lower }}"
+                                        data-id="{{ grp.id }}">
                                         
-                                        {# 
-                                        HIER IST DER FIX: 
-                                        Wir müssen die data-Attribute setzen, die das JS sucht.
-                                        Ich setze hier sowohl data-group als auch data-search, um sicher zu sein.
-                                        #}
-                                        <li class="px-2 py-1" 
-                                            data-group-id="{{ grp.id }}" 
-                                            data-group="{{ grp.name }}" 
-                                            data-search="{{ grp.name|lower }}">
-                                            
-                                            <div class="form-check">
-                                                {# Value ist die ID, Label ist der Name #}
-                                                <input class="form-check-input" type="checkbox" name="group_ids[]" value="{{ grp.id }}" id="check_grp_{{ grp.id }}">
-                                                <label class="form-check-label w-100 cursor-pointer" for="check_grp_{{ grp.id }}">
-                                                    {{ grp.name }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% else %}
-                                        <li class="text-muted small p-2">Keine weiteren Gruppen verfügbar</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
+                                        <div class="form-check">
+                                            {# Value ist die ID, Label ist der Name #}
+                                            <input class="form-check-input" type="checkbox" name="group_ids[]" value="{{ grp.id }}" id="check_grp_{{ grp.id }}">
+                                            <label class="form-check-label w-100 cursor-pointer" for="check_grp_{{ grp.id }}">
+                                                {{ grp.name }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% else %}
+                                    <li class="text-muted small p-2">Keine weiteren Gruppen verfügbar</li>
+                                {% endfor %}
+                            </ul>
 
                             <input type="hidden" name="add_groups" value="1">
                             <button type="submit" class="btn btn-osa-success w-100 py-2" {% if available_groups is empty %}disabled{% endif %}>
