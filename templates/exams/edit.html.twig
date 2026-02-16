@@ -20,7 +20,7 @@
                     </div>
                     <div class="card-body p-4">
                         <form method="post">
-                            {# NEU: Ein Hidden-Field zur Identifikation #}
+                            {# Hidden-Field zur Identifikation #}
                             <input type="hidden" name="update_exam_data" value="1">
 
                             <div class="mb-3">
@@ -87,8 +87,12 @@
                                     <span>{{ 'Gruppen auswählen...'|trans }}</span>
                                 </button>
 
-                                {# Das Dropdown-Menü mit Checkboxen #}
-                                <ul class="dropdown-menu dropdown-menu-dark-custom w-100 p-2" aria-labelledby="groupDropdown" style="max-height: 300px; overflow-y: auto;">
+                                {# HIER WURDE DIE ID HINZUGEFÜGT: id="group-checkbox-container" #}
+                                <ul class="dropdown-menu dropdown-menu-dark-custom w-100 p-2" 
+                                    id="group-checkbox-container"
+                                    aria-labelledby="groupDropdown" 
+                                    style="max-height: 300px; overflow-y: auto;">
+                                    
                                     {% for id, name in available_groups %}
                                         <li class="px-2 py-1">
                                             <div class="form-check">
