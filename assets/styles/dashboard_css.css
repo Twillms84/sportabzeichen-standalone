@@ -1,78 +1,148 @@
-/* --- CARD DESIGN --- */
-.exam-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background-color: #fff;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
+{% extends 'base.html.twig' %}
 
-.exam-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-    border-color: #b0b0b0;
-}
+{% block title %}Sportabzeichen Übersicht{% endblock %}
 
-.card-footer {
-    background-color: #fff;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 15px;
-    padding-bottom: 15px;
-}
+{% block stylesheets %}
+    {{ parent() }}
+    {# FontAwesome für die Icons laden (falls nicht schon im base.html.twig) #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
+{% endblock %}
 
-/* --- MEDAILLEN FARBEN & BADGES --- */
-.bg-gold {
-    background-color: #FFD700 !important;
-    color: #665500;
-}
+{% block body %}
+    <div class="row mb-5 align-items-center">
+        <div class="col">
+            <h1 class="h3 m-0 fw-bold text-dark">Sportabzeichen Dashboard</h1>
+            <p class="text-muted small mb-0">Verwalten Sie hier Ihre Prüfungstermine und Ergebnisse.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_exams_new') }}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus-circle"></i> Neue Prüfung
+            </a>
+        </div>
+    </div>
 
-.bg-silver {
-    background-color: #C0C0C0 !important;
-    color: #333;
-}
+    {% if yearlyStats is empty %}
+        <div class="alert alert-light border text-center py-5 shadow-sm">
+            <div class="mb-3">
+                <i class="fas fa-info-circle text-muted fa-3x"></i>
+            </div>
+            <h4>Noch keine Daten</h4>
+            <p class="text-muted">Starten Sie, indem Sie eine neue Prüfung anlegen.</p>
+            <a href="{{ path('app_exams_new') }}" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-plus"></i> Jetzt anlegen
+            </a>
+        </div>
+    {% else %}
 
-.bg-bronze {
-    background-color: #CD7F32 !important;
-    color: #fff;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
-}
+        {% for year, data in yearlyStats %}
+            
+            <div class="mb-5">
+                {# --- JAHRGANG ÜBERSCHRIFT --- #}
+                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
+                    <h2 class="h4 me-3 mb-0 text-dark fw-bold">
+                        <i class="far fa-calendar-alt text-primary"></i> Jahrgang {{ year }}
+                    </h2>
+                    <span class="badge bg-secondary rounded-pill">{{ data.exams|length }} Termine</span>
+                </div>
 
-.bg-none {
-    background-color: #f1f3f5 !important;
-    color: #868e96;
-}
+                {# --- STATISTIK BALKEN --- #}
+                {% set total_participants = data.unique_users|length %}
+                
+                {% if total_participants > 0 %}
+                    <div class="medal-progress-container">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 mb-2 mb-md-0 text-center text-md-start">
+                                <div class="small text-uppercase text-muted fw-bold">Gesamt</div>
+                                <div class="h4 mb-0 fw-bold">{{ total_participants }}</div>
+                                <div class="small text-muted">Teilnehmer</div>
+                            </div>
+                            <div class="col-md-10">
+                                {% set p_gold = (data.stats.Gold / total_participants * 100) %}
+                                {% set p_silver = (data.stats.Silber / total_participants * 100) %}
+                                {% set p_bronze = (data.stats.Bronze / total_participants * 100) %}
+                                {% set count_none = total_participants - data.stats.Total %}
+                                {% set p_none = (count_none / total_participants * 100) %}
 
-/* --- PROGRESS BARS (Zusammenfassung) --- */
-.medal-progress-container {
-    background-color: #fff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
+                                <div class="progress progress-custom">
+                                    {% if data.stats.Gold > 0 %}<div class="progress-bar bg-gold" style="width: {{ p_gold }}%">{{ data.stats.Gold }}</div>{% endif %}
+                                    {% if data.stats.Silber > 0 %}<div class="progress-bar bg-silver" style="width: {{ p_silver }}%">{{ data.stats.Silber }}</div>{% endif %}
+                                    {% if data.stats.Bronze > 0 %}<div class="progress-bar bg-bronze" style="width: {{ p_bronze }}%">{{ data.stats.Bronze }}</div>{% endif %}
+                                    {% if count_none > 0 %}<div class="progress-bar bg-none" style="width: {{ p_none }}%">{{ count_none }}</div>{% endif %}
+                                </div>
+                                
+                                <div class="d-flex flex-wrap gap-3 small text-muted justify-content-between justify-content-md-start">
+                                    <span><i class="fas fa-medal text-warning"></i> Gold: <strong>{{ data.stats.Gold }}</strong></span>
+                                    <span><i class="fas fa-medal text-secondary"></i> Silber: <strong>{{ data.stats.Silber }}</strong></span>
+                                    <span><i class="fas fa-medal" style="color: #CD7F32;"></i> Bronze: <strong>{{ data.stats.Bronze }}</strong></span>
+                                    <span><i class="far fa-circle"></i> Offen: <strong>{{ count_none }}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
 
-.progress-custom {
-    height: 15px;
-    border-radius: 10px;
-    background-color: #f5f5f5;
-    overflow: hidden;
-}
+                {# --- CARDS GRID --- #}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for exam in data.exams %}
+                        <div class="col">
+                            <div class="card h-100 exam-card">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="fw-bold">
+                                            {{ exam.exam_name }}
+                                        </a>
+                                    </h5>
+                                    
+                                    <p class="card-text text-muted small mb-3">
+                                        <i class="far fa-clock"></i> 
+                                        {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
+                                    </p>
 
-.progress-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1;
-}
+                                    <div class="mt-auto">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="btn btn-primary w-100 btn-sm">
+                                            <i class="fas fa-edit"></i> Ergebnisse erfassen
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ path('app_exams_stats', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Statistik ansehen">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </a>
+                                        <a href="{{ path('app_exams_edit', {id: exam.id}) }}" class="btn btn-outline-secondary btn-sm" title="Einstellungen bearbeiten">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                    </div>
 
-/* --- ICONS & HELFER --- */
-.icon {
-    margin-right: 5px;
-}
+                                    {# DELETE BUTTON #}
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm border-0 btn-delete-exam" 
+                                            data-name="{{ exam.exam_name }}"
+                                            data-form-id="form-del-{{ exam.id }}"
+                                            title="Prüfung löschen">
+                                        <i class="fas fa-trash-alt"></i> Löschen
+                                    </button>
 
-.text-decoration-none {
-    text-decoration: none !important;
-}
+                                    <form id="form-del-{{ exam.id }}" 
+                                          action="{{ path('app_exams_delete', {id: exam.id}) }}" 
+                                          method="post" 
+                                          style="display:none;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/exam_dashboard.js') }}"></script>
+{% endblock %}
