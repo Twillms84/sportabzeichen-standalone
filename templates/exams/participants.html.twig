@@ -1,61 +1,81 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}
-    Teilnehmer – {{ exam.exam_name }} ({{ exam.exam_year }})
+    Teilnehmer – {{ exam.name }} ({{ exam.year }})
 {% endblock %}
 
 {% block body %}
 
-<h1>Teilnehmer – {{ exam.exam_name }} ({{ exam.exam_year }})</h1>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Teilnehmer: <span class="text-primary">{{ exam.name }}</span> ({{ exam.year }})</h1>
+        
+        <div class="btn-group">
+            <a href="{{ path('sportabzeichen_exam_add_participant', {id: exam.id}) }}"
+               class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Manuell hinzufügen
+            </a>
 
-<div class="mb-3">
+            <form method="post"
+                  action="{{ path('sportabzeichen_exam_auto_add_participants', { id: exam.id }) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('Alle fehlenden Teilnehmer automatisch hinzufügen?');">
+                <button class="btn btn-warning ms-2">
+                    <i class="bi bi-arrow-repeat"></i> Fehlende abrufen
+                </button>
+            </form>
+        </div>
+    </div>
 
-    <a href="{{ path('sportabzeichen_exam_add_participant', {id: exam.id}) }}"
-       class="btn btn-primary">
-        ➕ Teilnehmer manuell hinzufügen
-    </a>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">#</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Alter (Prüfungsjahr)</th>
+                        <th scope="col" class="text-end pe-3">Aktionen</th>
+                    </tr>
+                    </thead>
 
-    <form method="post"
-          action="{{ path('sportabzeichen_exam_auto_add_participants', { id: exam.id }) }}"
-          class="d-inline"
-          onsubmit="return confirm('Alle fehlenden Teilnehmer automatisch hinzufügen?');">
-
-        <button class="btn btn-warning">
-            🔄 Fehlende automatisch hinzufügen
-        </button>
-    </form>
-
+                    <tbody>
+                    {% for ep in participants %}
+                        <tr>
+                            {# Annahme: ep ist eine Entity (ExamParticipant). Falls Array, Syntax anpassen #}
+                            <td class="ps-3 text-muted">{{ ep.id }}</td>
+                            <td class="fw-bold">
+                                {# Falls ep eine Entity ist: #}
+                                {{ ep.participant.user.firstname }} {{ ep.participant.user.lastname }}
+                                
+                                {# Falls ep ein Array aus dem Controller ist, nutze: 
+                                   {{ ep.vorname }} {{ ep.nachname }} 
+                                #}
+                            </td>
+                            <td>{{ ep.age }} Jahre</td>
+                            <td class="text-end pe-3">
+                                <a href="{{ path('sportabzeichen_results_edit', {
+                                    examId: exam.id,
+                                    epId: ep.id
+                                }) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil-square"></i> Ergebnisse
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="bi bi-info-circle display-6 d-block mb-2"></i>
+                                Noch keine Teilnehmer vorhanden.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
-
-<table class="table table-striped">
-    <thead>
-    <tr>
-        <th>TN-ID</th>
-        <th>Name</th>
-        <th>Alter im Jahr</th>
-        <th>Ergebnisse</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    {% for ep in participants %}
-        <tr>
-            <td>{{ ep.ep_id }}</td>
-            <td>{{ ep.vorname }} {{ ep.nachname }}</td>
-            <td>{{ ep.age_year }}</td>
-            <td>
-                <a href="{{ path('sportabzeichen_results_edit', {
-                    examId: exam.id,
-                    epId: ep.ep_id
-                }) }}" class="btn btn-sm btn-secondary">
-                    Ergebnisse eintragen
-                </a>
-            </td>
-        </tr>
-    {% else %}
-        <tr><td colspan="4">Noch keine Teilnehmer.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
 
 {% endblock %}
