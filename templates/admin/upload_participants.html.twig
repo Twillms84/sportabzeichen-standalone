@@ -4,9 +4,7 @@
 
 {% block body %}
 <div class="container-fluid">
-    <h1 class="h3 mb-4">Teilnehmerdaten importieren</h1>
-
-    {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_upload'} %}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'admin_participants_upload'} %}
 
     {# --- Erfolgsmeldung --- #}
     {% if message %}
