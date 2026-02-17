@@ -52,67 +52,25 @@
 
     {# --- 3. TABELLE --- #}
     <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-body-tertiary">
-                        <tr>
-                            <th class="ps-4 py-3">Name / Vorname</th>
-                            <th class="py-3">Login (E-Mail)</th>
-                            <th class="py-3">Rolle</th>
-                            <th class="py-3">Prüfer-Nr.</th>
-                            <th class="text-end pe-4 py-3">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for user in users %}
-                        <tr>
-                            <td class="ps-4 fw-bold">
-                                {{ user.lastname }}, {{ user.firstname }}
-                            </td>
-                            <td>
-                                <a href="mailto:{{ user.email }}" class="text-decoration-none">
-                                    {{ user.email }}
-                                </a>
-                            </td>
-                            <td>
-                                {# Hier unterscheiden wir die Badges #}
-                                {% if 'ROLE_SUPER_ADMIN' in user.roles %}
-                                    <span class="badge bg-dark border border-light">Super Admin</span>
-                                {% elseif 'ROLE_ADMIN' in user.roles %}
-                                    <span class="badge bg-danger">Admin</span>
-                                {% elseif 'ROLE_EXAMINER' in user.roles %}
-                                    <span class="badge bg-success">Prüfer</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">User</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if user.examinerId %}
-                                    <span class="font-monospace text-muted">{{ user.examinerId }}</span>
-                                {% else %}
-                                    <span class="text-muted small">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" 
-                                   class="btn btn-sm btn-outline-primary"
-                                   title="Bearbeiten">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="fas fa-user-slash fa-3x mb-3 text-secondary opacity-50"></i><br>
-                                Es wurden noch keine PrüferInnen angelegt.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+        <div class="card-body">
+    {{ form_start(form) }}
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form_row(form.firstname) }}
             </div>
+            <div class="col-md-6 mb-3">
+                {{ form_row(form.lastname) }}
+            </div>
+        </div>
+
+        {# HIER DAS NEUE FELD EINFÜGEN #}
+        <div class="mb-3">
+            {{ form_row(form.roles) }}
+        </div>
+
+        <div class="mb-3">
+            {{ form_row(form.email) }}
         </div>
         <div class="card-footer bg-body-tertiary text-muted small text-end">
             Gesamt: {{ users|length }} Einträge
