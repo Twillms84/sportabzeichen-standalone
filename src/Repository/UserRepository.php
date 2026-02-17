@@ -34,6 +34,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    // --- DEINE BESTEHENDE FUNKTION (BLEIBT ERHALTEN) ---
     // Hilfsmethode für den Import, um User schnell zu finden
     public function findByImportIdOrAct(string $identifier): ?User
     {
@@ -44,5 +45,27 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    // --- DIE NEUE FUNKTION FÜR DIE PRÜFER-LISTE (NEU) ---
+    /**
+     * Findet alle User, die Admin oder Prüfer sind (filtert Schüler raus).
+     * @return User[]
+     */
+    public function findStaff(?School $school = null): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.roles LIKE :roleAdmin OR u.roles LIKE :roleExaminer')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
+            ->orderBy('u.lastname', 'ASC');
+
+        // WICHTIG: Wenn eine Schule übergeben wurde, filtern wir danach!
+        if ($school) {
+            $qb->andWhere('u.school = :school')
+               ->setParameter('school', $school);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }
