@@ -53,23 +53,20 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * Findet alle User, die Admin oder Prüfer sind (filtert Schüler raus).
      * @return User[]
      */
-    public function findStaff(?Institution $institution = null): array
+    public function findStaffByInstitution($institution): array
     {
-        $qb = $this->createQueryBuilder('u')
-            ->orderBy('u.lastname', 'ASC');
-
-        // Die Datenbank filtert nur nach der Institution
-        if ($institution) {
-            $qb->andWhere('u.institution = :institution')
-               ->setParameter('institution', $institution);
-        }
-
-        $allUsersOfInstitution = $qb->getQuery()->getResult();
-
-        // Wir filtern die Liste in PHP nach den Rollen
-        return array_filter($allUsersOfInstitution, function(User $user) {
-            return in_array('ROLE_ADMIN', $user->getRoles()) || 
-                   in_array('ROLE_EXAMINER', $user->getRoles());
-        });
+        return $this->createQueryBuilder('u')
+            ->where('u.institution = :inst')
+            ->setParameter('inst', $institution)
+            // Wir suchen im JSON-String der Rollen nach den spezifischen Begriffen
+            ->andWhere('u.roles LIKE :roleAdmin OR u.roles LIKE :roleExaminer')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
+            // Super-Admins (dich selbst) in der Liste ausblenden
+            ->andWhere('u.roles NOT LIKE :roleSuper')
+            ->setParameter('roleSuper', '%"ROLE_SUPER_ADMIN"%')
+            ->orderBy('u.lastname', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 }
