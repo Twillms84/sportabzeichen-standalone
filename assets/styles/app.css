@@ -1,11 +1,11 @@
 /* =========================================
-   1. KONFIGURATION & BASIS (DARK MODE READY)
+   1. KONFIGURATION & BASIS
    ========================================= */
 :root {
-    /* Deine Sidebar-Farben (bleiben konstant) */
+    /* Deine Sidebar-Farben */
     --sidebar-bg-color: #144018; 
     --sidebar-accent: #2ecc71; 
-    --sidebar-width: 250px; /* Leicht verbreitert für bessere Lesbarkeit */
+    --sidebar-width: 250px;
 
     /* Dynamische App-Farben (Light Mode Standard) */
     --app-bg: #f4f7f6;      
@@ -13,11 +13,15 @@
     --app-text: #2c3e50;
     --app-border: #dee2e6;
     --app-muted: #6c757d;
+    
+    /* Hintergrund für Inputs (Light) */
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+    --input-focus-border: #2ecc71; /* Dein Grün */
+    --input-focus-shadow: rgba(46, 204, 113, 0.25);
 }
 
-/* WICHTIG: Bootstrap Variablen überschreiben!
-   Damit funktioniert der Darkmode automatisch für Cards, Modals und Body.
-*/
+/* WICHTIG: Bootstrap Variablen überschreiben */
 [data-bs-theme="light"] {
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
@@ -31,43 +35,97 @@
     --app-border: #495057;  
     --app-muted: #adb5bd;
 
-    /* Bootstrap Overrides für Dark Mode */
+    /* Input Variablen für Dark Mode */
+    --input-bg: #2b3035;
+    --input-border: #495057;
+
+    /* Bootstrap Overrides */
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
     --bs-border-color: var(--app-border);
-    --bs-secondary-bg: #2b3035; /* Hintergrund für Inputs */
+    
+    /* HIER IST DER FIX FÜR DEN HINTERGRUND: */
+    --bs-secondary-bg: #2b3035; 
+    --bs-tertiary-bg:  #343a40; /* Dunklerer Hintergrund für verschachtelte Boxen */
 }
 
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: var(--bs-body-bg); /* Nutzt jetzt Bootstrap Var */
-    color: var(--bs-body-color);        /* Nutzt jetzt Bootstrap Var */
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
     transition: background-color 0.3s ease, color 0.3s ease;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+
 /* =========================================
-   2. DARK MODE SPEZIALANPASSUNGEN
+   2. MODERNE FORMULARE & BUTTONS (ZENTRAL)
    ========================================= */
 
-/* Nur aktiv, wenn Dark Mode an ist */
+/* Inputs moderner gestalten */
+.form-control, 
+.form-select, 
+.input-group-text {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--bs-body-color);
+    border-radius: 0.5rem; /* Rundere Ecken */
+    padding: 0.6rem 1rem;  /* Mehr Platz innen */
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Fokus-Effekt: Dein Grün statt Bootstrap-Blau */
+.form-control:focus, 
+.form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--bs-body-color);
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 4px var(--input-focus-shadow); /* Sanfterer Glow */
+    outline: none;
+}
+
+/* Placeholder Farbe anpassen */
+::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 0.7;
+}
+
+/* Buttons auch etwas runder und größer */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+
+/* =========================================
+   3. DARK MODE FIXES (SPEZIALFÄLLE)
+   ========================================= */
+
 [data-bs-theme="dark"] {
     
-    /* Formularfelder dunkel machen */
-    .form-control, .form-select {
-        background-color: var(--bs-secondary-bg);
+    /* Zwingt .bg-light dazu, dunkel zu sein (Dein Hauptproblem!) */
+    .bg-light {
+        background-color: var(--bs-secondary-bg) !important;
+        color: var(--app-text) !important;
+    }
+
+    /* Zwingt .bg-body-tertiary dunkel zu sein */
+    .bg-body-tertiary {
+        background-color: var(--bs-tertiary-bg) !important;
+        color: var(--app-text) !important;
+    }
+
+    /* Alerts / Infoboxen dunkel */
+    .alert-light, .alert-secondary {
+        background-color: rgba(255, 255, 255, 0.05);
         border-color: var(--app-border);
         color: var(--app-text);
     }
     
-    .form-control:focus, .form-select:focus {
-        background-color: #32373d;
-        color: #fff;
-        border-color: var(--sidebar-accent);
-        box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
-    }
-
     /* Tabellen */
     .table {
         --bs-table-color: var(--app-text);
@@ -79,7 +137,7 @@ body {
         --bs-table-hover-color: #fff;
     }
     
-    /* Cards explizit */
+    /* Cards */
     .card {
         background-color: var(--app-card-bg);
         border-color: var(--app-border);
@@ -93,27 +151,29 @@ body {
 
 
 /* =========================================
-   3. SIDEBAR (BLEIBT IMMER DUNKELGRÜN)
+   4. SIDEBAR (DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
     color: #ecf0f1;
     min-height: 100vh;
     display: flex;
-    flex-direction: column; /* Wichtig für mt-auto Footer */
+    flex-direction: column;
 }
 
 .sidebar .nav-link {
     color: rgba(255, 255, 255, 0.7);
-    padding: 10px 15px;
+    padding: 12px 20px; /* Etwas mehr Platz */
     font-size: 0.95rem;
     border-left: 4px solid transparent;
     display: flex;
     align-items: center;
+    border-radius: 0 4px 4px 0; /* Rechts leicht abgerundet */
+    margin-right: 10px;
 }
 
 .sidebar .nav-link i {
-    width: 25px; /* Icon Breite fixieren für saubere Ausrichtung */
+    width: 25px; 
     text-align: center;
     margin-right: 10px;
 }
@@ -126,8 +186,8 @@ body {
 }
 
 .sidebar-brand {
-    padding: 15px;
-    font-size: 1.2rem;
+    padding: 20px 15px;
+    font-size: 1.3rem;
     font-weight: bold;
     color: white;
     background-color: rgba(0, 0, 0, 0.2);
@@ -141,10 +201,8 @@ body {
 }
 
 /* =========================================
-   4. DROPDOWN STYLING (GLOBAL & SIDEBAR)
+   5. DROPDOWN STYLING
    ========================================= */
-
-/* Dropdowns generell im Sidebar-Stil (Dunkelgrün) */
 .dropdown-menu,
 .dropdown-menu-osa {
     background-color: #144018 !important; 
@@ -152,39 +210,33 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     z-index: 2000 !important;
+    border-radius: 0.5rem; /* Auch hier runder */
 }
 
-/* Items */
 .dropdown-menu .dropdown-item,
 .dropdown-menu-osa .dropdown-item {
     color: rgba(255, 255, 255, 0.85) !important;
-    transition: all 0.2s;
-    padding: 8px 16px;
+    padding: 8px 20px;
+    font-size: 0.95rem;
 }
 
-/* Hover */
 .dropdown-menu .dropdown-item:hover,
 .dropdown-menu .dropdown-item:focus {
     color: #ffffff !important;
     background-color: rgba(255, 255, 255, 0.15) !important; 
-    cursor: pointer;
 }
 
-/* Icons in Dropdowns */
 .dropdown-menu .dropdown-item i {
     width: 20px;
     text-align: center;
-    margin-right: 8px;
+    margin-right: 10px;
     color: var(--sidebar-accent);
 }
 
-/* Divider */
 .dropdown-menu .dropdown-divider {
     border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-    opacity: 1;
 }
 
-/* Header Text */
 .dropdown-menu .dropdown-header {
     color: rgba(255, 255, 255, 0.5) !important;
     font-size: 0.75rem;
@@ -192,7 +244,7 @@ body {
     letter-spacing: 1px;
 }
 
-/* Form Checkboxen im Dropdown */
+/* Checkboxen im Dropdown */
 .dropdown-menu .form-check-input {
     background-color: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -205,11 +257,11 @@ body {
     color: white !important;
 }
 
+
 /* =========================================
-   5. LAYOUT LOGIK (DESKTOP VS MOBILE)
+   6. RESPONSIVE LAYOUT
    ========================================= */
 
-/* Desktop Ansicht (ab 992px) */
 @media (min-width: 992px) {
     .sidebar-wrapper {
         transform: none !important;
@@ -226,7 +278,7 @@ body {
 
     .main-content {
         margin-left: var(--sidebar-width);
-        padding: 20px;
+        padding: 30px; /* Mehr Platz am Desktop */
     }
 
     .mobile-header, .offcanvas-header {
@@ -234,14 +286,12 @@ body {
     }
 }
 
-/* Mobile Ansicht (bis 991px) */
 @media (max-width: 991px) {
     .main-content {
         margin-left: 0;
     }
 }
 
-/* Kleine Screens (Handy) */
 @media (max-width: 768px) {
     .main-content {
         padding: 0 !important; 
@@ -260,12 +310,11 @@ body {
 
     .mobile-header {
         border-bottom: 1px solid var(--app-border);
-        background-color: var(--sidebar-bg-color); /* Header auch grün */
+        background-color: var(--sidebar-bg-color);
         color: white;
     }
 }
 
-/* Offcanvas Fix */
 .offcanvas.show {
     z-index: 1055 !important;
 }
