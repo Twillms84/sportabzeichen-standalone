@@ -55,22 +55,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findStaff(?Institution $institution = null): array
     {
-        $qb = $this->createQueryBuilder('u');
+        $qb = $this->createQueryBuilder('u')
+            ->orderBy('u.lastname', 'ASC');
 
-        // Wir nutzen eine Logik, die ohne spezielle CAST-Befehle auskommt,
-        // indem wir die Abfrage für Postgres verständlich machen.
-        $qb->where('u.roles LIKE :roleAdmin')
-           ->orWhere('u.roles LIKE :roleExaminer')
-           ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
-           ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
-           ->orderBy('u.lastname', 'ASC');
-
+        // Die Datenbank filtert nur nach der Institution
         if ($institution) {
-            // Wir klammern die Rollen ein, damit die Institution immer greift
             $qb->andWhere('u.institution = :institution')
                ->setParameter('institution', $institution);
         }
 
-        return $qb->getQuery()->getResult();
+        $allUsersOfInstitution = $qb->getQuery()->getResult();
+
+        // Wir filtern die Liste in PHP nach den Rollen
+        return array_filter($allUsersOfInstitution, function(User $user) {
+            return in_array('ROLE_ADMIN', $user->getRoles()) || 
+                   in_array('ROLE_EXAMINER', $user->getRoles());
+        });
     }
 }
