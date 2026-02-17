@@ -57,15 +57,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         $qb = $this->createQueryBuilder('u');
 
-        // Wir prüfen, ob die Strings in dem Rollen-Array existieren
-        $qb->where(':roleAdmin MEMBER OF u.roles')
-           ->orWhere(':roleExaminer MEMBER OF u.roles')
-           ->setParameter('roleAdmin', 'ROLE_ADMIN')
-           ->setParameter('roleExaminer', 'ROLE_EXAMINER')
+        // Wir nutzen eine Logik, die ohne spezielle CAST-Befehle auskommt,
+        // indem wir die Abfrage für Postgres verständlich machen.
+        $qb->where('u.roles LIKE :roleAdmin')
+           ->orWhere('u.roles LIKE :roleExaminer')
+           ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+           ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
            ->orderBy('u.lastname', 'ASC');
 
         if ($institution) {
-            // Mit andWhere sicherstellen, dass die Institution zusätzlich gilt
+            // Wir klammern die Rollen ein, damit die Institution immer greift
             $qb->andWhere('u.institution = :institution')
                ->setParameter('institution', $institution);
         }
