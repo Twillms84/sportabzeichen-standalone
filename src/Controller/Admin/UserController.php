@@ -16,7 +16,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/admin/user', name: 'admin_user_')]
 class UserController extends AbstractController
 {
-    #[Route('/', name: 'admin_user_index', methods: ['GET'])]
+    #[Route('/', name: 'index', methods: ['GET'])]
     public function index(UserRepository $userRepository, Request $request): Response
     {
         /** @var User $currentUser */
