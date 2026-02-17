@@ -5,15 +5,6 @@
 {% block body %}
 <div class="container-fluid">
 
-    {# --- TABS --- #}
-    {% set tabs = [
-        { id: 'dashboard', route: 'admin_dashboard', icon: 'fa-home', label: 'Übersicht' },
-        { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Prüfer & User' }, 
-        { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
-        { id: 'import', route: 'admin_participants_upload', icon: 'fa-file-upload', label: 'Import Teilnehmer' },
-        { id: 'requirements', route: 'admin_requirements_upload', icon: 'fa-list-alt', label: 'Anforderungen', role: 'ROLE_SUPER_ADMIN' }
-    ] %}
-
     <div class="mb-4">
         <ul class="nav nav-tabs">
             {% for tab in tabs %}
