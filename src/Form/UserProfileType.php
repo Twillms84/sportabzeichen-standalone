@@ -25,17 +25,35 @@ class UserProfileType extends AbstractType
                 'required' => false,
                 'help' => 'Ihre offizielle Nummer für Urkunden.'
             ])
-            // Passwort ändern (optional, mapped => false bedeutet, es ist nicht direkt in der Entity)
+            
+            // Trenner für Passwort-Änderung (optional für die Optik im Formular-Objekt, meist im Template gelöst)
+            
+            ->add('currentPassword', PasswordType::class, [
+                'mapped' => false, // Nicht in der Entity speichern
+                'required' => false,
+                'label' => 'Aktuelles Passwort',
+                'help' => 'Nur ausfüllen, wenn Sie das Passwort ändern möchten.',
+                'attr' => ['autocomplete' => 'current-password'],
+            ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'mapped' => false,
                 'required' => false,
-                'first_options'  => ['label' => 'Neues Passwort (optional)', 'help' => 'Leer lassen, um es zu behalten.'],
-                'second_options' => ['label' => 'Passwort wiederholen'],
+                'first_options'  => ['label' => 'Neues Passwort'],
+                'second_options' => ['label' => 'Neues Passwort wiederholen'],
                 'invalid_message' => 'Die Passwörter stimmen nicht überein.',
                 'constraints' => [
-                    new Length(['min' => 6, 'minMessage' => 'Mindestens {{ limit }} Zeichen.'])
-                ]
+                    new Length([
+                        'min' => 8,
+                        'minMessage' => 'Das Passwort muss mindestens {{ limit }} Zeichen lang sein.',
+                        // max length allowed by Symfony for security reasons
+                        'max' => 4096,
+                    ]),
+                    new Regex([
+                        'pattern' => '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/',
+                        'message' => 'Das Passwort muss sicher sein: Groß- und Kleinbuchstaben, Zahlen und Sonderzeichen.'
+                    ])
+                ],
             ]);
     }
 

@@ -6,6 +6,7 @@ use App\Form\UserProfileType;
 use App\Form\UserSettingsType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -24,16 +25,34 @@ class ProfileController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Passwort Logik
+            
+            // Passwort Änderung Logik
             $plainPassword = $form->get('plainPassword')->getData();
+            $currentPassword = $form->get('currentPassword')->getData();
+
+            // Wenn ein neues Passwort eingegeben wurde...
             if ($plainPassword) {
-                $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-                $user->setPassword($hashedPassword);
+                // ... muss auch das alte eingegeben sein
+                if (!$currentPassword) {
+                    $form->get('currentPassword')->addError(new FormError('Bitte geben Sie zur Sicherheit Ihr aktuelles Passwort ein.'));
+                } 
+                // ... und das alte muss korrekt sein
+                elseif (!$passwordHasher->isPasswordValid($user, $currentPassword)) {
+                    $form->get('currentPassword')->addError(new FormError('Das aktuelle Passwort ist falsch.'));
+                } 
+                // Alles okay -> Speichern
+                else {
+                    $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
+                    $user->setPassword($hashedPassword);
+                }
             }
 
-            $em->flush();
-            $this->addFlash('success', 'Profildaten aktualisiert.');
-            return $this->redirectToRoute('profile_index');
+            // Nur speichern, wenn keine Fehler nachträglich hinzugefügt wurden
+            if ($form->isValid()) {
+                $em->flush();
+                $this->addFlash('success', 'Profildaten aktualisiert.');
+                return $this->redirectToRoute('profile_index');
+            }
         }
 
         return $this->render('profile/index.html.twig', [
@@ -50,9 +69,7 @@ class ProfileController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-            
-            $this->addFlash('success', 'Einstellungen gespeichert.');
-            // Reload, damit das neue Theme direkt greift
+            // Hier kein Flash nötig, der visuelle Change reicht oft, aber kann man machen
             return $this->redirectToRoute('profile_settings');
         }
 
