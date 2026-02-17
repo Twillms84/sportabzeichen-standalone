@@ -21,26 +21,18 @@ class UserController extends AbstractController
     {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
-        
-        // Basis-Filter: Die eigene Schule des aktuell eingeloggten Users
         $myInstitution = $currentUser->getInstitution();
 
-        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
-            // Option für dich als Super-Root: 
-            // Wenn du in der URL ?institution=X anhängst, filterst du fremd.
-            // Wenn nichts in der URL steht, nimmst du DEINE Schule.
-            $filterId = $request->query->get('institution');
-            
-            if ($filterId) {
-                $users = $userRepository->findBy(['institution' => $filterId]);
-                // Optional: Hol dir das Institution-Objekt für eine Überschrift im Template
-            } else {
-                $users = $userRepository->findBy(['institution' => $myInstitution]);
-            }
-        } else {
-            // Normaler Admin: Sieht IMMER nur seine eigenen Leute
-            $users = $userRepository->findBy(['institution' => $myInstitution]);
+        // Ziel-Institution bestimmen
+        $targetInstitution = $myInstitution;
+        if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->query->get('institution')) {
+            // Falls du als Super-Admin eine andere Schule anschaust
+            $targetInstitution = $request->query->get('institution');
         }
+
+        // Wir holen nur User, die ENTWEDER ROLE_ADMIN ODER ROLE_EXAMINER haben
+        // und zur entsprechenden Institution gehören
+        $users = $userRepository->findStaffByInstitution($targetInstitution);
 
         return $this->render('admin/user/index.html.twig', [
             'users' => $users,
