@@ -19,9 +19,21 @@ class UserController extends AbstractController // <--- NEUER KLASSENNAME
     #[Route('/', name: 'index', methods: ['GET'])]
     public function index(UserRepository $userRepository): Response
     {
-        // Pfad zum Template bleibt gleich, da wir die Ordnerstruktur in /templates nicht ändern müssen
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        // Standard: Wir filtern nach der Schule des aktuellen Admins
+        $schoolFilter = $currentUser->getSchool();
+
+        // AUSNAHME: Wenn ich Super-Admin bin, will ich vielleicht ALLE sehen?
+        // Wenn du das willst, setze $schoolFilter auf null.
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            $schoolFilter = null; // Zeigt alle Schulen an
+        }
+
         return $this->render('admin/user/index.html.twig', [
-            'users' => $userRepository->findAll(),
+            // Wir übergeben die Schule an die Suchfunktion
+            'users' => $userRepository->findStaff($schoolFilter),
         ]);
     }
 

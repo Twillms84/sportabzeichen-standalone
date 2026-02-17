@@ -5,32 +5,21 @@
 {% block body %}
 <div class="container mt-4">
 
-    {# --- 1. NAVIGATION TABS --- #}
-    {% set activeTab = 'users' %}
-    
-    {# Tab-Definition (inkl. Rollen-Check für Anforderungen) #}
+    {# --- TABS --- #}
     {% set tabs = [
         { id: 'dashboard', route: 'admin_dashboard', icon: 'fa-home', label: 'Übersicht' },
         { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Prüfer & User' }, 
         { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
         { id: 'import', route: 'admin_participants_upload', icon: 'fa-file-upload', label: 'Import Teilnehmer' },
-        { 
-            id: 'requirements', 
-            route: 'admin_requirements_upload', 
-            icon: 'fa-list-alt', 
-            label: 'Anforderungen', 
-            role: 'ROLE_SUPER_ADMIN' 
-        }
+        { id: 'requirements', route: 'admin_requirements_upload', icon: 'fa-list-alt', label: 'Anforderungen', role: 'ROLE_SUPER_ADMIN' }
     ] %}
 
     <div class="mb-4">
         <ul class="nav nav-tabs">
             {% for tab in tabs %}
-                {# Zeige Tab nur, wenn keine Rolle definiert ist ODER der User die Rolle hat #}
                 {% if tab.role is not defined or is_granted(tab.role) %}
                     <li class="nav-item">
-                        <a class="nav-link {{ activeTab == tab.id ? 'active' : '' }}" 
-                           href="{{ path(tab.route) }}">
+                        <a class="nav-link {{ activeTab|default('users') == tab.id ? 'active' : '' }}" href="{{ path(tab.route) }}">
                             <i class="fas {{ tab.icon }} me-1"></i> {{ tab.label }}
                         </a>
                     </li>
@@ -39,41 +28,57 @@
         </ul>
     </div>
 
-    {# --- 2. HEADER & ACTION --- #}
+    {# --- HEADER --- #}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="h3 mb-0">Verwaltung: PrüferInnen</h2>
-            <p class="text-muted small mb-0">Übersicht aller registrierten Benutzer und Prüfer.</p>
-        </div>
-        <a href="{{ path('admin_user_new') }}" class="btn btn-success shadow-sm">
+        <h2 class="h3 mb-0">Verwaltung: PrüferInnen</h2>
+        <a href="{{ path('admin_user_new') }}" class="btn btn-success">
             <i class="fas fa-plus-circle me-1"></i> Neu anlegen
         </a>
     </div>
 
-    {# --- 3. TABELLE --- #}
+    {# --- TABELLE --- #}
     <div class="card shadow-sm border-0">
-        <div class="card-body">
-    {{ form_start(form) }}
-        
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                {{ form_row(form.firstname) }}
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-body-tertiary">
+                        <tr>
+                            <th class="ps-4">Name</th>
+                            <th>Login</th>
+                            <th>Rolle</th>
+                            <th>Prüfer-Nr.</th>
+                            <th class="text-end pe-4">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ user.lastname }}, {{ user.firstname }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if 'ROLE_SUPER_ADMIN' in user.roles %}
+                                    <span class="badge bg-dark">Super Admin</span>
+                                {% elseif 'ROLE_ADMIN' in user.roles %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elseif 'ROLE_EXAMINER' in user.roles %}
+                                    <span class="badge bg-success">Prüfer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.examinerId|default('-') }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center p-4">Keine Einträge gefunden.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="col-md-6 mb-3">
-                {{ form_row(form.lastname) }}
-            </div>
-        </div>
-
-        {# HIER DAS NEUE FELD EINFÜGEN #}
-        <div class="mb-3">
-            {{ form_row(form.roles) }}
-        </div>
-
-        <div class="mb-3">
-            {{ form_row(form.email) }}
-        </div>
-        <div class="card-footer bg-body-tertiary text-muted small text-end">
-            Gesamt: {{ users|length }} Einträge
         </div>
     </div>
 </div>
