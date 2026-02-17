@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Form\InstitutionType;
 
 #[Route('/admin/institutions', name: 'admin_institution_')]
 #[IsGranted('ROLE_SUPER_ADMIN')] // Nur du darfst das!
