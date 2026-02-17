@@ -3,52 +3,51 @@
 {% block title %}Prüferverwaltung{% endblock %}
 
 {% block body %}
-<div class="container-fluid">
-
-    <div class="mb-4">
-        <ul class="nav nav-tabs">
-            {% for tab in tabs %}
-                {% if tab.role is not defined or is_granted(tab.role) %}
-                    <li class="nav-item">
-                        <a class="nav-link {{ activeTab|default('users') == tab.id ? 'active' : '' }}" href="{{ path(tab.route) }}">
-                            <i class="fas {{ tab.icon }} me-1"></i> {{ tab.label }}
-                        </a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-
-    {# --- HEADER --- #}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'users'} %}
+    
+<div class="container mt-4">
+    {# --- 1. HEADER & ACTION --- #}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3 mb-0">Verwaltung: PrüferInnen</h2>
-        <a href="{{ path('admin_user_new') }}" class="btn btn-success">
+        <div>
+            <h2 class="h3 mb-0">Verwaltung: Personal & Prüfer</h2>
+            <p class="text-muted small mb-0">Übersicht aller registrierten Benutzer und Prüfer.</p>
+        </div>
+        <a href="{{ path('admin_user_new') }}" class="btn btn-success shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Neu anlegen
         </a>
     </div>
 
-    {# --- TABELLE --- #}
+    {# --- 2. TABELLE --- #}
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-body-tertiary">
                         <tr>
-                            <th class="ps-4">Name</th>
-                            <th>Login</th>
-                            <th>Rolle</th>
-                            <th>Prüfer-Nr.</th>
-                            <th class="text-end pe-4">Aktionen</th>
+                            <th class="ps-4 py-3">Name / Vorname</th>
+                            <th class="py-3">Login (E-Mail)</th>
+                            <th class="py-3">Rolle</th>
+                            <th class="py-3">Prüfer-Nr.</th>
+                            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                                <th class="py-3">Institution</th>
+                            {% endif %}
+                            <th class="text-end pe-4 py-3">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for user in users %}
                         <tr>
-                            <td class="ps-4 fw-bold">{{ user.lastname }}, {{ user.firstname }}</td>
-                            <td>{{ user.email }}</td>
+                            <td class="ps-4 fw-bold">
+                                {{ user.lastname }}, {{ user.firstname }}
+                            </td>
+                            <td>
+                                <a href="mailto:{{ user.email }}" class="text-decoration-none">
+                                    {{ user.email }}
+                                </a>
+                            </td>
                             <td>
                                 {% if 'ROLE_SUPER_ADMIN' in user.roles %}
-                                    <span class="badge bg-dark">Super Admin</span>
+                                    <span class="badge bg-dark border border-light">Super Admin</span>
                                 {% elseif 'ROLE_ADMIN' in user.roles %}
                                     <span class="badge bg-danger">Admin</span>
                                 {% elseif 'ROLE_EXAMINER' in user.roles %}
@@ -57,19 +56,40 @@
                                     <span class="badge bg-secondary">User</span>
                                 {% endif %}
                             </td>
-                            <td>{{ user.examinerId|default('-') }}</td>
+                            <td>
+                                {% if user.examinerId %}
+                                    <span class="font-monospace text-muted">{{ user.examinerId }}</span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                                <td class="small text-muted">
+                                    {{ user.institution ? user.institution.name : '<em>System</em>'|raw }}
+                                </td>
+                            {% endif %}
                             <td class="text-end pe-4">
-                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary">
+                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Bearbeiten">
                                     <i class="fas fa-pencil-alt"></i>
                                 </a>
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="5" class="text-center p-4">Keine Einträge gefunden.</td></tr>
+                        <tr>
+                            <td colspan="{{ is_granted('ROLE_SUPER_ADMIN') ? '6' : '5' }}" class="text-center py-5 text-muted">
+                                <i class="fas fa-user-slash fa-3x mb-3 text-secondary opacity-50"></i><br>
+                                Keine Benutzer gefunden.
+                            </td>
+                        </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
+        </div>
+        <div class="card-footer bg-body-tertiary text-muted small text-end">
+            Gesamt: {{ users|length }} Einträge
         </div>
     </div>
 </div>
