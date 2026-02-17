@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Statistik: {{ exam.exam_name }}{% endblock %}
+{% block title %}Statistik: {{ exam.name }}{% endblock %}
 
 {% block body %}
 <div class="container-fluid mt-4">
@@ -9,11 +9,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             {# KORREKTUR: exam_name statt name #}
-            <h1 class="h3 mb-0">Statistik: {{ exam.exam_name }}</h1>
+            <h1 class="h3 mb-0">Statistik: {{ exam.name }}</h1>
             
             {# KORREKTUR: exam_date statt date #}
             {# Falls exam_date ein String ist, funktioniert date() meist trotzdem. Falls Fehler, das |date(...) entfernen #}
-            <p class="text-muted">Datum: {{ exam.exam_date|date('d.m.Y') }}</p>
+            <p class="text-muted">Datum: {{ exam.date|date('d.m.Y') }}</p>
         </div>
          <a href="{{ path('app_exams_dashboard') }}" class="btn btn-secondary">
                 {{ icon('arrow-left') }} {{ 'Zurück zur Übersicht'|trans }}
