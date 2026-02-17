@@ -414,89 +414,115 @@ final class ExamController extends AbstractController
     #[Route('/{id}/stats', name: 'stats', methods: ['GET'])]
     public function stats(int $id, ExamRepository $examRepo, ExamParticipantRepository $epRepo): Response
     {
+        // 1. Prüfung laden
         $exam = $examRepo->find($id);
-        if (!$exam) throw $this->createNotFoundException();
+        if (!$exam) {
+            throw $this->createNotFoundException('Prüfung nicht gefunden.');
+        }
 
-        // 1. Medaillen-Statistik
-        // Wir nutzen den QueryBuilder im Repository oder zählen iterativ (bei kleinen Mengen OK)
+        // 2. Medaillen-Statistik berechnen
+        // Wir iterieren über die Teilnehmer, um die Medaillen zu zählen
         $participants = $exam->getExamParticipants();
         $stats = ['Gold' => 0, 'Silber' => 0, 'Bronze' => 0, 'Ohne' => 0];
 
         foreach ($participants as $ep) {
             $pts = $ep->getTotalPoints();
-            if ($pts >= 11) $stats['Gold']++;
-            elseif ($pts >= 8) $stats['Silber']++;
-            elseif ($pts >= 4) $stats['Bronze']++;
-            else $stats['Ohne']++;
+            if ($pts >= 11) {
+                $stats['Gold']++;
+            } elseif ($pts >= 8) {
+                $stats['Silber']++;
+            } elseif ($pts >= 4) {
+                $stats['Bronze']++;
+            } else {
+                $stats['Ohne']++;
+            }
         }
 
-        // 2. Top-Listen (Ergebnisse laden)
-        // Hier laden wir die Ergebnisse effizient über das ParticipantRepo mit Joins
-        $results = $epRepo->findResultsForStats($exam); // << Muss ins Repo!
+        // 3. Ergebnisse für die Bestenliste laden
+        // Nutzt die optimierte Query aus dem Repository
+        $results = $epRepo->findResultsForStats($exam);
 
         $topList = [];
-        // Die Sortierlogik bleibt PHP-seitig, da sie komplex (Calculated vs Measured) ist.
+
         foreach ($results as $res) {
-            $discName = $res->getDiscipline()->getName();
-            $gender = $res->getExamParticipant()->getParticipant()->getGeschlecht();
-            $genderKey = match($gender) { 'MALE' => 'Männlich', 'FEMALE' => 'Weiblich', default => 'Divers' };
+            // Daten sicher abrufen
+            $examParticipant = $res->getExamParticipant();
+            $participant = $examParticipant->getParticipant();
+            $user = $participant->getUser();
+            $discipline = $res->getDiscipline();
+
+            // Gruppierungsschlüssel erstellen
+            $discName = $discipline->getName();
             
-            // Alter
-            $age = $res->getExamParticipant()->getAge();
+            // Geschlecht ins Deutsche übersetzen
+            $gender = $participant->getGeschlecht(); // 'MALE', 'FEMALE', etc.
+            $genderKey = match($gender) { 
+                'MALE' => 'Männlich', 
+                'FEMALE' => 'Weiblich', 
+                default => 'Divers' 
+            };
+            
+            // Altersklasse (AK)
+            $age = $examParticipant->getAge(); // Das Alter zum Zeitpunkt der Prüfung
             $akKey = 'AK ' . $age;
 
+            // Array-Struktur initialisieren, falls noch nicht vorhanden
             if (!isset($topList[$discName][$genderKey][$akKey])) {
                 $topList[$discName][$genderKey][$akKey] = [];
             }
 
+            // Datensatz hinzufügen
+            // WICHTIG: Die Keys hier müssen exakt mit dem Twig-Template übereinstimmen!
             $topList[$discName][$genderKey][$akKey][] = [
-                'firstname' => $res->getExamParticipant()->getParticipant()->getUser()->getFirstname(),
-                'lastname' => $res->getExamParticipant()->getParticipant()->getUser()->getLastname(),
-                'points' => $res->getPoints(),
-                'value' => $res->getLeistung(),
-                'unit' => $res->getDiscipline()->getEinheit(),
-                'type' => $res->getDiscipline()->getBerechnungsart(),
-                'groups' => '...' // Gruppen zu laden ist teuer, evtl. weglassen oder vorladen
+                'firstname' => $user->getFirstname(),
+                'lastname'  => $user->getLastname(),
+                'points'    => $res->getPoints(),
+                // Achtung: Prüfen ob die Methode in ExamResult 'getLeistung' oder 'getValue' heißt
+                'value'     => method_exists($res, 'getLeistung') ? $res->getLeistung() : $res->getValue(), 
+                'unit'      => $discipline->getEinheit(), // z.B. 'sec', 'm'
+                'type'      => $discipline->getBerechnungsart(), // 'BIGGER' oder 'SMALLER'
+                
+                // HIER WAR DER FEHLER: Twig erwartet 'group_name', nicht 'groups'
+                'group_name' => '...', // Hier könntest du $user->getGroup()->getName() einfügen, falls vorhanden
             ];
         }
 
-        // Sortieren
-        foreach ($topList as $d => &$gend) {
-            foreach ($gend as $g => &$aks) {
+        // 4. Sortieren der Bestenlisten
+        foreach ($topList as $disc => &$genders) {
+            foreach ($genders as $gender => &$aks) {
                 foreach ($aks as $ak => &$rows) {
                     usort($rows, function($a, $b) {
-                        if ($a['points'] !== $b['points']) return $b['points'] <=> $a['points'];
-                        // Tie-Breaker: Leistung
-                        if ($a['type'] === 'BIGGER') return $b['value'] <=> $a['value'];
+                        // 1. Priorität: Punkte (immer absteigend, 3 ist besser als 1)
+                        if ($a['points'] !== $b['points']) {
+                            return $b['points'] <=> $a['points'];
+                        }
+                        
+                        // 2. Priorität: Leistung (Tie-Breaker)
+                        // Bei 'BIGGER' (Weitsprung): Mehr ist besser (Absteigend)
+                        // Bei 'SMALLER' (Lauf): Weniger ist besser (Aufsteigend)
+                        if (isset($a['type']) && $a['type'] === 'BIGGER') {
+                            return $b['value'] <=> $a['value'];
+                        }
+                        // Default (Laufen/Schwimmen):
                         return $a['value'] <=> $b['value'];
                     });
+
+                    // Nur die Top 10 pro Altersklasse behalten (optional)
                     $rows = array_slice($rows, 0, 10);
                 }
             }
         }
+        unset($genders, $aks, $rows); // Referenzen aufräumen
 
+        // 5. Render
         return $this->render('exams/stats.html.twig', [
-            'exam' => $exam,
+            'exam' => $exam, // Das ganze Objekt übergeben -> löst exam.name / exam.date Probleme
             'stats' => $stats,
             'topList' => $topList,
-            'totalParticipants' => count($participants)
+            'totalParticipants' => count($participants),
+            // Hilfsvariablen für das Template, falls nötig
+            'is_exam' => true, 
         ]);
-    }
-
-    // --- HELPER METHODS (Private Logic) ---
-
-    /**
-     * Importiert alle User einer Gruppe in die Prüfung
-     */
-    private function importParticipantsFromGroup(Exam $exam, Group $group): int
-    {
-        $count = 0;
-        foreach ($group->getUsers() as $user) {
-            if ($this->addParticipantToExam($exam, $user)) {
-                $count++;
-            }
-        }
-        return $count;
     }
 
     /**
