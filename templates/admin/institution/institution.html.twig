@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Schulverwaltung{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>Registrierte Institutionen</h1>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Name der Schule</th>
+                <th>Ort</th>
+                <th>Registrar (Admin)</th>
+                <th>E-Mail</th>
+                <th>User-Anzahl</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for institution in institutions %}
+                <tr>
+                    <td><strong>{{ institution.name }}</strong></td>
+                    <td>{{ institution.city|default('N/A') }}</td>
+                    <td>
+                        {# Wir suchen den ersten Admin der Schule raus #}
+                        {% set admin = null %}
+                        {% for user in institution.users %}
+                            {% if 'ROLE_ADMIN' in user.roles and admin is null %}
+                                {% set admin = user %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if admin %}
+                            {{ admin.firstname }} {{ admin.lastname }}
+                        {% else %}
+                            <span class="text-muted">Kein Admin gefunden</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if admin %}
+                            <a href="mailto:{{ admin.email }}">{{ admin.email }}</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info text-dark">
+                            {{ institution.users|length }} User
+                        </span>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5">Noch keine Schulen registriert.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

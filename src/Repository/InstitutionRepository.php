@@ -15,4 +15,14 @@ class InstitutionRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Institution::class);
     }
+
+    public function findAllWithAdmins(): array
+    {
+        return $this->createQueryBuilder('i')
+            ->leftJoin('i.users', 'u')
+            ->addSelect('u')
+            ->orderBy('i.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
