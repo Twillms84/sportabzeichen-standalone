@@ -2,20 +2,22 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\User;
+use App\Form\InstitutionType;
 use App\Repository\InstitutionRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Form\InstitutionType;
 
 #[Route('/admin/institutions', name: 'admin_institution_')]
-#[IsGranted('ROLE_SUPER_ADMIN')] // Nur du darfst das!
+// IsGranted von hier oben entfernen, damit nicht die ganze Klasse gesperrt ist!
 class InstitutionController extends AbstractController
 {
     #[Route('/', name: 'index', methods: ['GET'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')] // Nur der Super-Admin sieht die Liste aller Schulen
     public function index(InstitutionRepository $institutionRepository): Response
     {
         return $this->render('admin/institution/index.html.twig', [
@@ -24,6 +26,7 @@ class InstitutionController extends AbstractController
     }
 
     #[Route('/settings', name: 'settings')]
+    #[IsGranted('ROLE_ADMIN')] // Registrar (ROLE_ADMIN) und du (ROLE_SUPER_ADMIN) dürfen das
     public function settings(Request $request, EntityManagerInterface $em): Response
     {
         /** @var User $user */
@@ -31,20 +34,23 @@ class InstitutionController extends AbstractController
         $institution = $user->getInstitution();
 
         if (!$institution) {
-            throw $this->createNotFoundException('Keine Institution zugeordnet.');
+            $this->addFlash('danger', 'Ihnen ist keine Institution zugeordnet.');
+            return $this->redirectToRoute('admin_dashboard');
         }
 
-        // Hier nutzt du dein vorhandenes Formular für die Institution
         $form = $this->createForm(InstitutionType::class, $institution);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
             $this->addFlash('success', 'Die Schuldaten wurden erfolgreich aktualisiert.');
+            
+            // WICHTIG: Der Name der Route ist admin_institution_settings (wegen Präfix + name)
             return $this->redirectToRoute('admin_institution_settings');
         }
 
-        return $this->render('admin/institution/settings.html.twig', [
+        // Achte darauf, dass die Datei wirklich edit.html.twig heißt (oder settings.html.twig)
+        return $this->render('admin/institution/edit.html.twig', [
             'institution' => $institution,
             'institutionForm' => $form->createView(),
             'activeTab' => 'institution_edit',
