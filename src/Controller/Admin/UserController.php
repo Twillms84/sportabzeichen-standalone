@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Admin; // <--- NEUER NAMESPACE
+namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Form\UserAdminType;
@@ -11,10 +11,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-// Wir behalten den Route-Namen 'admin_user_' bei, damit die Links im Template funktionieren
 #[Route('/admin/user', name: 'admin_user_')]
-class UserController extends AbstractController // <--- NEUER KLASSENNAME
+class UserController extends AbstractController
 {
     #[Route('/', name: 'index', methods: ['GET'])]
     public function index(UserRepository $userRepository): Response
@@ -22,17 +22,16 @@ class UserController extends AbstractController // <--- NEUER KLASSENNAME
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        // Standard: Wir filtern nach der Schule des aktuellen Admins
+        // 1. Standard: Wir filtern nach der Schule des aktuellen Admins
         $schoolFilter = $currentUser->getSchool();
 
-        // AUSNAHME: Wenn ich Super-Admin bin, will ich vielleicht ALLE sehen?
-        // Wenn du das willst, setze $schoolFilter auf null.
+        // 2. AUSNAHME: Super-Admin sieht ALLES (Filter auf null setzen)
         if ($this->isGranted('ROLE_SUPER_ADMIN')) {
-            $schoolFilter = null; // Zeigt alle Schulen an
+            $schoolFilter = null; 
         }
 
         return $this->render('admin/user/index.html.twig', [
-            // Wir übergeben die Schule an die Suchfunktion
+            // Wir übergeben die Schule an die Suchfunktion im Repository
             'users' => $userRepository->findStaff($schoolFilter),
         ]);
     }
@@ -42,13 +41,23 @@ class UserController extends AbstractController // <--- NEUER KLASSENNAME
     {
         $user = new User();
         
-        // Neue User im Admin-Bereich sind automatisch Prüfer
-        $user->setRoles(['ROLE_EXAMINER']); 
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        // WICHTIG: Automatisch die Schule des Erstellers zuweisen!
+        // (Damit der neue Prüfer nicht "heimatlos" ist)
+        if ($currentUser->getSchool()) {
+            $user->setSchool($currentUser->getSchool());
+        }
+
+        // HINWEIS: Wir setzen hier KEINE Rollen mehr manuell ($user->setRoles...).
+        // Das übernimmt jetzt das Dropdown im Formular (UserAdminType).
 
         $form = $this->createForm(UserAdminType::class, $user, ['is_new' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Passwort hashen
             $user->setPassword(
                 $userPasswordHasher->hashPassword(
                     $user,
@@ -59,26 +68,28 @@ class UserController extends AbstractController // <--- NEUER KLASSENNAME
             $entityManager->persist($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'PrüferIn erfolgreich angelegt.');
-            
-            // Redirect Route bleibt gleich, da wir oben im Route-Attribut 'admin_user_' definiert haben
+            $this->addFlash('success', 'Personal erfolgreich angelegt.');
             return $this->redirectToRoute('admin_user_index');
         }
 
         return $this->render('admin/user/form.html.twig', [
             'user' => $user,
             'form' => $form,
-            'title' => 'PrüferIn anlegen'
+            'title' => 'PrüferIn / Admin anlegen'
         ]);
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
+        // Sicherheitscheck: Darf der aktuelle Admin diesen User überhaupt bearbeiten?
+        // (Optional: Hier könnte man prüfen, ob $user->getSchool() == $currentUser->getSchool())
+
         $form = $this->createForm(UserAdminType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Passwort nur ändern, wenn etwas eingegeben wurde
             $plainPassword = $form->get('plainPassword')->getData();
             if ($plainPassword) {
                 $user->setPassword(
@@ -95,7 +106,7 @@ class UserController extends AbstractController // <--- NEUER KLASSENNAME
         return $this->render('admin/user/form.html.twig', [
             'user' => $user,
             'form' => $form,
-            'title' => 'PrüferIn bearbeiten'
+            'title' => 'Personal bearbeiten'
         ]);
     }
 }
