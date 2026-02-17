@@ -22,15 +22,16 @@ class UserController extends AbstractController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        // KORRIGIERT: getInstitution() statt getSchool()
+        // Standard: Nur User der eigenen Institution
         $institutionFilter = $currentUser->getInstitution();
 
-        // Wenn Super-Admin: Filter entfernen (alles sehen)
+        // Super-Admin sieht alle Personen systemweit
         if ($this->isGranted('ROLE_SUPER_ADMIN')) {
             $institutionFilter = null; 
         }
 
         return $this->render('admin/user/index.html.twig', [
+            // WICHTIG: Hier müssen User-Objekte kommen, keine Institutionen!
             'users' => $userRepository->findStaff($institutionFilter),
         ]);
     }
