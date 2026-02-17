@@ -43,4 +43,26 @@ class ParticipantRepository extends ServiceEntityRepository
 
         return $qb;
     }
+
+    public function getAdminList(int $page = 1, int $limit = 20, ?string $search = null): Paginator
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.user', 'u')
+            ->addSelect('u') // Performance: User-Daten mitladen
+            ->orderBy('u.lastname', 'ASC');
+
+        if ($search) {
+            $qb->andWhere('
+                LOWER(u.lastname) LIKE LOWER(:q) OR 
+                LOWER(u.firstname) LIKE LOWER(:q) OR 
+                LOWER(u.email) LIKE LOWER(:q)
+            ')
+            ->setParameter('q', '%' . $search . '%');
+        }
+
+        $qb->setFirstResult(($page - 1) * $limit)
+        ->setMaxResults($limit);
+
+        return new Paginator($qb);
+    }
 }
