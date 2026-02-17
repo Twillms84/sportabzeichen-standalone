@@ -52,18 +52,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * Findet alle User, die Admin oder Prüfer sind (filtert Schüler raus).
      * @return User[]
      */
-    public function findStaff(?School $school = null): array
+    public function findStaff(?Institution $institution = null): array
     {
         $qb = $this->createQueryBuilder('u')
+            // Suche nach Rollen Admin oder Prüfer
             ->where('u.roles LIKE :roleAdmin OR u.roles LIKE :roleExaminer')
             ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
             ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
             ->orderBy('u.lastname', 'ASC');
 
-        // WICHTIG: Wenn eine Schule übergeben wurde, filtern wir danach!
-        if ($school) {
-            $qb->andWhere('u.school = :school')
-               ->setParameter('school', $school);
+        // WICHTIG: Filterung auf Institution (statt School)
+        if ($institution) {
+            $qb->andWhere('u.institution = :institution')
+               ->setParameter('institution', $institution);
         }
 
         return $qb->getQuery()->getResult();
