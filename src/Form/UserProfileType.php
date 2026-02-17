@@ -1,4 +1,3 @@
-// src/Form/UserProfileType.php
 <?php
 
 namespace App\Form;
