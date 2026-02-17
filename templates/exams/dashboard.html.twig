@@ -4,7 +4,6 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {# FontAwesome für die Icons laden (falls nicht schon im base.html.twig) #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
 {% endblock %}
@@ -12,8 +11,9 @@
 {% block body %}
     <div class="row mb-5 align-items-center">
         <div class="col">
-            <h1 class="h3 m-0 fw-bold text-dark">Sportabzeichen Dashboard</h1>
-            <p class="text-muted small mb-0">Verwalten Sie hier Ihre Prüfungstermine und Ergebnisse.</p>
+            {# WICHTIG: 'text-dark' entfernt. Jetzt nimmt es die Farbe vom Body (weiß im Darkmode) #}
+            <h1 class="h3 m-0 fw-bold">Sportabzeichen Dashboard</h1>
+            <p class="small mb-0" style="color: var(--app-muted);">Verwalten Sie hier Ihre Prüfungstermine und Ergebnisse.</p>
         </div>
         <div class="col-auto">
             <a href="{{ path('app_exams_new') }}" class="btn btn-primary shadow-sm">
@@ -23,12 +23,12 @@
     </div>
 
     {% if yearlyStats is empty %}
-        <div class="alert alert-light border text-center py-5 shadow-sm">
+        <div class="alert text-center py-5 shadow-sm" style="background-color: var(--app-card-bg); border: 1px solid var(--app-border);">
             <div class="mb-3">
-                <i class="fas fa-info-circle text-muted fa-3x"></i>
+                <i class="fas fa-info-circle fa-3x" style="color: var(--app-muted);"></i>
             </div>
             <h4>Noch keine Daten</h4>
-            <p class="text-muted">Starten Sie, indem Sie eine neue Prüfung anlegen.</p>
+            <p style="color: var(--app-muted);">Starten Sie, indem Sie eine neue Prüfung anlegen.</p>
             <a href="{{ path('app_exams_new') }}" class="btn btn-outline-primary mt-2">
                 <i class="fas fa-plus"></i> Jetzt anlegen
             </a>
@@ -39,8 +39,9 @@
             
             <div class="mb-5">
                 {# --- JAHRGANG ÜBERSCHRIFT --- #}
-                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
-                    <h2 class="h4 me-3 mb-0 text-dark fw-bold">
+                <div class="d-flex align-items-center mb-3 border-bottom pb-2" style="border-color: var(--app-border) !important;">
+                    {# WICHTIG: 'text-dark' entfernt #}
+                    <h2 class="h4 me-3 mb-0 fw-bold">
                         <i class="far fa-calendar-alt text-primary"></i> Jahrgang {{ year }}
                     </h2>
                     <span class="badge bg-secondary rounded-pill">{{ data.exams|length }} Termine</span>
@@ -53,9 +54,9 @@
                     <div class="medal-progress-container">
                         <div class="row align-items-center">
                             <div class="col-md-2 mb-2 mb-md-0 text-center text-md-start">
-                                <div class="small text-uppercase text-muted fw-bold">Gesamt</div>
+                                <div class="small text-uppercase fw-bold" style="color: var(--app-muted);">Gesamt</div>
                                 <div class="h4 mb-0 fw-bold">{{ total_participants }}</div>
-                                <div class="small text-muted">Teilnehmer</div>
+                                <div class="small" style="color: var(--app-muted);">Teilnehmer</div>
                             </div>
                             <div class="col-md-10">
                                 {% set p_gold = (data.stats.Gold / total_participants * 100) %}
@@ -71,7 +72,7 @@
                                     {% if count_none > 0 %}<div class="progress-bar bg-none" style="width: {{ p_none }}%">{{ count_none }}</div>{% endif %}
                                 </div>
                                 
-                                <div class="d-flex flex-wrap gap-3 small text-muted justify-content-between justify-content-md-start">
+                                <div class="d-flex flex-wrap gap-3 small justify-content-between justify-content-md-start" style="color: var(--app-muted);">
                                     <span><i class="fas fa-medal text-warning"></i> Gold: <strong>{{ data.stats.Gold }}</strong></span>
                                     <span><i class="fas fa-medal text-secondary"></i> Silber: <strong>{{ data.stats.Silber }}</strong></span>
                                     <span><i class="fas fa-medal" style="color: #CD7F32;"></i> Bronze: <strong>{{ data.stats.Bronze }}</strong></span>
@@ -89,12 +90,12 @@
                             <div class="card h-100 exam-card">
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title mb-1">
-                                        <a href="{{ path('results_index', {id: exam.id}) }}" class="fw-bold">
+                                        <a href="{{ path('results_index', {id: exam.id}) }}">
                                             {{ exam.exam_name }}
                                         </a>
                                     </h5>
                                     
-                                    <p class="card-text text-muted small mb-3">
+                                    <p class="card-text small mb-3" style="color: var(--app-muted);">
                                         <i class="far fa-clock"></i> 
                                         {{ exam.exam_date ? exam.exam_date|date('d.m.Y') : 'Kein Datum' }}
                                     </p>
