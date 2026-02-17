@@ -5,24 +5,54 @@
 {% block body %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8 col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-gear"></i> Einstellungen</h5>
+                    <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Erscheinungsbild</h5>
                 </div>
                 <div class="card-body">
                     {{ form_start(form) }}
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Erscheinungsbild</label>
-                            <div class="alert alert-info py-2 small">
-                                Wähle hier, ob du die Anwendung hell oder dunkel sehen möchtest.
-                            </div>
-                            {{ form_widget(form.theme) }}
+                        
+                        <p class="text-muted mb-3">Wählen Sie, wie die Anwendung dargestellt werden soll.</p>
+
+                        {# Wir rendern das Feld manuell für besseres Design #}
+                        <div class="row g-3 mb-4">
+                            {% for child in form.theme %}
+                                <div class="col-4">
+                                    <input type="radio" 
+                                           class="btn-check" 
+                                           name="{{ child.vars.full_name }}" 
+                                           id="{{ child.vars.id }}" 
+                                           value="{{ child.vars.value }}" 
+                                           {% if child.vars.checked %}checked{% endif %}>
+                                    
+                                    <label class="btn btn-outline-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center gap-2" for="{{ child.vars.id }}">
+                                        {% if child.vars.value == 'light' %}
+                                            <i class="fas fa-sun fs-2 text-warning"></i>
+                                            <span>Hell</span>
+                                        {% elseif child.vars.value == 'dark' %}
+                                            <i class="fas fa-moon fs-2 text-info"></i>
+                                            <span>Dunkel</span>
+                                        {% else %}
+                                            <i class="fas fa-desktop fs-2"></i>
+                                            <span>Auto</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            
+                            {# Fehlermeldungen rendern, falls vorhanden #}
+                            {{ form_errors(form.theme) }}
+                        </div>
+
+                        {# Verstecktes Rendering für den Rest (CSRF Token etc) #}
+                        <div class="d-none">
+                            {{ form_rest(form) }}
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg"></i> Anwenden
+                                <i class="fas fa-save me-2"></i> Speichern & Anwenden
                             </button>
                         </div>
                     {{ form_end(form) }}

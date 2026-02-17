@@ -5,77 +5,102 @@
     /* Deine Sidebar-Farben (bleiben konstant) */
     --sidebar-bg-color: #144018; 
     --sidebar-accent: #2ecc71; 
-    --sidebar-width: 180px;
+    --sidebar-width: 250px; /* Leicht verbreitert für bessere Lesbarkeit */
 
     /* Dynamische App-Farben (Light Mode Standard) */
-    --app-bg: #f4f7f6;      /* Sehr helles Grau für den Hintergrund */
+    --app-bg: #f4f7f6;      
     --app-card-bg: #ffffff;
     --app-text: #2c3e50;
     --app-border: #dee2e6;
-    --app-muted: #6c757d;   /* Hinzugefügt für sekundären Text */
+    --app-muted: #6c757d;
 }
 
-/* Dark Mode Umschaltung der Variablen */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --app-bg: #1a1d20;      /* Dunkler Hintergrund */
-        --app-card-bg: #212529; /* Dunkle Karten/Container */
-        --app-text: #f8f9fa;    /* Heller Text */
-        --app-border: #495057;  /* Dunklere Ränder */
-        --app-muted: #adb5bd;
-    }
+/* WICHTIG: Bootstrap Variablen überschreiben!
+   Damit funktioniert der Darkmode automatisch für Cards, Modals und Body.
+*/
+[data-bs-theme="light"] {
+    --bs-body-bg: var(--app-bg);
+    --bs-body-color: var(--app-text);
+}
+
+[data-bs-theme="dark"] {
+    /* Variablen für Dark Mode */
+    --app-bg: #1a1d20;      
+    --app-card-bg: #212529; 
+    --app-text: #f8f9fa;    
+    --app-border: #495057;  
+    --app-muted: #adb5bd;
+
+    /* Bootstrap Overrides für Dark Mode */
+    --bs-body-bg: var(--app-bg);
+    --bs-body-color: var(--app-text);
+    --bs-border-color: var(--app-border);
+    --bs-secondary-bg: #2b3035; /* Hintergrund für Inputs */
 }
 
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: var(--app-bg);
-    color: var(--app-text);
+    background-color: var(--bs-body-bg); /* Nutzt jetzt Bootstrap Var */
+    color: var(--bs-body-color);        /* Nutzt jetzt Bootstrap Var */
     transition: background-color 0.3s ease, color 0.3s ease;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* =========================================
+   2. DARK MODE SPEZIALANPASSUNGEN
+   ========================================= */
 
-/* Darkmode Anpassungen für Tabellen */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #121212;
-        color: #e0e0e0;
+/* Nur aktiv, wenn Dark Mode an ist */
+[data-bs-theme="dark"] {
+    
+    /* Formularfelder dunkel machen */
+    .form-control, .form-select {
+        background-color: var(--bs-secondary-bg);
+        border-color: var(--app-border);
+        color: var(--app-text);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background-color: #32373d;
+        color: #fff;
+        border-color: var(--sidebar-accent);
+        box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
     }
 
-    /* Macht die Tabelle dunkel */
+    /* Tabellen */
     .table {
-        --bs-table-color: #e0e0e0;
-        --bs-table-bg: #1e1e1e;
-        --bs-table-border-color: #373b3e;
-        --bs-table-striped-bg: #2c3034;
-        --bs-table-striped-color: #e0e0e0;
-        --bs-table-hover-bg: #3a3f44;
-        --bs-table-hover-color: #ffffff;
+        --bs-table-color: var(--app-text);
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--app-border);
+        --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+        --bs-table-striped-color: var(--app-text);
+        --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+        --bs-table-hover-color: #fff;
     }
-
-    /* Kopfzeile der Tabelle */
-    .table-light {
-        --bs-table-bg: #2c3034;
-        --bs-table-color: #ffffff;
-        border-bottom: 2px solid #495057;
-    }
-
-    /* Cards im Darkmode anpassen */
+    
+    /* Cards explizit */
     .card {
-        background-color: #1e1e1e;
-        border-color: #373b3e;
+        background-color: var(--app-card-bg);
+        border-color: var(--app-border);
+    }
+    
+    .card-header {
+        border-bottom-color: var(--app-border);
+        background-color: rgba(0,0,0, 0.2);
     }
 }
 
 
 /* =========================================
-   2. SIDEBAR (BLEIBT DUNKELGRÜN)
+   3. SIDEBAR (BLEIBT IMMER DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
     color: #ecf0f1;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column; /* Wichtig für mt-auto Footer */
 }
 
 .sidebar .nav-link {
@@ -83,6 +108,14 @@ body {
     padding: 10px 15px;
     font-size: 0.95rem;
     border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .nav-link i {
+    width: 25px; /* Icon Breite fixieren für saubere Ausrichtung */
+    text-align: center;
+    margin-right: 10px;
 }
 
 .sidebar .nav-link:hover, 
@@ -108,79 +141,72 @@ body {
 }
 
 /* =========================================
-   3. GLOBAL DROPDOWN STYLING (Dark/Green Theme)
+   4. DROPDOWN STYLING (GLOBAL & SIDEBAR)
    ========================================= */
 
-/* Basis-Container für ALLE Dropdowns + Speziell OSA */
+/* Dropdowns generell im Sidebar-Stil (Dunkelgrün) */
 .dropdown-menu,
 .dropdown-menu-osa {
-    background-color: #144018 !important; /* Dein Sidebar-Dunkelgrün */
-    color: #ffffff !important;            /* Text immer weiß */
+    background-color: #144018 !important; 
+    color: #ffffff !important;           
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     z-index: 2000 !important;
 }
 
-/* Links und Texte im Dropdown */
+/* Items */
 .dropdown-menu .dropdown-item,
-.dropdown-menu-osa .dropdown-item,
-.dropdown-menu button,
-.dropdown-menu a {
-    color: rgba(255, 255, 255, 0.85) !important; /* Leicht abgedunkeltes Weiß */
+.dropdown-menu-osa .dropdown-item {
+    color: rgba(255, 255, 255, 0.85) !important;
     transition: all 0.2s;
+    padding: 8px 16px;
 }
 
-/* Hover-Effekt: Helles Aufleuchten */
+/* Hover */
 .dropdown-menu .dropdown-item:hover,
-.dropdown-menu-osa .dropdown-item:hover,
 .dropdown-menu .dropdown-item:focus {
     color: #ffffff !important;
     background-color: rgba(255, 255, 255, 0.15) !important; 
     cursor: pointer;
 }
 
-/* Trennlinien */
-.dropdown-menu .dropdown-divider,
-.dropdown-menu .border-bottom {
-    border-color: rgba(255, 255, 255, 0.15) !important;
+/* Icons in Dropdowns */
+.dropdown-menu .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    color: var(--sidebar-accent);
 }
 
-/* --- FORM ELEMENTE (Checkboxen) --- */
-
-/* Checkbox-Container Hover */
-.dropdown-menu .form-check:hover,
-.dropdown-menu-osa .form-check:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Labels für Checkboxen */
-.dropdown-menu .form-check-label {
-    color: #ffffff !important;
-    background-color: transparent;
-}
-
-/* Die Checkbox selbst */
-.dropdown-menu .form-check-input,
-.dropdown-menu-osa .form-check-input {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-}
-
-/* Wenn angehakt -> Grün */
-.dropdown-menu .form-check-input:checked,
-.dropdown-menu-osa .form-check-input:checked {
-    background-color: #2ecc71 !important;
-    border-color: #2ecc71 !important;
+/* Divider */
+.dropdown-menu .dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    opacity: 1;
 }
 
 /* Header Text */
 .dropdown-menu .dropdown-header {
     color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
+/* Form Checkboxen im Dropdown */
+.dropdown-menu .form-check-input {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+.dropdown-menu .form-check-input:checked {
+    background-color: var(--sidebar-accent) !important;
+    border-color: var(--sidebar-accent) !important;
+}
+.dropdown-menu .form-check-label {
+    color: white !important;
+}
 
 /* =========================================
-   4. LAYOUT LOGIK (DESKTOP VS MOBILE)
+   5. LAYOUT LOGIK (DESKTOP VS MOBILE)
    ========================================= */
 
 /* Desktop Ansicht (ab 992px) */
@@ -215,9 +241,8 @@ body {
     }
 }
 
-/* --- HIER IST DIE MOBILE OPTIMIERUNG (VOLLBILD TABELLE) --- */
+/* Kleine Screens (Handy) */
 @media (max-width: 768px) {
-    /* Padding entfernen, damit alles an den Rand rutscht */
     .main-content {
         padding: 0 !important; 
     }
@@ -226,17 +251,17 @@ body {
         padding: 0 !important;
     }
 
-    /* Karten auf dem Handy randlos machen */
     .card {
         border-radius: 0 !important;
-        border: none !important;
+        border-left: none !important;
+        border-right: none !important;
         box-shadow: none !important;
-        background-color: var(--app-card-bg); /* Sicherstellen, dass Hintergrund passt */
     }
 
-    /* Etwas Abstand zum Header lassen, falls nötig */
     .mobile-header {
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid var(--app-border);
+        background-color: var(--sidebar-bg-color); /* Header auch grün */
+        color: white;
     }
 }
 
