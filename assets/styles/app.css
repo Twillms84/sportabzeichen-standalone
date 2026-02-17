@@ -35,6 +35,40 @@ body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+
+/* Darkmode Anpassungen für Tabellen */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    /* Macht die Tabelle dunkel */
+    .table {
+        --bs-table-color: #e0e0e0;
+        --bs-table-bg: #1e1e1e;
+        --bs-table-border-color: #373b3e;
+        --bs-table-striped-bg: #2c3034;
+        --bs-table-striped-color: #e0e0e0;
+        --bs-table-hover-bg: #3a3f44;
+        --bs-table-hover-color: #ffffff;
+    }
+
+    /* Kopfzeile der Tabelle */
+    .table-light {
+        --bs-table-bg: #2c3034;
+        --bs-table-color: #ffffff;
+        border-bottom: 2px solid #495057;
+    }
+
+    /* Cards im Darkmode anpassen */
+    .card {
+        background-color: #1e1e1e;
+        border-color: #373b3e;
+    }
+}
+
+
 /* =========================================
    2. SIDEBAR (BLEIBT DUNKELGRÜN)
    ========================================= */
