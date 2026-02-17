@@ -476,12 +476,7 @@ final class ExamController extends AbstractController
         }
 
         return $this->render('exams/stats.html.twig', [
-            'exam' => [
-                'id' => $exam->getId(),
-                'name' => $exam->getName(),
-                'year' => $exam->getYear(),
-                'date' => $exam->getDate(),
-            ],
+            'exam' => $exam,
             'stats' => $stats,
             'topList' => $topList,
             'totalParticipants' => count($participants)
