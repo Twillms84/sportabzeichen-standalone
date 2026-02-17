@@ -19,4 +19,32 @@ class InstitutionController extends AbstractController
             'institutions' => $institutionRepository->findAllWithAdmins(),
         ]);
     }
+    
+    #[Route('/admin/settings/institution', name: 'admin_institution_settings')]
+    public function settings(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $institution = $user->getInstitution();
+
+        if (!$institution) {
+            throw $this->createNotFoundException('Keine Institution zugeordnet.');
+        }
+
+        // Hier nutzt du dein vorhandenes Formular für die Institution
+        $form = $this->createForm(InstitutionType::class, $institution);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+            $this->addFlash('success', 'Die Schuldaten wurden erfolgreich aktualisiert.');
+            return $this->redirectToRoute('admin_institution_settings');
+        }
+
+        return $this->render('admin/institution/settings.html.twig', [
+            'institution' => $institution,
+            'institutionForm' => $form->createView(),
+            'activeTab' => 'institution_edit',
+        ]);
+    }
 }

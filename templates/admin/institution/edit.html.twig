@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Schuldaten verwalten{% endblock %}
+
+{% block body %}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'institution_edit'} %}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h2 class="h4 mb-0"><i class="fas fa-edit me-2 text-primary"></i>Schuldaten anpassen</h2>
+                </div>
+                <div class="card-body p-4">
+                    {{ form_start(institutionForm) }}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {{ form_row(institutionForm.name, {'label': 'Name der Institution'}) }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form_row(institutionForm.city, {'label': 'Stadt'}) }}
+                            </div>
+                            {# Füge hier weitere Felder deines InstitutionType hinzu #}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Änderungen speichern
+                            </button>
+                        </div>
+                    {{ form_end(institutionForm) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
