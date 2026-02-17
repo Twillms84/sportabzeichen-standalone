@@ -54,6 +54,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?string $password = null;
 
+    #[ORM\Column(length: 20, options: ["default" => "light"])]
+    private ?string $theme = 'light'; // 'dark', 'light' oder 'auto'
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $examinerId = null; // Prüfernummer
+
+    // ... Getter und Setter ...
+
+    public function getTheme(): ?string
+    {
+        return $this->theme;
+    }
+
+    public function setTheme(string $theme): static
+    {
+        $this->theme = $theme;
+        return $this;
+    }
+
+    public function getExaminerId(): ?string
+    {
+        return $this->examinerId;
+    }
+
+    public function setExaminerId(?string $examinerId): static
+    {
+        $this->examinerId = $examinerId;
+        return $this;
+    }
+
     // --- RELATIONEN ---
 
     // WICHTIG NEU: Zugehörigkeit zur Institution

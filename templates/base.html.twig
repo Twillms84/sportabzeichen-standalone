@@ -153,13 +153,44 @@
                     {% endif %}
                 </ul>
                 <div class="mt-auto p-3 border-top border-secondary bg-black bg-opacity-25">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <span class="text-white small ms-2">{{ app.user ? (app.user.firstname|default(app.user.username)) : 'Gast' }}</span>
-                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger border-0" title="Abmelden">
-                            <i class="fas fa-sign-out-alt fs-5"></i>
-                        </a>
-                    </div>
-                </div>
+                    {% if app.user %}
+                        {# Wir nutzen ein Dropup, da wir am unteren Rand sind #}
+                        <div class="dropup">
+                            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                                {# Kleines Icon vor dem Namen #}
+                                <i class="fas fa-user-circle fs-4 me-2"></i>
+                                <strong>{{ app.user.firstname|default(app.user.username) }}</strong>
+                            </a>
+                            
+                            {# Das Menü (Dunkel, passend zur Sidebar) #}
+                            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser">
+                                <li>
+                                    <a class="dropdown-item" href="{{ path('profile_index') }}">
+                                        <i class="fas fa-id-card me-2"></i> Mein Konto
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ path('profile_settings') }}">
+                                        <i class="fas fa-sliders-h me-2"></i> Einstellungen
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider border-secondary"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ path('app_logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i> Abmelden
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        {# Fallback für Gäste #}
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-white small ms-2">Gast</span>
+                            <a href="{{ path('app_login') }}" class="btn btn-sm btn-outline-light border-0">
+                                <i class="fas fa-sign-in-alt fs-5"></i>
+                            </a>
+                        </div>
+                    {% endif %}
             </div>
         </div>
 
