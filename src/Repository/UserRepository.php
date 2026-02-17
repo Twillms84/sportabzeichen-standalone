@@ -56,14 +56,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     public function findStaff(?Institution $institution = null): array
     {
         $qb = $this->createQueryBuilder('u')
-            // Suche nach Rollen Admin oder Prüfer
-            ->where('u.roles LIKE :roleAdmin OR u.roles LIKE :roleExaminer')
+            // Wir casten die JSON-Spalte zu Text, damit LIKE funktioniert
+            ->where('CAST(u.roles AS text) LIKE :roleAdmin')
+            ->orWhere('CAST(u.roles AS text) LIKE :roleExaminer')
             ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
             ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
             ->orderBy('u.lastname', 'ASC');
 
-        // WICHTIG: Filterung auf Institution (statt School)
         if ($institution) {
+            // Wichtig: andWhere nutzen, damit die Rollen-Logik oben 
+            // nicht durch die Institution ausgehebelt wird
             $qb->andWhere('u.institution = :institution')
                ->setParameter('institution', $institution);
         }
