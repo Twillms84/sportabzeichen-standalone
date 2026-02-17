@@ -58,12 +58,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return $this->createQueryBuilder('u')
             ->where('u.institution = :inst')
             ->setParameter('inst', $institution)
-            // Wir suchen im JSON-String der Rollen nach den spezifischen Begriffen
-            ->andWhere('u.roles LIKE :roleAdmin OR u.roles LIKE :roleExaminer')
+            // Wir casten das JSON-Feld zu TEXT für den LIKE-Vergleich
+            ->andWhere('CAST(u.roles AS text) LIKE :roleAdmin OR CAST(u.roles AS text) LIKE :roleExaminer')
             ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
             ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
-            // Super-Admins (dich selbst) in der Liste ausblenden
-            ->andWhere('u.roles NOT LIKE :roleSuper')
+            // Super-Admins ausschließen
+            ->andWhere('CAST(u.roles AS text) NOT LIKE :roleSuper')
             ->setParameter('roleSuper', '%"ROLE_SUPER_ADMIN"%')
             ->orderBy('u.lastname', 'ASC')
             ->getQuery()
