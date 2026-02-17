@@ -22,17 +22,16 @@ class UserController extends AbstractController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        // 1. Standard: Wir filtern nach der Schule des aktuellen Admins
-        $schoolFilter = $currentUser->getSchool();
+        // KORRIGIERT: getInstitution() statt getSchool()
+        $institutionFilter = $currentUser->getInstitution();
 
-        // 2. AUSNAHME: Super-Admin sieht ALLES (Filter auf null setzen)
+        // Wenn Super-Admin: Filter entfernen (alles sehen)
         if ($this->isGranted('ROLE_SUPER_ADMIN')) {
-            $schoolFilter = null; 
+            $institutionFilter = null; 
         }
 
         return $this->render('admin/user/index.html.twig', [
-            // Wir übergeben die Schule an die Suchfunktion im Repository
-            'users' => $userRepository->findStaff($schoolFilter),
+            'users' => $userRepository->findStaff($institutionFilter),
         ]);
     }
 
@@ -44,20 +43,15 @@ class UserController extends AbstractController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        // WICHTIG: Automatisch die Schule des Erstellers zuweisen!
-        // (Damit der neue Prüfer nicht "heimatlos" ist)
-        if ($currentUser->getSchool()) {
-            $user->setSchool($currentUser->getSchool());
+        // KORRIGIERT: Automatisch die Institution des Erstellers zuweisen
+        if ($currentUser->getInstitution()) {
+            $user->setInstitution($currentUser->getInstitution());
         }
-
-        // HINWEIS: Wir setzen hier KEINE Rollen mehr manuell ($user->setRoles...).
-        // Das übernimmt jetzt das Dropdown im Formular (UserAdminType).
 
         $form = $this->createForm(UserAdminType::class, $user, ['is_new' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Passwort hashen
             $user->setPassword(
                 $userPasswordHasher->hashPassword(
                     $user,
@@ -82,14 +76,10 @@ class UserController extends AbstractController
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
-        // Sicherheitscheck: Darf der aktuelle Admin diesen User überhaupt bearbeiten?
-        // (Optional: Hier könnte man prüfen, ob $user->getSchool() == $currentUser->getSchool())
-
         $form = $this->createForm(UserAdminType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Passwort nur ändern, wenn etwas eingegeben wurde
             $plainPassword = $form->get('plainPassword')->getData();
             if ($plainPassword) {
                 $user->setPassword(
