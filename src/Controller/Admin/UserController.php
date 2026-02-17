@@ -16,23 +16,35 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/admin/user', name: 'admin_user_')]
 class UserController extends AbstractController
 {
-    #[Route('/', name: 'index', methods: ['GET'])]
-    public function index(UserRepository $userRepository): Response
+    #[Route('/', name: 'admin_user_index', methods: ['GET'])]
+    public function index(UserRepository $userRepository, Request $request): Response
     {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
+        
+        // Basis-Filter: Die eigene Schule des aktuell eingeloggten Users
+        $myInstitution = $currentUser->getInstitution();
 
-        // Standard: Nur User der eigenen Institution
-        $institutionFilter = $currentUser->getInstitution();
-
-        // Super-Admin sieht alle Personen systemweit
         if ($this->isGranted('ROLE_SUPER_ADMIN')) {
-            $institutionFilter = null; 
+            // Option für dich als Super-Root: 
+            // Wenn du in der URL ?institution=X anhängst, filterst du fremd.
+            // Wenn nichts in der URL steht, nimmst du DEINE Schule.
+            $filterId = $request->query->get('institution');
+            
+            if ($filterId) {
+                $users = $userRepository->findBy(['institution' => $filterId]);
+                // Optional: Hol dir das Institution-Objekt für eine Überschrift im Template
+            } else {
+                $users = $userRepository->findBy(['institution' => $myInstitution]);
+            }
+        } else {
+            // Normaler Admin: Sieht IMMER nur seine eigenen Leute
+            $users = $userRepository->findBy(['institution' => $myInstitution]);
         }
 
         return $this->render('admin/user/index.html.twig', [
-            // WICHTIG: Hier müssen User-Objekte kommen, keine Institutionen!
-            'users' => $userRepository->findStaff($institutionFilter),
+            'users' => $users,
+            'activeTab' => 'users',
         ]);
     }
 
