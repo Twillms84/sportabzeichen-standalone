@@ -1,81 +1,66 @@
 /* assets/styles/dashboard_css.css */
 
-/* --- HINTERGRUND FIX --- */
-body {
-    background-color: #f4f6f9; /* Helles Grau für den Seitenhintergrund */
-    color: #212529;            /* Dunkles Grau/Schwarz für Text */
-}
-
 /* --- CARD DESIGN --- */
 .exam-card {
-    border: 0; /* Rahmen weg, wir nutzen Schatten */
+    /* WICHTIG: Nutzung der globalen Variablen für Dark/Light Mode */
+    background-color: var(--app-card-bg);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+    
     border-radius: 10px;
-    background-color: #ffffff; /* Weiße Karte */
     transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Sanfter Schatten */
-    color: #212529; /* Text in der Karte explizit dunkel */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .exam-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    /* Optional: Grüner Rahmen beim Hover passend zur Sidebar */
+    border-color: var(--sidebar-accent);
 }
 
-.card-title a {
-    color: #2c3e50; /* Titel Farbe */
+.exam-card .card-title a {
+    color: var(--app-text); /* Textfarbe passt sich an */
     text-decoration: none;
+    font-weight: bold;
 }
-.card-title a:hover {
-    color: #0d6efd; /* Primary Farbe beim Hover */
+
+.exam-card .card-title a:hover {
+    color: var(--sidebar-accent); /* Hover Effekt */
 }
 
 .card-footer {
-    background-color: #fff; /* Footer auch weiß */
-    border-top: 1px solid #eee;
+    background-color: var(--app-card-bg); /* Gleicher Hintergrund wie Card */
+    border-top: 1px solid var(--app-border);
     padding: 15px;
 }
 
-/* --- ICONS FIX --- */
-/* Wir nutzen FontAwesome Klassen (fas fa-...), 
-   aber falls du noch alte .icon Klassen hast, können wir sie anpassen */
-.fas, .far, .fab {
-    margin-right: 5px; /* Abstand zwischen Icon und Text */
-}
-
-/* --- MEDAILLEN FARBEN & BADGES (unverändert, nur optimiert) --- */
-.bg-gold {
-    background-color: #FFD700 !important;
-    color: #665500;
-}
-.bg-silver {
-    background-color: #e0e0e0 !important; /* Etwas heller für besseren Kontrast */
-    color: #333;
-}
-.bg-bronze {
-    background-color: #CD7F32 !important;
-    color: #fff;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
-}
-.bg-none {
-    background-color: #f8f9fa !important;
-    color: #adb5bd;
-}
-
-/* --- PROGRESS BARS --- */
+/* --- PROGRESS CONTAINER (Zusammenfassung) --- */
 .medal-progress-container {
-    background-color: #ffffff;
+    background-color: var(--app-card-bg);
+    border: 1px solid var(--app-border);
+    color: var(--app-text);
+    
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* Der Balken-Hintergrund muss im Darkmode auch dunkel sein */
 .progress-custom {
-    height: 18px; /* Etwas dicker */
+    height: 18px;
     border-radius: 9px;
-    background-color: #edf2f7;
+    background-color: rgba(0,0,0, 0.1); /* Leicht dunkel im Light Mode */
     overflow: hidden;
     margin-bottom: 10px;
+}
+
+/* Im Dark Mode den Balken-Hintergrund aufhellen, damit er sichtbar ist */
+@media (prefers-color-scheme: dark) {
+    .progress-custom {
+        background-color: rgba(255,255,255, 0.1);
+    }
 }
 
 .progress-bar {
@@ -84,4 +69,29 @@ body {
     justify-content: center;
     font-size: 11px;
     font-weight: 700;
+    color: #fff; /* Text IM Balken bleibt weiß */
+}
+
+/* --- ICONS & HELFER --- */
+.fas, .far, .fab {
+    margin-right: 5px;
+}
+
+/* --- MEDAILLEN FARBEN (Bleiben gleich) --- */
+.bg-gold {
+    background-color: #FFD700 !important;
+    color: #665500;
+}
+.bg-silver {
+    background-color: #e0e0e0 !important;
+    color: #333;
+}
+.bg-bronze {
+    background-color: #CD7F32 !important;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+.bg-none {
+    background-color: var(--app-border) !important; /* Passt sich an */
+    color: var(--app-muted);
 }
