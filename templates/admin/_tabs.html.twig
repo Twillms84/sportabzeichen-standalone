@@ -1,21 +1,31 @@
 {# Definition der Tabs #}
 {% set tabs = [
     { id: 'dashboard', route: 'admin_dashboard', icon: 'fa-home', label: 'Übersicht' },
+    { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Prüfer' }, 
     { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
     { id: 'import', route: 'admin_participants_upload', icon: 'fa-file-upload', label: 'Import Teilnehmer' },
-    { id: 'requirements', route: 'admin_requirements_upload', icon: 'fa-list-alt', label: 'Anforderungen' }
+    { 
+        id: 'requirements', 
+        route: 'admin_requirements_upload', 
+        icon: 'fa-list-alt', 
+        label: 'Anforderungen', 
+        role: 'ROLE_SUPER_ADMIN' 
+    }
 ] %}
 
 <div class="mb-4">
     <ul class="nav nav-tabs">
         {% for tab in tabs %}
-            <li class="nav-item">
-                <a class="nav-link {{ activeTab == tab.id ? 'active' : '' }}" 
-                   href="{{ path(tab.route) }}">
-                   {# Wir nutzen hier direkt das FontAwesome Tag #}
-                   <i class="fas {{ tab.icon }}"></i> {{ tab.label }}
-                </a>
-            </li>
+            {# ANZEIGELOGIK: #}
+            {# Zeige Tab, wenn KEINE Rolle definiert ist ODER wenn der User die definierte Rolle hat #}
+            {% if tab.role is not defined or is_granted(tab.role) %}
+                <li class="nav-item">
+                    <a class="nav-link {{ activeTab|default('') == tab.id ? 'active' : '' }}" 
+                       href="{{ path(tab.route) }}">
+                        <i class="fas {{ tab.icon }}"></i> {{ tab.label }}
+                    </a>
+                </li>
+            {% endif %}
         {% endfor %}
     </ul>
 </div>
