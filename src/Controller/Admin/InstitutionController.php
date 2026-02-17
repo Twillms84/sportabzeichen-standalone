@@ -19,8 +19,8 @@ class InstitutionController extends AbstractController
             'institutions' => $institutionRepository->findAllWithAdmins(),
         ]);
     }
-    
-    #[Route('/admin/settings/institution', name: 'admin_institution_settings')]
+
+    #[Route('/settings', name: 'settings')]
     public function settings(Request $request, EntityManagerInterface $em): Response
     {
         /** @var User $user */
