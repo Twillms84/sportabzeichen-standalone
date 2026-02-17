@@ -23,16 +23,27 @@ class UserController extends AbstractController
         $currentUser = $this->getUser();
         $myInstitution = $currentUser->getInstitution();
 
-        // Ziel-Institution bestimmen
+        // 1. Ziel-Institution bestimmen
         $targetInstitution = $myInstitution;
         if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->query->get('institution')) {
-            // Falls du als Super-Admin eine andere Schule anschaust
             $targetInstitution = $request->query->get('institution');
         }
 
-        // Wir holen nur User, die ENTWEDER ROLE_ADMIN ODER ROLE_EXAMINER haben
-        // und zur entsprechenden Institution gehören
-        $users = $userRepository->findStaffByInstitution($targetInstitution);
+        // 2. Erstmal alle User der Schule laden (Standard Doctrine Methode)
+        $allUsers = $userRepository->findBy(['institution' => $targetInstitution]);
+
+        // 3. In PHP filtern: Nur Admins und Prüfer, aber keine Super-Admins
+        $users = array_filter($allUsers, function($user) {
+            $roles = $user->getRoles();
+            
+            // Darf nicht Super-Admin sein
+            if (in_array('ROLE_SUPER_ADMIN', $roles)) {
+                return false;
+            }
+
+            // Muss Admin oder Prüfer sein
+            return in_array('ROLE_ADMIN', $roles) || in_array('ROLE_EXAMINER', $roles);
+        });
 
         return $this->render('admin/user/index.html.twig', [
             'users' => $users,
