@@ -3,8 +3,9 @@
 {% block title %}Schulverwaltung{% endblock %}
 
 {% block body %}
-<div class="container mt-4">
-    <h1>Registrierte Institutionen</h1>
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'institutions'} %}
+
+    <div class="container-fluid">
 
     <table class="table table-striped mt-4">
         <thead>
