@@ -2,8 +2,10 @@
 
 namespace App\Repository;
 
+use App\Entity\Exam;
 use App\Entity\ExamParticipant;
-use App\Entity\Institution; // <--- Importieren
+use App\Entity\ExamResult; // <--- Wichtig: Deine Ergebnis-Entity
+use App\Entity\Institution;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -18,18 +20,19 @@ class ExamParticipantRepository extends ServiceEntityRepository
     }
 
     /**
-     * Findet alle Teilnehmer einer bestimmten Prüfung
+     * Findet alle Teilnehmer einer bestimmten Prüfung.
      * SICHER: Filtert zusätzlich nach der Institution!
      */
     public function findByExam(int $examId, Institution $institution): array
     {
         return $this->createQueryBuilder('ep')
-            ->join('ep.exam', 'e') // Wir müssen das Exam joinen, um die Schule zu prüfen
-            ->andWhere('e.id = :examId')
-            ->andWhere('e.institution = :institution') // <--- DER SICHERHEITS-CHECK
+            ->join('ep.exam', 'e')
+            ->where('e.id = :examId') // where statt andWhere am Anfang ist sauberer, aber beides geht
+            ->andWhere('e.institution = :institution')
             ->setParameter('examId', $examId)
             ->setParameter('institution', $institution)
             
+            // Performance: Verwandte Daten gleich mitladen
             ->leftJoin('ep.participant', 'p')
             ->addSelect('p')
             ->leftJoin('p.user', 'u')
@@ -39,17 +42,28 @@ class ExamParticipantRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Lädt die Einzelergebnisse (ExamResult) für die Statistik.
+     * Wird vom ExamController::stats() verwendet.
+     */
     public function findResultsForStats(Exam $exam): array
     {
         return $this->getEntityManager()->createQueryBuilder()
+            // Wir laden das Ergebnis (r) und joinen alles andere dazu
             ->select('r', 'ep', 'p', 'u', 'd')
-            ->from('App\Entity\ExamResult', 'r')
-            ->join('r.examParticipant', 'ep')
-            ->join('ep.participant', 'p')
-            ->join('p.user', 'u')
-            ->join('r.discipline', 'd')
+            ->from(ExamResult::class, 'r') // <--- Hier nutzen wir die Klasse direkt, das ist sicherer als String
+            
+            ->innerJoin('r.examParticipant', 'ep')
+            ->innerJoin('ep.participant', 'p')
+            ->innerJoin('p.user', 'u')
+            ->innerJoin('r.discipline', 'd')
+            
             ->where('ep.exam = :exam')
-            ->andWhere('r.points > 0')
+            // Optional: Nur Ergebnisse > 0 Punkte anzeigen?
+            // Wenn du auch 0-Punkte-Ergebnisse in der Liste willst, nimm die nächste Zeile raus:
+            ->andWhere('r.points > 0') 
+            
             ->setParameter('exam', $exam)
             ->getQuery()
             ->getResult();
