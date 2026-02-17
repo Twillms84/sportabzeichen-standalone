@@ -1,3 +1,4 @@
+{# templates/admin/institution/settings.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Schuldaten verwalten{% endblock %}
@@ -7,28 +8,52 @@
 
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-10">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h2 class="h4 mb-0"><i class="fas fa-edit me-2 text-primary"></i>Schuldaten anpassen</h2>
+                <div class="card-header bg-primary text-white py-3">
+                    <h2 class="h5 mb-0"><i class="fas fa-university me-2"></i>Stammdaten der Institution</h2>
                 </div>
                 <div class="card-body p-4">
                     {{ form_start(institutionForm) }}
+                        
+                        <div class="row border-bottom mb-4 pb-3">
+                            <div class="col-md-8">
+                                {{ form_row(institutionForm.name) }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form_row(institutionForm.type) }}
+                            </div>
+                        </div>
+
+                        <h3 class="h6 mb-3 text-muted uppercase">Anschrift & Kontakt</h3>
                         <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form_row(institutionForm.name, {'label': 'Name der Institution'}) }}
+                            <div class="col-md-6 mb-3">
+                                {{ form_row(institutionForm.contactPerson) }}
                             </div>
                             <div class="col-md-6 mb-3">
-                                {{ form_row(institutionForm.city, {'label': 'Stadt'}) }}
+                                {{ form_row(institutionForm.registrarEmail) }}
                             </div>
-                            {# Füge hier weitere Felder deines InstitutionType hinzu #}
+                            <div class="col-md-12 mb-3">
+                                {{ form_row(institutionForm.street) }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form_row(institutionForm.zip) }}
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                {{ form_row(institutionForm.city) }}
+                            </div>
                         </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save me-2"></i>Änderungen speichern
+
+                        <h3 class="h6 mb-3 text-muted uppercase">Systemdaten</h3>
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form_row(institutionForm.identifier) }}
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-success px-5 shadow-sm">
+                                <i class="fas fa-check-circle me-1"></i> Daten speichern
                             </button>
                         </div>
                     {{ form_end(institutionForm) }}
