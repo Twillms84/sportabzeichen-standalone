@@ -1,5 +1,3 @@
-// src/Form/UserSettingsType.php
-
 <?php
 
 namespace App\Form;
