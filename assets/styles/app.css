@@ -156,9 +156,11 @@ body {
 .sidebar {
     background-color: var(--sidebar-bg-color);
     color: #ecf0f1;
-    min-height: 100vh;
+    height: 100%; 
+    width: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden; 
 }
 
 .sidebar .nav-link {
@@ -198,6 +200,8 @@ body {
 .sidebar-wrapper {
     background-color: var(--sidebar-bg-color);
     width: var(--sidebar-width);
+    display: flex; 
+    flex-direction: column;
 }
 
 /* =========================================
@@ -317,4 +321,17 @@ body {
 
 .offcanvas.show {
     z-index: 1055 !important;
+}
+
+@media (max-width: 991px) {
+    /* Zwingt das Offcanvas-Menü auf die exakte sichtbare Höhe */
+    .offcanvas, .offcanvas-lg, .offcanvas-start, .sidebar-wrapper {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+    }
+    
+    /* Stellt sicher, dass die Sidebar den Platz füllt */
+    .sidebar {
+        height: 100% !important;
+    }
 }
