@@ -26,9 +26,13 @@
                         {# Wir suchen den ersten Admin der Schule raus #}
                         {% set admin = null %}
                         {% for user in institution.users %}
-                            {% if 'ROLE_ADMIN' in user.roles and admin is null %}
-                                {% set admin = user %}
-                            {% endif %}
+                            <span class="badge bg-secondary">
+                                {{ user.email }} 
+                                {# Optional: Rollen anzeigen #}
+                                {% if 'ROLE_ADMIN' in user.roles %}(Admin){% endif %}
+                            </span>
+                        {% else %}
+                            <span class="text-muted small">Kein Personal</span>
                         {% endfor %}
 
                         {% if admin %}
