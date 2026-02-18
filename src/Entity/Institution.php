@@ -49,10 +49,10 @@ class Institution
 
     // --- BEZIEHUNGEN ---
 
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true,cascade: ['remove']) ]
     private Collection $groups;
 
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class)]
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class, cascade: ['remove'])]
     private Collection $users;
 
     public function __construct()
@@ -60,12 +60,6 @@ class Institution
         $this->groups = new ArrayCollection();
         $this->users = new ArrayCollection();
     }
-
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true, cascade: ['remove'])]
-    private Collection $groups;
-
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class, cascade: ['remove'])]
-    private Collection $users;
     
     // --- GETTER & SETTER ---
 
