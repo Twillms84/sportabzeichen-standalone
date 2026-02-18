@@ -56,19 +56,29 @@ class UserController extends AbstractController
         Request $request, 
         UserPasswordHasherInterface $userPasswordHasher, 
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository // <--- Repository injecten
+        UserRepository $userRepository 
     ): Response {
         $user = new User();
-        // ... (Schul-Logik wie gehabt)
+        
+        // WICHTIG: Institution setzen (aus deinem Kommentar "Schul-Logik wie gehabt")
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+        if ($currentUser && $currentUser->getInstitution()) {
+            $user->setInstitution($currentUser->getInstitution());
+        }
 
         $form = $this->createForm(UserAdminType::class, $user, ['is_new' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Manueller Check, falls die UniqueEntity-Validierung mal nicht greift
+            
+            // Manueller Check auf E-Mail Dubletten
+            // (Hinweis: Besser wäre UniqueEntity Constraint in der Entity, aber so geht es auch)
             $existingUser = $userRepository->findOneBy(['email' => $user->getEmail()]);
+            
             if ($existingUser) {
                 $this->addFlash('danger', 'Ein Konto mit dieser E-Mail existiert bereits im System.');
+                // Hier muss auch ein Return stehen!
                 return $this->render('admin/user/form.html.twig', [
                     'user' => $user,
                     'form' => $form,
@@ -76,10 +86,13 @@ class UserController extends AbstractController
                 ]);
             }
 
-            // Passwort hashen und speichern...
-            $user->setPassword(
-                $userPasswordHasher->hashPassword($user, $form->get('plainPassword')->getData())
-            );
+            // Passwort hashen
+            $plainPassword = $form->get('plainPassword')->getData();
+            if ($plainPassword) {
+                $user->setPassword(
+                    $userPasswordHasher->hashPassword($user, $plainPassword)
+                );
+            }
 
             $entityManager->persist($user);
             $entityManager->flush();
@@ -88,7 +101,13 @@ class UserController extends AbstractController
             return $this->redirectToRoute('admin_user_index');
         }
         
-        // ... restliches Render
+        // --- HIER FEHLTE DER RETURN BEFEHL ---
+        // Wenn das Formular nicht abgeschickt wurde oder Fehler hat, muss das Template angezeigt werden.
+        return $this->render('admin/user/form.html.twig', [
+            'user' => $user,
+            'form' => $form,
+            'title' => 'PrüferIn / Admin anlegen'
+        ]);
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
