@@ -12,13 +12,11 @@
 {% set unitMap = {'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'} %}
 
 <div class="container-fluid mt-3">
-    
-    <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
         
     <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
         
     {# A) ANSICHT FILTER #}
-    <div class="dropdown d-inline-block mb-3 me-2">
+    <div class="dropdown d-inline-block ms-2">
         {# ÄNDERUNG: btn-sm hinzugefügt #}
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                 type="button" 
@@ -38,7 +36,7 @@
     </div>
 
     {# B) GRUPPEN FILTER #}
-    <div class="dropdown d-inline-block mb-3">
+    <div class="dropdown d-inline-block ms-2">
         {# ÄNDERUNG: btn-sm hinzugefügt #}
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                 type="button" 
@@ -61,8 +59,7 @@
     </div>
 
     {# C) ACTION BUTTONS #}
-    {# ÄNDERUNG: mb-3 hinzugefügt, damit sie auf gleicher Höhe wie Dropdowns sitzen #}
-    <div class="d-flex gap-2 ms-2 mb-3">
+    <div class="d-flex gap-2 ms-3">
         {# DRUCKEN #}
         <a id="btn-print-groupcard" 
            href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
@@ -78,8 +75,7 @@
     </div>
 
     {# D) SUCHLEISTE #}
-    {# ÄNDERUNG: mb-3 auch hier sicherheitshalber hinzufügen #}
-    <div class="d-flex align-items-center flex-grow-1 search-container mb-3 ms-2">
+    <div class="d-flex align-items-center flex-grow-1 search-container ms-2">
         <div class="input-group input-group-sm">
             <input type="text" id="client-search-input" class="form-control form-control-osa" placeholder="Schüler suchen...">
         </div>
