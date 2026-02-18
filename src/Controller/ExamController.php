@@ -92,11 +92,6 @@ final class ExamController extends AbstractController
         ]);
     }
 
-    Hier sind die beiden Methoden new und edit vollständig und korrekt zusammengebaut, inklusive der Logik für den Prüfer (Examiner).
-
-Du kannst diese beiden Methoden direkt so in deinen Controller kopieren und die alten ersetzen.
-
-PHP
     #[Route('/new', name: 'new')]
     public function new(Request $request, GroupRepository $groupRepo, ParticipantRepository $participantRepo): Response
     {
