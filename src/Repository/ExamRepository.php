@@ -18,8 +18,27 @@ class ExamRepository extends ServiceEntityRepository
     }
 
     /**
-     * Findet User, die in Gruppen der Prüfung sind, aber noch nicht teilnehmen.
+     * Lädt alle Prüfungen inkl. Prüfer und Teilnehmer für die Übersicht.
+     * Optimiert, um Datenbankabfragen zu sparen.
+     * * @return Exam[]
      */
+    public function findAllWithStats(): array
+    {
+        return $this->createQueryBuilder('e')
+            ->addSelect('ex') // Examiner (User)
+            ->addSelect('ep') // ExamParticipants
+            ->addSelect('p')  // Participant (Stammdaten)
+            
+            ->leftJoin('e.examiner', 'ex')
+            ->leftJoin('e.examParticipants', 'ep')
+            ->leftJoin('ep.participant', 'p')
+            
+            ->orderBy('e.date', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    // ... deine existierende findMissingUsersForExam Methode ...
     public function findMissingUsersForExam(Exam $exam, string $search = ''): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -32,7 +51,7 @@ class ExamRepository extends ServiceEntityRepository
         ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
         
         ->where('e.id = :examId')
-        ->andWhere('ep.id IS NULL'); // Wir lassen 'deleted' weg, da das Feld fehlt
+        ->andWhere('ep.id IS NULL');
 
         if ($search) {
             $qb->andWhere('u.lastname LIKE :search OR u.firstname LIKE :search')
