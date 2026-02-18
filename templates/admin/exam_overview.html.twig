@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prüfungsübersicht{% endblock %}
+
+{% block body %}
+<div class="container-fluid p-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
+            <p class="text-muted">Verwaltung aller offenen und geschlossenen Prüfungen</p>
+        </div>
+        <a href="{{ path('app_exam_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Neue Prüfung
+        </a>
+    </div>
+
+    {# --- GRID LAYOUT --- #}
+    <div class="row g-4">
+        {% for item in exams %}
+            {# Annahme: 'item' ist entweder das Exam-Objekt oder ein Array mit 'exam' und 'stats' #}
+            {# Wir gehen hier davon aus, dass wir direkt auf das Exam zugreifen oder Helper-Methoden haben #}
+            {% set exam = item.exam ?? item %} 
+            
+            <div class="col-12 col-md-6 col-xxl-4">
+                <div class="card h-100 shadow-sm border-0 exam-card">
+                    
+                    {# HEADER: Name & Jahr #}
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge bg-secondary mb-1">{{ exam.year }}</span>
+                            <h5 class="card-title fw-bold mb-0 text-truncate" style="max-width: 250px;">
+                                {{ exam.name }}
+                            </h5>
+                            <small class="text-muted">
+                                <i class="bi bi-calendar-event"></i> {{ exam.date|date('d.m.Y') }}
+                            </small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Bearbeiten</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exportieren</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Löschen</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        
+                        {# 1. PRÜFER ZUWEISUNG #}
+                        <div class="mb-3">
+                            <label class="form-label text-uppercase text-muted x-small fw-bold">Verantwortlicher Prüfer</label>
+                            <select class="form-select form-select-sm js-change-examiner" data-exam-id="{{ exam.id }}">
+                                <option value="" {{ exam.examiner is null ? 'selected' : '' }}>-- Nicht zugewiesen --</option>
+                                {% for examiner in examiners %}
+                                    <option value="{{ examiner.id }}" {{ exam.examiner and exam.examiner.id == examiner.id ? 'selected' : '' }}>
+                                        {{ examiner.lastname }}, {{ examiner.firstname }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# 2. WARNUNG: NICHT ZUGEORDNETE #}
+                        {# Angenommen du hast eine Methode getUnassignedCount() #}
+                        {% set unassigned = exam.unassignedParticipants|default(0) %}
+                        {% if unassigned > 0 %}
+                            <div class="alert alert-warning py-2 px-3 d-flex align-items-center mb-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                <div class="small lh-1">
+                                    <strong>{{ unassigned }} Teilnehmer</strong><br>
+                                    ohne Klassenzuordnung
+                                </div>
+                                <a href="#" class="btn btn-sm btn-warning ms-auto stretched-link">Fix</a>
+                            </div>
+                        {% endif %}
+
+                        <hr class="opacity-10 my-3">
+
+                        {# 3. MEDAILLEN SPIEGEL #}
+                        <div class="row text-center mb-3">
+                            <div class="col-4 border-end">
+                                <div class="medal-circle bg-gold mx-auto mb-1">{{ exam.stats.gold|default(0) }}</div>
+                                <span class="x-small text-muted text-uppercase">Gold</span>
+                            </div>
+                            <div class="col-4 border-end">
+                                <div class="medal-circle bg-silver mx-auto mb-1">{{ exam.stats.silver|default(0) }}</div>
+                                <span class="x-small text-muted text-uppercase">Silber</span>
+                            </div>
+                            <div class="col-4">
+                                <div class="medal-circle bg-bronze mx-auto mb-1">{{ exam.stats.bronze|default(0) }}</div>
+                                <span class="x-small text-muted text-uppercase">Bronze</span>
+                            </div>
+                        </div>
+
+                        {# 4. DISZIPLINEN FORTSCHRITT (Kategorien) #}
+                        <h6 class="text-uppercase text-muted x-small fw-bold mb-2">Abgeschlossene Disziplinen</h6>
+                        <div class="row g-2">
+                            {# Ausdauer #}
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center small">
+                                        <i class="bi bi-lungs-fill text-primary me-2"></i> Ausdauer
+                                    </span>
+                                    <span class="fw-bold">{{ exam.stats.cat_ausdauer|default(0) }}</span>
+                                </div>
+                            </div>
+                            {# Kraft #}
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center small">
+                                        <i class="bi bi-minecart-loaded text-danger me-2"></i> Kraft
+                                    </span>
+                                    <span class="fw-bold">{{ exam.stats.cat_kraft|default(0) }}</span>
+                                </div>
+                            </div>
+                            {# Schnelligkeit #}
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center small">
+                                        <i class="bi bi-speedometer2 text-warning me-2"></i> Schnell.
+                                    </span>
+                                    <span class="fw-bold">{{ exam.stats.cat_schnelligkeit|default(0) }}</span>
+                                </div>
+                            </div>
+                            {# Koordination #}
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center small">
+                                        <i class="bi bi-shuffle text-success me-2"></i> Koord.
+                                    </span>
+                                    <span class="fw-bold">{{ exam.stats.cat_koordination|default(0) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    {# FOOTER #}
+                    <div class="card-footer bg-white border-top py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-people"></i> {{ exam.participants|length }} Teilnehmer
+                            </small>
+                            <a href="{{ path('app_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-primary">
+                                Zur Prüfung <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
