@@ -353,10 +353,15 @@ final class ExamController extends AbstractController
 
     private function importParticipantsFromGroup(\App\Entity\Exam $exam, \App\Entity\Group $group): void
     {
+        // Schleife über die User der Gruppe
         foreach ($group->getUsers() as $user) {
-            // Wir prüfen, ob der User schon im Exam ist, um Duplikate zu vermeiden
-            if (!$exam->getUsers()->contains($user)) {
-                $exam->addUser($user);
+            
+            // ACHTUNG: Hier stand vorher getUsers(). 
+            // Ich habe es zu getParticipants() geändert.
+            // Falls es bei dir anders heißt (z.B. getStudents), pass es hier an.
+            
+            if (!$exam->getParticipants()->contains($user)) {
+                $exam->addParticipant($user);
             }
         }
     }
