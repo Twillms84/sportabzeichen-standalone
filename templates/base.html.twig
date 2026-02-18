@@ -1,165 +1,81 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Sportabzeichen App{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    {# --- 1. CSS LIBRARIES --- #}
-    {# Bootstrap 5 Core #}
+    {# 1. LIBRARIES (CDN) #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    {# Bootstrap Select (Das Plugin, das wahrscheinlich deine Daten nachlädt) #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css">
-    {# Icons #}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    {# 2. THEME-SCRIPT (Muss im Head bleiben gegen Flackern) #}
     <script>
-            (function() {
-                const userTheme = "{{ app.user ? app.user.theme : 'light' }}";
-                const storedTheme = localStorage.getItem('theme');
-                
-                // Wenn der User explizit 'auto' eingestellt hat oder gar nichts (default)
-                if (userTheme === 'auto' || !userTheme) {
-                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.documentElement.setAttribute('data-bs-theme', 'dark');
-                    } else {
-                        document.documentElement.setAttribute('data-bs-theme', 'light');
-                    }
-                } else {
-                    // Wenn der User fest 'dark' oder 'light' eingestellt hat
-                    document.documentElement.setAttribute('data-bs-theme', userTheme);
-                }
-            })();
-        </script>
+        (function() {
+            const userTheme = "{{ app.user ? app.user.theme : 'light' }}";
+            if (userTheme === 'auto' || !userTheme) {
+                const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', userTheme);
+            }
+        })();
+    </script>
 
     {% block stylesheets %}
-    <style>
-        /* --- GLOBAL THEME VARIABLES --- */
-        :root {
-            --osa-bg: #121212;
-            --osa-card-bg: #1e1e1e;
-            --osa-border: #333333;
-            --osa-green: #2c5e32;
-            --osa-green-hover: #1e4223;
-            --osa-text: #e9ecef;
-            --osa-input-bg: #2b3035;
-        }
-
-        body { 
-            background-color: var(--osa-bg); 
-            color: var(--osa-text); 
-            min-height: 100vh;
-        }
-
-        /* --- BUTTONS (Global) --- */
-        .btn-primary, .btn-success, .btn-osa-primary, .btn-osa-success {
-            background-color: var(--osa-green) !important;
-            border-color: var(--osa-green) !important;
-            color: #fff !important;
-        }
-        .btn-primary:hover, .btn-success:hover {
-            background-color: var(--osa-green-hover) !important;
-            border-color: var(--osa-green-hover) !important;
-        }
-        .btn-outline-secondary { color: #adb5bd; border-color: #495057; }
-        .btn-outline-secondary:hover { background-color: #343a40; color: #fff; }
-
-        /* --- CARDS --- */
-        .card, .osa-card {
-            background-color: var(--osa-card-bg) !important;
-            border: 1px solid var(--osa-border) !important;
-            color: var(--osa-text) !important;
-        }
-        .card-header {
-            background-color: var(--osa-green) !important;
-            color: #fff !important;
-            border-bottom: 1px solid var(--osa-border) !important;
-        }
-        .list-group-item {
-            background-color: var(--osa-card-bg) !important;
-            border-color: var(--osa-border) !important;
-            color: var(--osa-text) !important;
-        }
-
-        /* --- DROPDOWNS (Bootstrap 5 Standard) --- */
-        .dropdown-menu {
-            background-color: var(--osa-input-bg) !important;
-            border: 1px solid #495057 !important;
-            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.5);
-            /* EXTREM WICHTIG: Hoher Z-Index, damit es über nachträglich geladenen Containern liegt */
-            z-index: 9999 !important; 
-        }
-        .dropdown-item { color: #dee2e6 !important; cursor: pointer; }
-        .dropdown-item:hover, .dropdown-item:focus {
-            background-color: var(--osa-green) !important;
-            color: #fff !important;
-        }
-
-        /* --- BOOTSTRAP SELECT FIX (Das Plugin, das die Werte nachlädt) --- */
-        /* Wir müssen den Button stylen, den das Plugin generiert */
-        .bootstrap-select > .dropdown-toggle {
-            background-color: var(--osa-input-bg) !important;
-            border: 1px solid #495057 !important;
-            color: #fff !important;
-        }
-        .bootstrap-select > .dropdown-toggle:hover, 
-        .bootstrap-select > .dropdown-toggle:focus {
-            border-color: var(--osa-green) !important;
-            background-color: #343a40 !important;
-            outline: none !important;
-        }
-        /* Das Dropdown-Menü vom Plugin */
-        .bootstrap-select .dropdown-menu {
-            background-color: var(--osa-input-bg) !important;
-            border: 1px solid #495057 !important;
-        }
-        .bootstrap-select .dropdown-menu li a {
-            color: #dee2e6 !important;
-        }
-        .bootstrap-select .dropdown-menu li a:hover {
-            background-color: var(--osa-green) !important;
-        }
-
-        /* Inputs */
-        .form-control, .form-select {
-            background-color: var(--osa-input-bg); border: 1px solid #495057; color: #fff;
-        }
-        .form-control:focus { background-color: #33393f; color: #fff; border-color: var(--osa-green); }
-    </style>
+        {# Hier wird jetzt deine aufgeräumte app.css geladen #}
+        {{ importmap('app') }}
     {% endblock %}
 
     {% block javascripts %}
-        {# Die App steuert jetzt alles #}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
         {{ importmap('app') }}
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+                var toastList = toastElList.map(function (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                    // Entfernt das Element aus dem DOM nach dem Ausblenden
+                    toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
+                    return toast;
+                });
+            });
+        </script>
     {% endblock %}
 </head>
 <body>
 
-<div class="toast-container position-fixed top-0 end-0 p-3">
-    {% for label, messages in app.flashes %}
-        {% for message in messages %}
-            {% set bg_class = (label == 'success' ? 'text-success' : (label == 'danger' or label == 'error' ? 'text-danger' : 'text-warning')) %}
-            
-            <div class="toast custom-toast hide {{ bg_class }}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
-                <div class="toast-header border-0 bg-transparent {{ bg_class }}">
-                    <i class="fas {{ label == 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-2"></i>
-                    <strong class="me-auto">System-Hinweis</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    {# --- TOAST CONTAINER (Overlay) --- #}
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                {# Farbzuordnung basierend auf Label #}
+                {% set text_color = (label == 'success' ? 'text-success' : (label in ['danger', 'error'] ? 'text-danger' : 'text-warning')) %}
+                
+                <div class="toast custom-toast hide {{ text_color }}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="toast-header border-0 bg-transparent {{ text_color }}">
+                        <i class="fas {{ label == 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-2"></i>
+                        <strong class="me-auto">System-Hinweis</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body pt-0">
+                        {{ message }}
+                    </div>
+                    <div class="toast-progress">
+                        <div class="toast-progress-fill" style="animation-duration: 5000ms;"></div>
+                    </div>
                 </div>
-                <div class="toast-body pt-0">
-                    {{ message }}
-                </div>
-                {# Der Fortschrittsbalken #}
-                <div class="toast-progress">
-                    <div class="toast-progress-fill" style="animation-duration: 5000ms;"></div>
-                </div>
-            </div>
+            {% endfor %}
         {% endfor %}
-    {% endfor %}
-</div>
+    </div>
 
     {% block layout %}
+        {# Mobile Header #}
         <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top border-bottom border-secondary">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
                 <i class="fas fa-bars"></i> Menü
@@ -167,87 +83,67 @@
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
-        <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark d-flex flex-column" tabindex="-1" id="sidebarMenu">
+        {# Sidebar Wrapper #}
+        <div class="offcanvas-lg offcanvas-start sidebar-wrapper d-flex flex-column" tabindex="-1" id="sidebarMenu">
             <div class="offcanvas-header d-lg-none border-bottom border-secondary">
                 <h5 class="offcanvas-title text-white">Menü</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
             </div>
 
-            <div class="sidebar d-flex flex-column flex-grow-1 overflow-hidden" style="border-right: 1px solid var(--osa-border);">
-                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
+            <div class="sidebar d-flex flex-column flex-grow-1 overflow-hidden">
+                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none">
                      <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
                 </a>
                 <hr class="my-0 border-secondary">
-                <ul class="nav flex-column mb-auto mt-3 px-2" style="overflow-y: auto;">
+                
+                <ul class="nav flex-column mb-auto mt-3 px-2">
                     <li class="nav-item mb-1">
                         {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
-                        <a href="{{ path('app_exams_dashboard') }}" class="nav-link text-white {% if is_exam %}active bg-success{% endif %} rounded">
-                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        <a href="{{ path('app_exams_dashboard') }}" class="nav-link {% if is_exam %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
                     </li>
                     {% if is_granted('ROLE_ADMIN') %}
                     <li class="nav-item mb-1">
                         {% set is_admin = app.request.attributes.get('_route') starts with 'admin_' %}
-                        <a href="{{ path('admin_dashboard') }}" class="nav-link text-white opacity-75 {% if is_admin %}active bg-success{% endif %} rounded">
-                            <i class="fas fa-tools me-2"></i> Verwaltung
+                        <a href="{{ path('admin_exam_overview') }}" class="nav-link {% if is_admin %}active{% endif %}">
+                            <i class="fas fa-tools"></i> Verwaltung
                         </a>
                     </li>
                     {% endif %}
                 </ul>
+
                 <div class="mt-auto p-3 border-top border-secondary bg-black bg-opacity-25">
                     {% if app.user %}
-                        {# Wir nutzen ein Dropup, da wir am unteren Rand sind #}
                         <div class="dropup">
-                            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
-                                {# Kleines Icon vor dem Namen #}
+                            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle fs-4 me-2"></i>
                                 <strong>{{ app.user.firstname|default(app.user.username) }}</strong>
                             </a>
-                            
-                            {# Das Menü (Dunkel, passend zur Sidebar) #}
-                            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser">
-                                <li>
-                                    <a class="dropdown-item" href="{{ path('profile_index') }}">
-                                        <i class="fas fa-id-card me-2"></i> Mein Konto
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ path('profile_settings') }}">
-                                        <i class="fas fa-sliders-h me-2"></i> Einstellungen
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider border-secondary"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="{{ path('app_logout') }}">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Abmelden
-                                    </a>
-                                </li>
+                            <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="dropdownUser">
+                                <li><a class="dropdown-item" href="{{ path('profile_index') }}"><i class="fas fa-id-card"></i> Mein Konto</a></li>
+                                <li><a class="dropdown-item" href="{{ path('profile_settings') }}"><i class="fas fa-sliders-h"></i> Einstellungen</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ path('app_logout') }}"><i class="fas fa-sign-out-alt"></i> Abmelden</a></li>
                             </ul>
                         </div>
                     {% else %}
-                        {# Fallback für Gäste #}
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span class="text-white small ms-2">Gast</span>
+                         <div class="d-flex align-items-center justify-content-between text-white">
+                            <span class="small ms-2">Gast</span>
                             <a href="{{ path('app_login') }}" class="btn btn-sm btn-outline-light border-0">
                                 <i class="fas fa-sign-in-alt fs-5"></i>
                             </a>
                         </div>
                     {% endif %}
-               </div> 
+                </div> 
             </div>
         </div>
 
-        <main class="main-content p-4" style="flex-grow: 1;">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endfor %}
-
-            {% block body %}{% endblock %}
+        {# Main Content #}
+        <main class="main-content">
+            <div class="container-fluid p-4">
+                {% block body %}{% endblock %}
+            </div>
         </main>
     {% endblock %} 
 </body>
