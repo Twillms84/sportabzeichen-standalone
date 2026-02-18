@@ -210,11 +210,11 @@ final class ExamController extends AbstractController
                     $exam->setDate(new \DateTime($dateStr));
                 }
 
-                // --- NEU: PRÜFER WECHSELN ---
+                // --- PRÜFER WECHSELN ---
                 $newExaminerId = $request->request->get('examiner_id');
                 if ($newExaminerId) {
-                    // Wir suchen den User und prüfen, ob er zur selben Schule gehört!
                     $newExaminer = $userRepo->find($newExaminerId);
+                    // Sicherstellen, dass der neue Prüfer auch zur Schule gehört
                     if ($newExaminer && $newExaminer->getInstitution() === $institution) {
                         $exam->setExaminer($newExaminer);
                     }
@@ -230,13 +230,11 @@ final class ExamController extends AbstractController
             // 2. GRUPPEN HINZUFÜGEN
             if ($request->request->has('add_groups')) {
                 $groupIds = $request->request->all('group_ids', []); 
-
                 $addedCountTotal = 0;
                 $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
 
                 foreach ($groupIds as $gId) {
                     $gId = (int)$gId;
-
                     $groupAlreadyInExam = false;
                     foreach ($exam->getGroups() as $existingGroup) {
                         if ($existingGroup->getId() === $gId) {
@@ -245,12 +243,9 @@ final class ExamController extends AbstractController
                         }
                     }
 
-                    if ($groupAlreadyInExam) {
-                        continue; 
-                    }
-
+                    if ($groupAlreadyInExam) continue; 
                     if (in_array($gId, $usedGroupIds)) {
-                        $this->addFlash('warning', "Gruppe ID $gId ist bereits in einer anderen Prüfung vergeben.");
+                        $this->addFlash('warning', "Gruppe ID $gId ist bereits vergeben.");
                         continue;
                     }
 
@@ -265,9 +260,9 @@ final class ExamController extends AbstractController
                 $this->em->flush();
                 
                 if ($addedCountTotal > 0) {
-                    $this->addFlash('success', "$addedCountTotal Teilnehmer wurden importiert.");
+                    $this->addFlash('success', "$addedCountTotal Teilnehmer importiert.");
                 } else {
-                    $this->addFlash('info', "Gruppen wurden zugeordnet.");
+                    $this->addFlash('info', "Gruppen zugeordnet.");
                 }
                 
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
@@ -276,10 +271,8 @@ final class ExamController extends AbstractController
             // 3. GRUPPE ENTFERNEN
             if ($request->request->has('remove_group')) {
                 $groupId = $request->request->get('remove_group');
-                
                 if (!empty($groupId) && is_numeric($groupId)) {
                     $group = $groupRepo->find((int)$groupId); 
-                    
                     if ($group && $group->getInstitution() === $institution) {
                         $exam->removeGroup($group);
                         $this->em->flush();
@@ -291,38 +284,43 @@ final class ExamController extends AbstractController
 
         // --- VIEW DATEN ---
         
-        // 1. Bereits zugewiesene Gruppen
         $assignedGroups = $exam->getGroups();
-        
-        // 2. Alle Gruppen der Schule laden
         $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
-
-        // 3. IDs von Gruppen, die IRGENDWO in diesem Jahr benutzt werden
         $usedGroupIdsInYear = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
 
-        // 4. Verfügbare Gruppen berechnen
         $availableGroups = [];
         foreach ($allGroups as $g) {
-            $gId = $g->getId();
-            $isInThisExam = $assignedGroups->contains($g);
-            $isUsed = in_array($gId, $usedGroupIdsInYear);
-
-            if (!$isUsed && !$isInThisExam) {
+            if (!in_array($g->getId(), $usedGroupIdsInYear) && !$assignedGroups->contains($g)) {
                 $availableGroups[] = $g; 
             }
         }
 
-        // 5. NEU: Alle Kollegen der Institution laden für das Dropdown
-        $colleagues = $userRepo->findBy(
+        // --- NEU: KOLLEGEN FILTERN (EXAMINER / ADMIN / SUPER_ADMIN) ---
+        
+        // 1. Alle aus der Institution holen
+        $allInstitutionUsers = $userRepo->findBy(
             ['institution' => $institution], 
             ['lastname' => 'ASC']
         );
+
+        $colleagues = [];
+        foreach ($allInstitutionUsers as $u) {
+            $roles = $u->getRoles();
+            
+            // Check: Hat der User eine der erlaubten Rollen?
+            if (in_array('ROLE_EXAMINER', $roles) || 
+                in_array('ROLE_ADMIN', $roles) || 
+                in_array('ROLE_SUPER_ADMIN', $roles)) {
+                
+                $colleagues[] = $u;
+            }
+        }
 
         return $this->render('exams/edit.html.twig', [
             'exam' => $exam,
             'assigned_groups' => $assignedGroups,
             'available_groups' => $availableGroups,
-            'colleagues' => $colleagues, // WICHTIG für das Dropdown
+            'colleagues' => $colleagues, // Das gefilterte Array übergeben
             'missing_students' => [],
         ]);
     }
