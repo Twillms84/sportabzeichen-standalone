@@ -144,13 +144,13 @@
             <span class="navbar-brand ms-2">Sportabzeichen</span>
         </nav>
 
-        <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" tabindex="-1" id="sidebarMenu">
+        <div class="offcanvas-lg offcanvas-start sidebar-wrapper bg-dark" d-flex flex-column" tabindex="-1" id="sidebarMenu">
             <div class="offcanvas-header d-lg-none border-bottom border-secondary">
                 <h5 class="offcanvas-title text-white">Menü</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
             </div>
 
-            <div class="sidebar d-flex flex-column h-100" style="border-right: 1px solid var(--osa-border);">
+            <div class="sidebar d-flex flex-column flex-grow-1 overflow-hidden" style="border-right: 1px solid var(--osa-border);">
                 <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
                      <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
                 </a>
