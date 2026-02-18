@@ -51,11 +51,9 @@ final class AdminController extends AbstractController
                     $stats[$medal]++;
                 }
 
-                // 2. Nicht zugeordnete zählen (Teilnehmer ohne Klasse/Gruppe)
-                // Annahme: $ep->getParticipant()->getGroup() liefert die Gruppe
-                if (empty($ep->getParticipant()->getKlasse()) && empty($ep->getParticipant()->getGroup())) {
-                    $stats['unassigned']++;
-                }
+                if (!$ep->getParticipant()->hasAssignment()) {
+                        $stats['unassigned']++;
+                    }
 
                 // 3. Kategorien zählen
                 // Hier müsstest du prüfen, ob der Teilnehmer die Kategorien erfüllt hat.

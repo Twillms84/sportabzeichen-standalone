@@ -120,4 +120,17 @@ class Participant
     {
         return $this->user ? (string)$this->user : ($this->username ?: 'Unbekannt');    
     }
+
+    public function hasAssignment(): bool 
+    {
+        if ($this->user && !$this->user->getGroups()->isEmpty()) {
+            return true;
+        }
+        
+        if (!empty($this->legacyGroupName)) {
+            return true;
+        }
+
+        return false;
+    }
 }   
