@@ -31,19 +31,58 @@ final class AdminController extends AbstractController
     #[Route('/exams', name: 'exam_overview')]
     public function exams(ExamRepository $examRepo, UserRepository $userRepo): Response
     {
-        // 1. Hol den aktuell angemeldeten User
+        // 1. Institution des aktuellen Users ermitteln
         /** @var User $user */
         $user = $this->getUser();
-        
-        // 2. Institution ermitteln (falls der User einer zugeordnet ist)
-        // Ich gehe davon aus, dass dein User ein Feld 'getInstitution()' hat
         $currentInstitution = $user->getInstitution();
 
-        // 3. Jetzt die Methode aufrufen (die wir im Repository erstellt haben)
+        // 2. Alle Prüfungen holen (ggf. gefiltert nach Institution)
+        $exams = $examRepo->findBy(['institution' => $currentInstitution], ['date' => 'DESC']);
+
+        // 3. Prüfer für das Dropdown-Menü laden (inkl. dir als Super-Admin)
         $examiners = $userRepo->findAvailableExaminers($currentInstitution);
 
-        // ... Rest deines Codes (Stats berechnen, $examsData bauen etc.) ...
+        // 4. Statistik-Daten pro Prüfung aufbereiten
+        $examsData = [];
+        foreach ($exams as $exam) {
+            $stats = [
+                'gold' => 0,
+                'silver' => 0,
+                'bronze' => 0,
+                'unassigned' => 0,
+                // Falls du Kategorien wie Ausdauer/Kraft trackst:
+                'cat_ausdauer' => 0,
+                'cat_kraft' => 0,
+                'cat_schnelligkeit' => 0,
+                'cat_koordination' => 0,
+            ];
 
+            foreach ($exam->getExamParticipants() as $ep) {
+                // Medaillen zählen (Beispiel-Logik)
+                $medal = strtolower((string)$ep->getFinalMedal());
+                if (isset($stats[$medal])) {
+                    $stats[$medal]++;
+                }
+
+                // Zuordnungscheck (unassigned)
+                $participant = $ep->getParticipant();
+                $pUser = $participant->getUser();
+                
+                $hasNoGroups = ($pUser === null || count($pUser->getGroups()) === 0);
+                $hasNoLegacy = empty($participant->getGroupName());
+
+                if ($hasNoGroups && $hasNoLegacy) {
+                    $stats['unassigned']++;
+                }
+            }
+
+            $examsData[] = [
+                'exam' => $exam,
+                'stats' => $stats
+            ];
+        }
+
+        // 5. Alles ans Template übergeben
         return $this->render('admin/exam_overview.html.twig', [
             'examsData' => $examsData,
             'examiners' => $examiners,
