@@ -74,7 +74,7 @@ class InstitutionController extends AbstractController
             $em->remove($institution);
             $em->flush();
 
-            $this->addFlash('success', 'Die Institution wurde vollständig entfernt.');
+            $this->addFlash('success', 'Die Schule inklusive aller zugehörigen Benutzer und Gruppen wurde erfolgreich gelöscht.');
         }
 
         return $this->redirectToRoute('admin_institution_index');

@@ -49,10 +49,10 @@ class Institution
 
     // --- BEZIEHUNGEN ---
 
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true,cascade: ['remove']) ]
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $groups;
 
-    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class, cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $users;
 
     public function __construct()
