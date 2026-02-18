@@ -92,8 +92,12 @@ final class ExamController extends AbstractController
         ]);
     }
 
+    Hier sind die beiden Methoden new und edit vollständig und korrekt zusammengebaut, inklusive der Logik für den Prüfer (Examiner).
+
+Du kannst diese beiden Methoden direkt so in deinen Controller kopieren und die alten ersetzen.
+
+PHP
     #[Route('/new', name: 'new')]
-    // HIER GEÄNDERT: ParticipantRepository hinzugefügt
     public function new(Request $request, GroupRepository $groupRepo, ParticipantRepository $participantRepo): Response
     {
         $user = $this->getUser();
@@ -124,6 +128,9 @@ final class ExamController extends AbstractController
                 $exam->setCreator($user->getUserIdentifier());
                 $exam->setInstitution($institution);
                 
+                // WICHTIG: Den Ersteller automatisch als Prüfer setzen
+                $exam->setExaminer($user);
+                
                 $this->em->persist($exam);
 
                 $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $year);
@@ -141,7 +148,6 @@ final class ExamController extends AbstractController
 
                     if ($group) {
                         $exam->addGroup($group);
-                        // HIER GEÄNDERT: Repo übergeben
                         $countAdded += $this->importParticipantsFromGroup($exam, $group, $participantRepo);
                     }
                 }
@@ -177,7 +183,6 @@ final class ExamController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
-    // HIER GEÄNDERT: ParticipantRepository hinzugefügt
     public function edit(
         int $id, 
         Request $request, 
@@ -209,6 +214,17 @@ final class ExamController extends AbstractController
                 if ($dateStr) {
                     $exam->setDate(new \DateTime($dateStr));
                 }
+
+                // --- NEU: PRÜFER WECHSELN ---
+                $newExaminerId = $request->request->get('examiner_id');
+                if ($newExaminerId) {
+                    // Wir suchen den User und prüfen, ob er zur selben Schule gehört!
+                    $newExaminer = $userRepo->find($newExaminerId);
+                    if ($newExaminer && $newExaminer->getInstitution() === $institution) {
+                        $exam->setExaminer($newExaminer);
+                    }
+                }
+                // -----------------------------
 
                 $this->em->flush();
                 $this->addFlash('success', 'Stammdaten gespeichert.');
@@ -247,7 +263,6 @@ final class ExamController extends AbstractController
                     
                     if ($group) {
                         $exam->addGroup($group);
-                        // HIER GEÄNDERT: Repo übergeben
                         $addedCountTotal += $this->importParticipantsFromGroup($exam, $group, $participantRepo);
                     }
                 }
@@ -280,27 +295,41 @@ final class ExamController extends AbstractController
         }
 
         // --- VIEW DATEN ---
+        
+        // 1. Bereits zugewiesene Gruppen
         $assignedGroups = $exam->getGroups();
+        
+        // 2. Alle Gruppen der Schule laden
         $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
+
+        // 3. IDs von Gruppen, die IRGENDWO in diesem Jahr benutzt werden
         $usedGroupIdsInYear = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
 
+        // 4. Verfügbare Gruppen berechnen
         $availableGroups = [];
-            foreach ($allGroups as $g) {
-                $gId = $g->getId();
-                $isInThisExam = $assignedGroups->contains($g);
-                $isUsed = in_array($gId, $usedGroupIdsInYear);
+        foreach ($allGroups as $g) {
+            $gId = $g->getId();
+            $isInThisExam = $assignedGroups->contains($g);
+            $isUsed = in_array($gId, $usedGroupIdsInYear);
 
-                if (!$isUsed && !$isInThisExam) {
-                    $availableGroups[] = $g; 
-                }
+            if (!$isUsed && !$isInThisExam) {
+                $availableGroups[] = $g; 
             }
+        }
 
-            return $this->render('exams/edit.html.twig', [
-                'exam' => $exam,
-                'assigned_groups' => $assignedGroups,
-                'available_groups' => $availableGroups,
-                'missing_students' => [],
-            ]);
+        // 5. NEU: Alle Kollegen der Institution laden für das Dropdown
+        $colleagues = $userRepo->findBy(
+            ['institution' => $institution], 
+            ['lastname' => 'ASC']
+        );
+
+        return $this->render('exams/edit.html.twig', [
+            'exam' => $exam,
+            'assigned_groups' => $assignedGroups,
+            'available_groups' => $availableGroups,
+            'colleagues' => $colleagues, // WICHTIG für das Dropdown
+            'missing_students' => [],
+        ]);
     }
 
     /**

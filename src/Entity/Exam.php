@@ -21,6 +21,10 @@ class Exam
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)] // True lassen, damit alte Daten nicht crashen
+    private ?User $examiner = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Institution $institution = null;
@@ -41,7 +45,6 @@ class Exam
     #[ORM\JoinTable(name: 'sportabzeichen_exam_groups')]
     private Collection $groups;
 
-    // --- NEU HINZUGEFÜGT: Die Beziehung zu den Teilnehmern dieser Prüfung ---
     #[ORM\OneToMany(mappedBy: 'exam', targetEntity: ExamParticipant::class, cascade: ['persist', 'remove'])]
     private Collection $examParticipants;
     // -----------------------------------------------------------------------
@@ -49,7 +52,6 @@ class Exam
     public function __construct()
     {
         $this->groups = new ArrayCollection();
-        // WICHTIG: Auch diese Collection initialisieren!
         $this->examParticipants = new ArrayCollection();
     }
 
@@ -86,6 +88,18 @@ class Exam
     public function setCreator(?string $creator): self
     {
         $this->creator = $creator;
+        return $this;
+    }
+
+    public function getExaminer(): ?User
+    {
+        return $this->examiner;
+    }
+
+    public function setExaminer(?User $examiner): static
+    {
+        $this->examiner = $examiner;
+
         return $this;
     }
 
