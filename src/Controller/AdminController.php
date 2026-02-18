@@ -32,45 +32,12 @@ final class AdminController extends AbstractController
     public function exams(ExamRepository $examRepo, UserRepository $userRepo): Response
     {
         $exams = $examRepo->findAllWithStats();
-        $examiners = $userRepo->findByRole('ROLE_EXAMINER'); // Annahme: Du hast so eine Methode oder nutzt findBy(['role' => ...])
-
-        // Daten aufbereiten (Statistiken berechnen)
-        $examData = [];
-        foreach ($exams as $exam) {
-            $stats = [
-                'gold' => 0, 'silver' => 0, 'bronze' => 0,
-                'cat_ausdauer' => 0, 'cat_kraft' => 0, 'cat_schnelligkeit' => 0, 'cat_koordination' => 0,
-                'unassigned' => 0
-            ];
-
-            // Annahme: $exam->getExamParticipants() liefert die Teilnehmer
-            foreach ($exam->getExamParticipants() as $ep) {
-                // 1. Medaillen zählen (Annahme: Methode getMedal() existiert oder Feld 'medal')
-                $medal = strtolower($ep->getFinalMedal() ?? ''); // z.B. 'gold', 'silver', 'bronze'
-                if (isset($stats[$medal])) {
-                    $stats[$medal]++;
-                }
-
-                if (!$ep->getParticipant()->hasAssignment()) {
-                        $stats['unassigned']++;
-                    }
-
-                // 3. Kategorien zählen
-                // Hier müsstest du prüfen, ob der Teilnehmer die Kategorien erfüllt hat.
-                // Das ist Pseudo-Code, da ich deine Result-Struktur nicht exakt kenne.
-                // if ($ep->hasCategoryFinished('ausdauer')) $stats['cat_ausdauer']++;
-            }
-
-            $examData[] = [
-                'exam' => $exam,
-                'stats' => $stats
-            ];
-        }
+        $examiners = $userRepo->findAvailableExaminers($currentInstitution);
 
         return $this->render('admin/exam_overview.html.twig', [
+            'examsData' => $examsData,
+            'examiners' => $examiners, // Diese Liste geht ans Dropdown
             'activeTab' => 'exams',
-            'examsData' => $examData, // Das Array mit Stats
-            'examiners' => $examiners,
         ]);
     }
 

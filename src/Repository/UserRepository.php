@@ -54,21 +54,36 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * Findet alle User, die Admin oder Prüfer sind (filtert Schüler raus).
      * @return User[]
      */
-    public function findStaffByInstitution($institution): array
+    public function findAvailableExaminers(?Institution $institution = null): array
     {
-        return $this->createQueryBuilder('u')
-            ->where('u.institution = :inst')
-            ->setParameter('inst', $institution)
-            // Wir casten das JSON-Feld zu TEXT für den LIKE-Vergleich
-            ->andWhere('CAST(u.roles AS text) LIKE :roleAdmin OR CAST(u.roles AS text) LIKE :roleExaminer')
-            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
-            ->setParameter('roleExaminer', '%"ROLE_EXAMINER"%')
-            // Super-Admins ausschließen
-            ->andWhere('CAST(u.roles AS text) NOT LIKE :roleSuper')
-            ->setParameter('roleSuper', '%"ROLE_SUPER_ADMIN"%')
-            ->orderBy('u.lastname', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $entityManager = $this->getEntityManager();
+        $rsm = new ResultSetMappingBuilder($entityManager);
+        $rsm->addRootEntityFromClassMetadata(User::class, 'u');
+
+        $tableName = $this->getClassMetadata()->getTableName();
+
+        // Wir suchen nach allen Rollen, die prüfen dürfen. 
+        // WICHTIG: Das NOT LIKE ROLE_SUPER_ADMIN habe ich entfernt, damit DU auftauchst!
+        $sql = "SELECT " . $rsm->generateSelectClause() . "
+                FROM " . $tableName . " u
+                WHERE (u.roles::text LIKE :r1 OR u.roles::text LIKE :r2 OR u.roles::text LIKE :r3)";
+
+        if ($institution) {
+            $sql .= " AND u.institution_id = :instId";
+        }
+
+        $sql .= " ORDER BY u.lastname ASC, u.firstname ASC";
+
+        $query = $entityManager->createNativeQuery($sql, $rsm);
+        $query->setParameter('r1', '%"ROLE_EXAMINER"%');
+        $query->setParameter('r2', '%"ROLE_ADMIN"%');
+        $query->setParameter('r3', '%"ROLE_SUPER_ADMIN"%');
+
+        if ($institution) {
+            $query->setParameter('instId', $institution->getId());
+        }
+
+        return $query->getResult();
     }
 
     public function findByRole(string $role, ?Institution $institution = null): array
