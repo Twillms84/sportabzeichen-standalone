@@ -210,20 +210,32 @@ final class ExamController extends AbstractController
                     $exam->setDate(new \DateTime($dateStr));
                 }
 
-                // --- PRÜFER WECHSELN ---
+                // --- PRÜFER WECHSELN & REDIRECT LOGIK ---
                 $newExaminerId = $request->request->get('examiner_id');
+                $isTransfer = false; // Merker, ob übergeben wurde
+
                 if ($newExaminerId) {
                     $newExaminer = $userRepo->find($newExaminerId);
-                    // Sicherstellen, dass der neue Prüfer auch zur Schule gehört
-                    if ($newExaminer && $newExaminer->getInstitution() === $institution) {
+                    
+                    // Nur ändern, wenn User existiert, zur Schule gehört UND es ein anderer ist
+                    if ($newExaminer && 
+                        $newExaminer->getInstitution() === $institution && 
+                        $newExaminer !== $exam->getExaminer()) {
+                        
                         $exam->setExaminer($newExaminer);
+                        $isTransfer = true; // Wir haben die Prüfung übergeben!
                     }
                 }
                 // -----------------------------
 
                 $this->em->flush();
+
+                if ($isTransfer) {
+                    $this->addFlash('success', 'Die Prüfung wurde erfolgreich übergeben. Du hast nun keine Bearbeitungsrechte mehr.');
+                    return $this->redirectToRoute('app_exams_dashboard');
+                }
+
                 $this->addFlash('success', 'Stammdaten gespeichert.');
-                
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
