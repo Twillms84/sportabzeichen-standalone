@@ -59,6 +59,45 @@ body {
 }
 
 
+/* Toast Container Positionierung */
+.toast-container {
+    z-index: 1060; /* Über den Modals */
+}
+
+/* Der schicke Glas-Effekt */
+.custom-toast {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(10px);
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Der Verschwindebalken (Progress Bar) */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    width: 100%;
+}
+
+/* Animation für den Balken */
+.toast-progress-fill {
+    height: 100%;
+    background-color: currentColor; /* Nutzt die Textfarbe (success/danger) */
+    width: 100%;
+    animation: toast-countdown linear forwards;
+}
+
+@keyframes toast-countdown {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+
 /* =========================================
    2. MODERNE FORMULARE & BUTTONS (ZENTRAL)
    ========================================= */

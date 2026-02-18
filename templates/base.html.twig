@@ -136,6 +136,29 @@
 </head>
 <body>
 
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            {% set bg_class = (label == 'success' ? 'text-success' : (label == 'danger' or label == 'error' ? 'text-danger' : 'text-warning')) %}
+            
+            <div class="toast custom-toast hide {{ bg_class }}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                <div class="toast-header border-0 bg-transparent {{ bg_class }}">
+                    <i class="fas {{ label == 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-2"></i>
+                    <strong class="me-auto">System-Hinweis</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body pt-0">
+                    {{ message }}
+                </div>
+                {# Der Fortschrittsbalken #}
+                <div class="toast-progress">
+                    <div class="toast-progress-fill" style="animation-duration: 5000ms;"></div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
     {% block layout %}
         <nav class="navbar navbar-dark bg-dark mobile-header px-3 d-lg-none sticky-top border-bottom border-secondary">
             <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
