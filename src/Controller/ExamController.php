@@ -12,7 +12,7 @@ use App\Entity\User;
 use App\Repository\ExamParticipantRepository;
 use App\Repository\ExamRepository;
 use App\Repository\GroupRepository;
-use App\Repository\ParticipantRepository; // <--- WICHTIG: Neu hinzugefügt
+use App\Repository\ParticipantRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,16 +31,14 @@ final class ExamController extends AbstractController
     public function index(ExamRepository $examRepo): Response
     {
         $user = $this->getUser();
-        $institution = $user ? $user->getInstitution() : null;
-
-        if (!$institution) {
-            return $this->render('exams/dashboard.html.twig', [
-                'yearlyStats' => [],
-            ]);
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
         }
-
+        
+        // KORREKTUR: Wir filtern hier nach 'examiner', nicht nach Institution.
+        // So verschwinden Prüfungen, die man abgegeben hat, aus der Liste.
         $exams = $examRepo->findBy(
-            ['institution' => $institution],
+            ['examiner' => $user], 
             ['year' => 'DESC', 'date' => 'DESC']
         );
 
@@ -193,14 +191,23 @@ final class ExamController extends AbstractController
         $user = $this->getUser();
         $institution = $user ? $user->getInstitution() : null;
 
+        // 1. CHECK: Gehört Prüfung zur Schule?
         if (!$institution || $exam->getInstitution() !== $institution) {
-            throw $this->createAccessDeniedException('Du darfst diese Prüfung nicht bearbeiten.');
+            throw $this->createAccessDeniedException('Falsche Institution.');
+        }
+
+        // 2. CHECK: Bin ich der Prüfer ODER Admin?
+        $isExaminer = $exam->getExaminer() === $user;
+        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN');
+
+        if (!$isExaminer && !$isAdmin) {
+             throw $this->createAccessDeniedException('Du bist nicht mehr der verantwortliche Prüfer für diese Prüfung.');
         }
 
         // --- POST HANDLING ---
         if ($request->isMethod('POST')) {
             
-            // 1. STAMMDATEN SPEICHERN
+            // A. STAMMDATEN & ÜBERGABE
             if ($request->request->has('update_exam_data')) {
                 $exam->setName($request->request->get('exam_name'));
                 $exam->setYear((int)$request->request->get('exam_year'));
@@ -210,28 +217,28 @@ final class ExamController extends AbstractController
                     $exam->setDate(new \DateTime($dateStr));
                 }
 
-                // --- PRÜFER WECHSELN & REDIRECT LOGIK ---
+                // --- LOGIK: PRÜFUNG ÜBERGEBEN ---
                 $newExaminerId = $request->request->get('examiner_id');
-                $isTransfer = false; // Merker, ob übergeben wurde
+                $transferHappened = false;
 
                 if ($newExaminerId) {
                     $newExaminer = $userRepo->find($newExaminerId);
                     
-                    // Nur ändern, wenn User existiert, zur Schule gehört UND es ein anderer ist
+                    // Prüfen: Existiert User? Gleiche Schule? Ist es wirklich jemand anderes?
                     if ($newExaminer && 
                         $newExaminer->getInstitution() === $institution && 
-                        $newExaminer !== $exam->getExaminer()) {
+                        $newExaminer->getId() !== $user->getId()) {
                         
                         $exam->setExaminer($newExaminer);
-                        $isTransfer = true; // Wir haben die Prüfung übergeben!
+                        $transferHappened = true;
                     }
                 }
-                // -----------------------------
 
                 $this->em->flush();
 
-                if ($isTransfer) {
-                    $this->addFlash('success', 'Die Prüfung wurde erfolgreich übergeben. Du hast nun keine Bearbeitungsrechte mehr.');
+                // WENN ÜBERGEBEN: SOFORT ZUM DASHBOARD
+                if ($transferHappened) {
+                    $this->addFlash('success', 'Prüfung erfolgreich an ' . $newExaminer->getLastname() . ' übergeben.');
                     return $this->redirectToRoute('app_exams_dashboard');
                 }
 
@@ -239,62 +246,37 @@ final class ExamController extends AbstractController
                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
-            // 2. GRUPPEN HINZUFÜGEN
+            // B. GRUPPEN HINZUFÜGEN
             if ($request->request->has('add_groups')) {
-                $groupIds = $request->request->all('group_ids', []); 
-                $addedCountTotal = 0;
-                $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
-
-                foreach ($groupIds as $gId) {
-                    $gId = (int)$gId;
-                    $groupAlreadyInExam = false;
-                    foreach ($exam->getGroups() as $existingGroup) {
-                        if ($existingGroup->getId() === $gId) {
-                            $groupAlreadyInExam = true; 
-                            break;
-                        }
+                 $groupIds = $request->request->all('group_ids', []); 
+                 
+                 foreach ($groupIds as $gid) {
+                    $grp = $groupRepo->find($gid);
+                    if ($grp && $grp->getInstitution() === $institution) {
+                        $exam->addGroup($grp);
+                        $this->importParticipantsFromGroup($exam, $grp, $participantRepo);
                     }
+                 }
 
-                    if ($groupAlreadyInExam) continue; 
-                    if (in_array($gId, $usedGroupIds)) {
-                        $this->addFlash('warning', "Gruppe ID $gId ist bereits vergeben.");
-                        continue;
-                    }
-
-                    $group = $groupRepo->findOneBy(['id' => $gId, 'institution' => $institution]);
-                    
-                    if ($group) {
-                        $exam->addGroup($group);
-                        $addedCountTotal += $this->importParticipantsFromGroup($exam, $group, $participantRepo);
-                    }
-                }
-
-                $this->em->flush();
-                
-                if ($addedCountTotal > 0) {
-                    $this->addFlash('success', "$addedCountTotal Teilnehmer importiert.");
-                } else {
-                    $this->addFlash('info', "Gruppen zugeordnet.");
-                }
-                
-                return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
+                 $this->em->flush();
+                 return $this->redirectToRoute('app_exams_edit', ['id' => $id]);
             }
 
-            // 3. GRUPPE ENTFERNEN
+            // C. GRUPPE ENTFERNEN
             if ($request->request->has('remove_group')) {
-                $groupId = $request->request->get('remove_group');
-                if (!empty($groupId) && is_numeric($groupId)) {
-                    $group = $groupRepo->find((int)$groupId); 
-                    if ($group && $group->getInstitution() === $institution) {
+                 $groupId = $request->request->get('remove_group');
+                 if (!empty($groupId)) {
+                    $group = $groupRepo->find((int)$groupId);
+                    if ($group) {
                         $exam->removeGroup($group);
                         $this->em->flush();
                         $this->addFlash('success', 'Gruppe entfernt.');
                     }
-                }
+                 }
             }
         }
 
-        // --- VIEW DATEN ---
+        // --- VIEW DATEN AUFBEREITEN ---
         
         $assignedGroups = $exam->getGroups();
         $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
@@ -307,9 +289,7 @@ final class ExamController extends AbstractController
             }
         }
 
-        // --- NEU: KOLLEGEN FILTERN (EXAMINER / ADMIN / SUPER_ADMIN) ---
-        
-        // 1. Alle aus der Institution holen
+        // --- KOLLEGEN FILTERN (EXAMINER / ADMIN / SUPER_ADMIN) ---
         $allInstitutionUsers = $userRepo->findBy(
             ['institution' => $institution], 
             ['lastname' => 'ASC']
@@ -318,8 +298,6 @@ final class ExamController extends AbstractController
         $colleagues = [];
         foreach ($allInstitutionUsers as $u) {
             $roles = $u->getRoles();
-            
-            // Check: Hat der User eine der erlaubten Rollen?
             if (in_array('ROLE_EXAMINER', $roles) || 
                 in_array('ROLE_ADMIN', $roles) || 
                 in_array('ROLE_SUPER_ADMIN', $roles)) {
@@ -332,15 +310,11 @@ final class ExamController extends AbstractController
             'exam' => $exam,
             'assigned_groups' => $assignedGroups,
             'available_groups' => $availableGroups,
-            'colleagues' => $colleagues, // Das gefilterte Array übergeben
+            'colleagues' => $colleagues,
             'missing_students' => [],
         ]);
     }
 
-    /**
-     * Helper: Importiert User aus einer Gruppe als Participants
-     * HIER GEÄNDERT: Logik für User -> Participant Mapping
-     */
     private function importParticipantsFromGroup(Exam $exam, Group $group, ParticipantRepository $participantRepo): int
     {
         $existingParticipantIds = [];
@@ -352,23 +326,14 @@ final class ExamController extends AbstractController
 
         $count = 0;
         foreach ($group->getUsers() as $user) {
-            
-            // 1. Participant (Sportler-Profil) zum User finden
-            $participant = $participantRepo->findOneBy(['user' => $user]);
+            // OPTIMIERUNG: getOrCreate nutzen, damit auch Schüler ohne Profil angelegt werden
+            $participant = $this->getOrCreateParticipant($user);
 
-            if (!$participant) {
-                // Wenn User noch kein Profil hat, überspringen (oder hier on-the-fly erstellen)
-                continue;
-            }
-
-            // 2. Prüfen, ob der SPORTLER schon in der Liste ist
             if (!in_array($participant->getId(), $existingParticipantIds)) {
-                
                 $newParticipation = new ExamParticipant();
                 $newParticipation->setExam($exam);
-                $newParticipation->setParticipant($participant); // Jetzt korrektes Objekt!
+                $newParticipation->setParticipant($participant);
                 
-                // Alter berechnen
                 if ($participant->getGeburtsdatum()) {
                     $birthYear = (int)$participant->getGeburtsdatum()->format('Y');
                     $age = $exam->getYear() - $birthYear;
@@ -527,7 +492,6 @@ final class ExamController extends AbstractController
         if ($user) {
             $participant = $this->getOrCreateParticipant($user);
             
-            // Falls du setGeburtsdatum statt setBirthdate nutzt, pass das hier an!
             if ($dobStr) $participant->setGeburtsdatum(new \DateTime($dobStr));
             if ($gender) $participant->setGeschlecht($gender);
             
