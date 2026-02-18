@@ -6,6 +6,9 @@ use App\Repository\InstitutionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\User;
+use App\Entity\Group;
+
 
 #[ORM\Entity(repositoryClass: InstitutionRepository::class)]
 class Institution
@@ -61,6 +64,9 @@ class Institution
     #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true, cascade: ['remove'])]
     private Collection $groups;
 
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: User::class, cascade: ['remove'])]
+    private Collection $users;
+    
     // --- GETTER & SETTER ---
 
     public function getId(): ?int
