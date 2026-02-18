@@ -3,19 +3,18 @@
     { id: 'dashboard', route: 'admin_dashboard', icon: 'fa-home', label: 'Übersicht' },
     { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Personal' }, 
     { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
-    { id: 'import', route: 'admin_participants_upload', icon: 'fa-file-upload', label: 'Import Teilnehmer' },
+    { 
+        id: 'institution_edit', 
+        route: 'admin_institution_settings', 
+        icon: 'fa-university', 
+        label: 'Schuldaten' 
+    },
     { 
         id: 'institutions', 
         route: 'admin_institution_index', 
         icon: 'fa-university', 
         label: 'Schulen / Inst.', 
         role: 'ROLE_SUPER_ADMIN' 
-    },
-    { 
-        id: 'institution_edit', 
-        route: 'admin_institution_settings', 
-        icon: 'fa-university', 
-        label: 'Schuldaten' 
     },
     { 
         id: 'requirements', 
