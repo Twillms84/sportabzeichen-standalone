@@ -351,17 +351,41 @@ final class ExamController extends AbstractController
         return false;
     }
 
-    private function importParticipantsFromGroup(\App\Entity\Exam $exam, \App\Entity\Group $group): void
+    private function importParticipantsFromGroup(Exam $exam, Group $group): void
     {
-        // Schleife über die User der Gruppe
+        // 1. Wir holen uns die aktuellen Teilnehmer (ExamParticipant Objekte),
+        //    um Duplikate zu vermeiden.
+        $existingUserIds = [];
+        foreach ($exam->getExamParticipants() as $participantParams) {
+            // Wir merken uns die IDs der User, die schon dabei sind
+            if ($participantParams->getParticipant()) {
+                $existingUserIds[] = $participantParams->getParticipant()->getId();
+            }
+        }
+
+        // 2. Wir gehen alle User der Gruppe durch
         foreach ($group->getUsers() as $user) {
             
-            // ACHTUNG: Hier stand vorher getUsers(). 
-            // Ich habe es zu getParticipants() geändert.
-            // Falls es bei dir anders heißt (z.B. getStudents), pass es hier an.
-            
-            if (!$exam->getParticipants()->contains($user)) {
-                $exam->addParticipant($user);
+            // Wenn der User noch NICHT in der Liste ist:
+            if (!in_array($user->getId(), $existingUserIds)) {
+                
+                // A) Neues Zwischen-Objekt erstellen
+                $newParticipation = new ExamParticipant();
+                
+                // B) Beziehungen setzen
+                $newParticipation->setExam($exam);
+                $newParticipation->setParticipant($user); // HINWEIS: $user muss zur Entity 'Participant' passen!
+                
+                // C) Optional: Alter berechnen (falls User ein Geburtsdatum hat)
+                // if ($user->getBirthdate()) {
+                //     $age = $exam->getYear() - (int)$user->getBirthdate()->format('Y');
+                //     $newParticipation->setAge($age);
+                // }
+
+                // D) Zum Exam hinzufügen
+                // Dank "cascade: ['persist']" in deiner Exam-Entity wird das 
+                // beim nächsten $entityManager->flush() automatisch gespeichert.
+                $exam->addExamParticipant($newParticipation);
             }
         }
     }

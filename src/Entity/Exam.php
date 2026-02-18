@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\ExamRepository;
 use App\Entity\User; 
 use App\Entity\Group;
-use App\Entity\ExamParticipant; // Optional, falls im gleichen Namespace, aber sauberer
+use App\Entity\ExamParticipant;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
