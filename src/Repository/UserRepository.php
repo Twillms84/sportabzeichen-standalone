@@ -70,14 +70,26 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getResult();
     }
 
-    public function findByRole(string $role): array
+    public function findByRole(string $role, ?Institution $institution = null): array
     {
-        return $this->createQueryBuilder('u')
-            // Wir suchen mit LIKE, da roles ein JSON-String ist (z.B. ["ROLE_ADMIN", "ROLE_USER"])
-            // Die Anführungszeichen um %"role"% stellen sicher, dass wir exakt matchen
+        $qb = $this->createQueryBuilder('u')
             ->andWhere('u.roles LIKE :role')
-            ->setParameter('role', '%"' . $role . '"%')
-            ->orderBy('u.lastname', 'ASC')
+            ->setParameter('role', '%"' . $role . '"%'); // JSON Suche mit Anführungszeichen für Exaktheit
+
+        // Wenn eine Institution übergeben wurde, filtern wir zusätzlich
+        if ($institution) {
+            // ANPASSEN: Je nachdem wie deine Relation heißt (z.B. 'institution' oder 'institutions')
+            
+            // FALL A: User gehört zu GENAU EINER Institution (Many-to-One)
+            $qb->andWhere('u.institution = :institution')
+               ->setParameter('institution', $institution);
+
+            // FALL B: User kann MEHREREN Institutionen angehören (Many-to-Many)
+            // $qb->andWhere(':institution MEMBER OF u.institutions')
+            //    ->setParameter('institution', $institution);
+        }
+
+        return $qb->orderBy('u.lastname', 'ASC')
             ->addOrderBy('u.firstname', 'ASC')
             ->getQuery()
             ->getResult();
