@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Repository\ExamParticipantRepository;
 use App\Repository\ExamRepository;
 use App\Repository\GroupRepository;
+use App\Repository\ParticipantRepository; // <--- WICHTIG: Neu hinzugefügt
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,25 +30,20 @@ final class ExamController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function index(ExamRepository $examRepo): Response
     {
-        // 1. Institution des eingeloggten Users holen
         $user = $this->getUser();
         $institution = $user ? $user->getInstitution() : null;
 
-        // Sicherheits-Check: Ohne Institution keine Daten anzeigen
         if (!$institution) {
             return $this->render('exams/dashboard.html.twig', [
                 'yearlyStats' => [],
             ]);
         }
 
-        // 2. NUR Prüfungen der eigenen Institution laden
-        // Das ist der wichtigste Teil:
         $exams = $examRepo->findBy(
-            ['institution' => $institution], // <--- FILTER HINZUGEFÜGT
+            ['institution' => $institution],
             ['year' => 'DESC', 'date' => 'DESC']
         );
 
-        // 3. Daten aggregieren
         $yearlyStats = [];
 
         foreach ($exams as $exam) {
@@ -69,9 +65,7 @@ final class ExamController extends AbstractController
                 'creator' => $exam->getCreator(),
             ];
 
-            // Statistiken berechnen
             foreach ($exam->getExamParticipants() as $ep) {
-                // Vorsicht: Null-Check, falls durch Import-Fehler User fehlt
                 $participant = $ep->getParticipant();
                 if (!$participant || !$participant->getUser()) {
                     continue; 
@@ -79,14 +73,11 @@ final class ExamController extends AbstractController
 
                 $userId = $participant->getUser()->getId();
                 
-                // User pro Jahr nur einmal zählen für Total
                 if (!isset($yearlyStats[$year]['unique_users'][$userId])) {
                      $yearlyStats[$year]['stats']['Total']++;
                      $yearlyStats[$year]['unique_users'][$userId] = true;
                 }
 
-                // Punkte auswerten
-                // HINWEIS: Methode getTotalPoints() muss in ExamParticipant existieren!
                 $pts = $ep->getTotalPoints(); 
                 
                 if ($pts >= 11) $yearlyStats[$year]['stats']['Gold']++;
@@ -102,7 +93,8 @@ final class ExamController extends AbstractController
     }
 
     #[Route('/new', name: 'new')]
-    public function new(Request $request, GroupRepository $groupRepo): Response
+    // HIER GEÄNDERT: ParticipantRepository hinzugefügt
+    public function new(Request $request, GroupRepository $groupRepo, ParticipantRepository $participantRepo): Response
     {
         $user = $this->getUser();
         $institution = $user ? $user->getInstitution() : null;
@@ -112,7 +104,6 @@ final class ExamController extends AbstractController
             return $this->redirectToRoute('app_exams_dashboard');
         }
 
-        // Standardjahr für die Erstansicht (meist aktuelles Jahr)
         $currentYear = (int)date('Y'); 
 
         if ($request->isMethod('POST')) {
@@ -124,8 +115,6 @@ final class ExamController extends AbstractController
                 $dateStr = $request->request->get('exam_date');
                 $date = $dateStr ? new \DateTime($dateStr) : null;
                 
-                // FIX: Sicherer Zugriff auf das Array. 
-                // Falls 'groups' im Formular name="groups[]" heißt, liefert ->all('groups') das Array korrekt.
                 $groupIds = $request->request->all('groups') ?? []; 
 
                 $exam = new Exam();
@@ -137,14 +126,11 @@ final class ExamController extends AbstractController
                 
                 $this->em->persist($exam);
 
-                // Validierung: Welche Gruppen sind in DIESEM Jahr ($year) schon vergeben?
                 $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $year);
 
                 $countAdded = 0;
                 foreach ($groupIds as $groupId) {
-                    // Check: Ist Gruppe schon vergeben?
                     if (in_array($groupId, $usedGroupIds)) {
-                        // Optional: Warnung loggen oder Flash-Message erweitern
                         continue; 
                     }
 
@@ -155,8 +141,8 @@ final class ExamController extends AbstractController
 
                     if ($group) {
                         $exam->addGroup($group);
-                        // Teilnehmer kopieren
-                        $countAdded += $this->importParticipantsFromGroup($exam, $group);
+                        // HIER GEÄNDERT: Repo übergeben
+                        $countAdded += $this->importParticipantsFromGroup($exam, $group, $participantRepo);
                     }
                 }
 
@@ -170,22 +156,15 @@ final class ExamController extends AbstractController
             }
         }
 
-        // --- View Daten vorbereiten (mit Filterung) ---
-        
-        // 1. Alle Gruppen der Schule laden
         $allGroups = $groupRepo->findBy(
             ['institution' => $institution], 
             ['name' => 'ASC']
         );
 
-        // 2. Bereits vergebene Gruppen für das Standardjahr holen
-        // (Hinweis: Wenn der User das Jahr im Formular ändert, aktualisiert sich das Dropdown erst nach Reload. 
-        // Für eine Live-Anpassung bräuchte man JavaScript/AJAX. Das hier deckt den 90% Fall ab.)
         $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $currentYear);
 
         $groupsForDropdown = [];
         foreach ($allGroups as $g) {
-            // Nur hinzufügen, wenn ID nicht in der Blacklist ist
             if (!in_array($g->getId(), $usedGroupIds)) {
                 $groupsForDropdown[$g->getName()] = $g->getId();
             }
@@ -198,7 +177,15 @@ final class ExamController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
-    public function edit(int $id, Request $request, ExamRepository $examRepo, GroupRepository $groupRepo, UserRepository $userRepo): Response
+    // HIER GEÄNDERT: ParticipantRepository hinzugefügt
+    public function edit(
+        int $id, 
+        Request $request, 
+        ExamRepository $examRepo, 
+        GroupRepository $groupRepo, 
+        UserRepository $userRepo,
+        ParticipantRepository $participantRepo 
+    ): Response
     {
         $exam = $examRepo->find($id);
         if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden');
@@ -206,7 +193,6 @@ final class ExamController extends AbstractController
         $user = $this->getUser();
         $institution = $user ? $user->getInstitution() : null;
 
-        // Sicherheitscheck: Gehört die Prüfung zur Institution des Users?
         if (!$institution || $exam->getInstitution() !== $institution) {
             throw $this->createAccessDeniedException('Du darfst diese Prüfung nicht bearbeiten.');
         }
@@ -214,12 +200,11 @@ final class ExamController extends AbstractController
         // --- POST HANDLING ---
         if ($request->isMethod('POST')) {
             
-            // 1. STAMMDATEN SPEICHERN (Hier habe ich das hidden field 'update_exam_data' genutzt, das wir vorhin eingebaut haben)
+            // 1. STAMMDATEN SPEICHERN
             if ($request->request->has('update_exam_data')) {
                 $exam->setName($request->request->get('exam_name'));
                 $exam->setYear((int)$request->request->get('exam_year'));
                 
-                // Datum verarbeiten
                 $dateStr = $request->request->get('exam_date');
                 if ($dateStr) {
                     $exam->setDate(new \DateTime($dateStr));
@@ -233,20 +218,14 @@ final class ExamController extends AbstractController
 
             // 2. GRUPPEN HINZUFÜGEN
             if ($request->request->has('add_groups')) {
-                
-                // Eingaben normalisieren (Array oder einzelne ID)
-                $groupIds = $request->request->all('group_ids', []); // Achtung: Name im Twig war group_ids[]
+                $groupIds = $request->request->all('group_ids', []); 
 
                 $addedCountTotal = 0;
-                
-                // Welche Gruppen sind in diesem Jahr generell schon vergeben?
                 $usedGroupIds = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
 
                 foreach ($groupIds as $gId) {
                     $gId = (int)$gId;
 
-                    // Check 1: Ist die Gruppe schon in DIESER Prüfung? (Verhindert Duplikate)
-                    // Wir prüfen das direkt über die Collection, brauchen keine Hilfsmethode
                     $groupAlreadyInExam = false;
                     foreach ($exam->getGroups() as $existingGroup) {
                         if ($existingGroup->getId() === $gId) {
@@ -256,24 +235,20 @@ final class ExamController extends AbstractController
                     }
 
                     if ($groupAlreadyInExam) {
-                        continue; // Nächste Gruppe
+                        continue; 
                     }
 
-                    // Check 2: Ist die Gruppe schon in einer ANDEREN Prüfung dieses Jahres?
                     if (in_array($gId, $usedGroupIds)) {
                         $this->addFlash('warning', "Gruppe ID $gId ist bereits in einer anderen Prüfung vergeben.");
                         continue;
                     }
 
-                    // Gruppe laden und hinzufügen
                     $group = $groupRepo->findOneBy(['id' => $gId, 'institution' => $institution]);
                     
                     if ($group) {
                         $exam->addGroup($group);
-                        
-                        // WICHTIG: Hier Teilnehmer importieren. 
-                        // Da ich deine Methode nicht kenne, hier der Aufruf deiner privaten Methode (siehe unten)
-                        $addedCountTotal += $this->importParticipantsFromGroup($exam, $group);
+                        // HIER GEÄNDERT: Repo übergeben
+                        $addedCountTotal += $this->importParticipantsFromGroup($exam, $group, $participantRepo);
                     }
                 }
 
@@ -292,16 +267,11 @@ final class ExamController extends AbstractController
             if ($request->request->has('remove_group')) {
                 $groupId = $request->request->get('remove_group');
                 
-                // FIX: Erst prüfen, ob die ID nicht leer ist und numerisch ist
                 if (!empty($groupId) && is_numeric($groupId)) {
-                    
                     $group = $groupRepo->find((int)$groupId); 
                     
                     if ($group && $group->getInstitution() === $institution) {
                         $exam->removeGroup($group);
-                        
-                        // Optional: Teilnehmer entfernen logik hier...
-
                         $this->em->flush();
                         $this->addFlash('success', 'Gruppe entfernt.');
                     }
@@ -310,17 +280,10 @@ final class ExamController extends AbstractController
         }
 
         // --- VIEW DATEN ---
-        
-        // 1. Bereits zugewiesene Gruppen
         $assignedGroups = $exam->getGroups();
-        
-        // 2. Alle Gruppen der Schule laden
         $allGroups = $groupRepo->findBy(['institution' => $institution], ['name' => 'ASC']);
-
-        // 3. IDs von Gruppen, die IRGENDWO in diesem Jahr benutzt werden
         $usedGroupIdsInYear = $groupRepo->findGroupIdsUsedInYear($institution, $exam->getYear());
 
-        // 4. Verfügbare Gruppen berechnen
         $availableGroups = [];
             foreach ($allGroups as $g) {
                 $gId = $g->getId();
@@ -328,8 +291,6 @@ final class ExamController extends AbstractController
                 $isUsed = in_array($gId, $usedGroupIdsInYear);
 
                 if (!$isUsed && !$isInThisExam) {
-                    // WICHTIG: Das ganze Objekt übergeben, nicht nur den Namen!
-                    // Vorher: $availableGroups[$gId] = $g->getName();
                     $availableGroups[] = $g; 
                 }
             }
@@ -337,57 +298,55 @@ final class ExamController extends AbstractController
             return $this->render('exams/edit.html.twig', [
                 'exam' => $exam,
                 'assigned_groups' => $assignedGroups,
-                'available_groups' => $availableGroups, // Jetzt ein Array von Objekten
+                'available_groups' => $availableGroups,
                 'missing_students' => [],
             ]);
     }
 
-    // Helper um schnell zu prüfen, ob Gruppe schon im Exam Objekt ist (ohne DB Query)
-    private function isGroupInExam(Exam $exam, int $groupId): bool 
+    /**
+     * Helper: Importiert User aus einer Gruppe als Participants
+     * HIER GEÄNDERT: Logik für User -> Participant Mapping
+     */
+    private function importParticipantsFromGroup(Exam $exam, Group $group, ParticipantRepository $participantRepo): int
     {
-        foreach ($exam->getGroups() as $g) {
-            if ($g->getId() === $groupId) return true;
-        }
-        return false;
-    }
-
-    private function importParticipantsFromGroup(Exam $exam, Group $group): void
-    {
-        // 1. Wir holen uns die aktuellen Teilnehmer (ExamParticipant Objekte),
-        //    um Duplikate zu vermeiden.
-        $existingUserIds = [];
+        $existingParticipantIds = [];
         foreach ($exam->getExamParticipants() as $participantParams) {
-            // Wir merken uns die IDs der User, die schon dabei sind
             if ($participantParams->getParticipant()) {
-                $existingUserIds[] = $participantParams->getParticipant()->getId();
+                $existingParticipantIds[] = $participantParams->getParticipant()->getId();
             }
         }
 
-        // 2. Wir gehen alle User der Gruppe durch
+        $count = 0;
         foreach ($group->getUsers() as $user) {
             
-            // Wenn der User noch NICHT in der Liste ist:
-            if (!in_array($user->getId(), $existingUserIds)) {
-                
-                // A) Neues Zwischen-Objekt erstellen
-                $newParticipation = new ExamParticipant();
-                
-                // B) Beziehungen setzen
-                $newParticipation->setExam($exam);
-                $newParticipation->setParticipant($user); // HINWEIS: $user muss zur Entity 'Participant' passen!
-                
-                // C) Optional: Alter berechnen (falls User ein Geburtsdatum hat)
-                // if ($user->getBirthdate()) {
-                //     $age = $exam->getYear() - (int)$user->getBirthdate()->format('Y');
-                //     $newParticipation->setAge($age);
-                // }
+            // 1. Participant (Sportler-Profil) zum User finden
+            $participant = $participantRepo->findOneBy(['user' => $user]);
 
-                // D) Zum Exam hinzufügen
-                // Dank "cascade: ['persist']" in deiner Exam-Entity wird das 
-                // beim nächsten $entityManager->flush() automatisch gespeichert.
+            if (!$participant) {
+                // Wenn User noch kein Profil hat, überspringen (oder hier on-the-fly erstellen)
+                continue;
+            }
+
+            // 2. Prüfen, ob der SPORTLER schon in der Liste ist
+            if (!in_array($participant->getId(), $existingParticipantIds)) {
+                
+                $newParticipation = new ExamParticipant();
+                $newParticipation->setExam($exam);
+                $newParticipation->setParticipant($participant); // Jetzt korrektes Objekt!
+                
+                // Alter berechnen
+                if ($participant->getGeburtsdatum()) {
+                    $birthYear = (int)$participant->getGeburtsdatum()->format('Y');
+                    $age = $exam->getYear() - $birthYear;
+                    $newParticipation->setAge($age);
+                }
+
                 $exam->addExamParticipant($newParticipation);
+                $count++;
             }
         }
+        
+        return $count;
     }
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
@@ -401,8 +360,6 @@ final class ExamController extends AbstractController
 
         $exam = $examRepo->find($id);
         if ($exam) {
-            // Doctrine kümmert sich um die Löschung abhängiger Daten 
-            // (Voraussetzung: cascade={"remove"} oder orphanRemoval=true in Entity)
             $this->em->remove($exam);
             $this->em->flush();
             $this->addFlash('success', 'Prüfung gelöscht.');
@@ -422,15 +379,8 @@ final class ExamController extends AbstractController
             return $this->redirectToRoute('app_exams_add_participant', ['id' => $id, 'q' => $request->query->get('q')]);
         }
 
-        // Liste aller verfügbaren User, die noch nicht in der Prüfung sind
-        // Da die Logik ähnlich zu 'missingUsers' ist, könnten wir die Repo-Methode nutzen,
-        // aber hier geht es um ALLE User, nicht nur die aus den Gruppen.
-        // Das ist eine ähnliche Query, daher nutzen wir hier die gleiche Methode oder bauen eine allgemeinere.
-        // Für dieses Beispiel nutze ich die existierende Missing-Logik:
         $searchTerm = trim($request->query->get('q', ''));
         $users = $examRepo->findMissingUsersForExam($exam, $searchTerm); 
-        // HINWEIS: findMissingUsersForExam filtert aktuell nach Usern, die eine Gruppe HABEN, die der Exam zugeordnet ist.
-        // Wenn du ALLE User willst, müsstest du den Gruppen-Join im Repository entfernen.
 
         $missingStudentsData = [];
         foreach ($users as $user) {
@@ -453,120 +403,85 @@ final class ExamController extends AbstractController
     #[Route('/{id}/stats', name: 'stats', methods: ['GET'])]
     public function stats(int $id, ExamRepository $examRepo, ExamParticipantRepository $epRepo): Response
     {
-        // 1. Prüfung laden
         $exam = $examRepo->find($id);
-        if (!$exam) {
-            throw $this->createNotFoundException('Prüfung nicht gefunden.');
-        }
+        if (!$exam) throw $this->createNotFoundException('Prüfung nicht gefunden.');
 
-        // 2. Medaillen-Statistik berechnen
-        // Wir iterieren über die Teilnehmer, um die Medaillen zu zählen
         $participants = $exam->getExamParticipants();
         $stats = ['Gold' => 0, 'Silber' => 0, 'Bronze' => 0, 'Ohne' => 0];
 
         foreach ($participants as $ep) {
             $pts = $ep->getTotalPoints();
-            if ($pts >= 11) {
-                $stats['Gold']++;
-            } elseif ($pts >= 8) {
-                $stats['Silber']++;
-            } elseif ($pts >= 4) {
-                $stats['Bronze']++;
-            } else {
-                $stats['Ohne']++;
-            }
+            if ($pts >= 11) $stats['Gold']++;
+            elseif ($pts >= 8) $stats['Silber']++;
+            elseif ($pts >= 4) $stats['Bronze']++;
+            else $stats['Ohne']++;
         }
 
-        // 3. Ergebnisse für die Bestenliste laden
-        // Nutzt die optimierte Query aus dem Repository
         $results = $epRepo->findResultsForStats($exam);
-
         $topList = [];
 
         foreach ($results as $res) {
-            // Daten sicher abrufen
             $examParticipant = $res->getExamParticipant();
             $participant = $examParticipant->getParticipant();
             $user = $participant->getUser();
             $discipline = $res->getDiscipline();
 
-            // Gruppierungsschlüssel erstellen
             $discName = $discipline->getName();
             
-            // Geschlecht ins Deutsche übersetzen
-            $gender = $participant->getGeschlecht(); // 'MALE', 'FEMALE', etc.
+            $gender = $participant->getGeschlecht();
             $genderKey = match($gender) { 
                 'MALE' => 'Männlich', 
                 'FEMALE' => 'Weiblich', 
                 default => 'Divers' 
             };
             
-            // Altersklasse (AK)
-            $age = $examParticipant->getAge(); // Das Alter zum Zeitpunkt der Prüfung
+            $age = $examParticipant->getAge(); 
             $akKey = 'AK ' . $age;
 
-            // Array-Struktur initialisieren, falls noch nicht vorhanden
             if (!isset($topList[$discName][$genderKey][$akKey])) {
                 $topList[$discName][$genderKey][$akKey] = [];
             }
 
-            // Datensatz hinzufügen
-            // WICHTIG: Die Keys hier müssen exakt mit dem Twig-Template übereinstimmen!
             $topList[$discName][$genderKey][$akKey][] = [
                 'firstname' => $user->getFirstname(),
                 'lastname'  => $user->getLastname(),
                 'points'    => $res->getPoints(),
-                // Achtung: Prüfen ob die Methode in ExamResult 'getLeistung' oder 'getValue' heißt
                 'value'     => method_exists($res, 'getLeistung') ? $res->getLeistung() : $res->getValue(), 
-                'unit'      => $discipline->getEinheit(), // z.B. 'sec', 'm'
-                'type'      => $discipline->getBerechnungsart(), // 'BIGGER' oder 'SMALLER'
-                
-                // HIER WAR DER FEHLER: Twig erwartet 'group_name', nicht 'groups'
-                'group_name' => '...', // Hier könntest du $user->getGroup()->getName() einfügen, falls vorhanden
+                'unit'      => $discipline->getEinheit(),
+                'type'      => $discipline->getBerechnungsart(),
+                'group_name' => '...', 
             ];
         }
 
-        // 4. Sortieren der Bestenlisten
         foreach ($topList as $disc => &$genders) {
             foreach ($genders as $gender => &$aks) {
                 foreach ($aks as $ak => &$rows) {
                     usort($rows, function($a, $b) {
-                        // 1. Priorität: Punkte (immer absteigend, 3 ist besser als 1)
                         if ($a['points'] !== $b['points']) {
                             return $b['points'] <=> $a['points'];
                         }
                         
-                        // 2. Priorität: Leistung (Tie-Breaker)
-                        // Bei 'BIGGER' (Weitsprung): Mehr ist besser (Absteigend)
-                        // Bei 'SMALLER' (Lauf): Weniger ist besser (Aufsteigend)
                         if (isset($a['type']) && $a['type'] === 'BIGGER') {
                             return $b['value'] <=> $a['value'];
                         }
-                        // Default (Laufen/Schwimmen):
                         return $a['value'] <=> $b['value'];
                     });
 
-                    // Nur die Top 10 pro Altersklasse behalten (optional)
                     $rows = array_slice($rows, 0, 10);
                 }
             }
         }
-        unset($genders, $aks, $rows); // Referenzen aufräumen
+        unset($genders, $aks, $rows);
 
-        // 5. Render
         return $this->render('exams/stats.html.twig', [
-            'exam' => $exam, // Das ganze Objekt übergeben -> löst exam.name / exam.date Probleme
+            'exam' => $exam, 
             'stats' => $stats,
             'topList' => $topList,
             'totalParticipants' => count($participants),
-            // Hilfsvariablen für das Template, falls nötig
             'is_exam' => true, 
         ]);
     }
 
-    /**
-     * Handled den Request für einzelnen Teilnehmer hinzufügen
-     */
     private function handleAddSingleParticipant(Request $request, Exam $exam, UserRepository $userRepo): void
     {
         $account = trim($request->request->get('account', ''));
@@ -576,13 +491,13 @@ final class ExamController extends AbstractController
         $user = $userRepo->findOneBy(['act' => $account]);
 
         if ($user) {
-            // Pool Daten aktualisieren
             $participant = $this->getOrCreateParticipant($user);
-            if ($dobStr) $participant->setBirthdate(new \DateTime($dobStr));
-            if ($gender) $participant->setGender($gender);
             
-            // Zur Prüfung hinzufügen
-            $this->addParticipantToExam($exam, $user, $participant); // Übergibt $participant um neu-query zu sparen
+            // Falls du setGeburtsdatum statt setBirthdate nutzt, pass das hier an!
+            if ($dobStr) $participant->setGeburtsdatum(new \DateTime($dobStr));
+            if ($gender) $participant->setGeschlecht($gender);
+            
+            $this->addParticipantToExam($exam, $user, $participant); 
             
             $this->em->flush();
             $this->addFlash('success', 'Teilnehmer hinzugefügt/aktualisiert.');
@@ -599,10 +514,9 @@ final class ExamController extends AbstractController
 
         $p = new Participant();
         $p->setUser($user);
-        $p->setUsername($user->getAct()); // Fallback/Cache
+        $p->setUsername($user->getAct());
         $this->em->persist($p);
         
-        // Relation im User aktualisieren (für denselben Request wichtig)
         $user->setParticipant($p);
         
         return $p;
@@ -614,16 +528,12 @@ final class ExamController extends AbstractController
             $participant = $this->getOrCreateParticipant($user);
         }
 
-        // Prüfen ob schon drin (Collection Check)
-        // Performance-Tipp: Bei sehr vielen Teilnehmern > 1000 lieber Query checken, 
-        // aber für normale Klassen reicht der Collection Check
         foreach ($exam->getExamParticipants() as $ep) {
             if ($ep->getParticipant() === $participant) {
-                return false; // Schon drin
+                return false; 
             }
         }
 
-        // Alter berechnen
         $age = 0;
         if ($participant->getGeburtsdatum()) {
             $birthYear = (int)$participant->getGeburtsdatum()->format('Y');
@@ -637,26 +547,5 @@ final class ExamController extends AbstractController
         
         $this->em->persist($ep);
         return true;
-    }
-
-    /**
-     * Findet IDs von Gruppen, die in einem bestimmten Jahr bereits einer Prüfung zugewiesen sind.
-     * * @return int[]
-     */
-    public function findGroupIdsUsedInYear(Institution $institution, int $year): array
-    {
-        // Wir holen nur die IDs, das ist performanter
-        $result = $this->createQueryBuilder('g')
-            ->select('g.id')
-            ->join('g.exams', 'e')
-            ->where('e.institution = :institution')
-            ->andWhere('e.year = :year')
-            ->setParameter('institution', $institution)
-            ->setParameter('year', $year)
-            ->getQuery()
-            ->getScalarResult();
-
-        // Doctrine gibt hier oft [['id' => 1], ['id' => 2]] zurück, wir wollen [1, 2]
-        return array_column($result, 'id');
     }
 }
