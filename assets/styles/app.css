@@ -1,170 +1,93 @@
 /* =========================================
-   1. KONFIGURATION & VARIABLEN
+   1. KONFIGURATION & BASIS
    ========================================= */
 :root {
-    /* Hauptfarben */
-    --osa-green: #2c5e32;           /* Primärfarbe für Buttons/Akzente */
-    --osa-green-hover: #1e4223;
-    --sidebar-bg-color: #144018;    /* Dunkleres Grün für Sidebar */
-    --sidebar-accent: #2ecc71;      /* Hellgrün für Highlights */
+    /* Deine Sidebar-Farben */
+    --sidebar-bg-color: #144018; 
+    --sidebar-accent: #2ecc71; 
     --sidebar-width: 250px;
 
-    /* Light Mode Basis */
-    --app-bg: #f4f7f6;
+    /* Dynamische App-Farben (Light Mode Standard) */
+    --app-bg: #f4f7f6;      
     --app-card-bg: #ffffff;
     --app-text: #2c3e50;
     --app-border: #dee2e6;
     --app-muted: #6c757d;
-
-    /* Inputs (Light) */
+    
+    /* Hintergrund für Inputs (Light) */
     --input-bg: #ffffff;
     --input-border: #ced4da;
-    --input-focus-border: var(--osa-green);
-    --input-focus-shadow: rgba(44, 94, 50, 0.25);
+    --input-focus-border: #2ecc71; /* Dein Grün */
+    --input-focus-shadow: rgba(46, 204, 113, 0.25);
 }
 
-/* --- DARK MODE OVERRIDES --- */
+/* WICHTIG: Bootstrap Variablen überschreiben */
+[data-bs-theme="light"] {
+    --bs-body-bg: var(--app-bg);
+    --bs-body-color: var(--app-text);
+}
+
 [data-bs-theme="dark"] {
-    --app-bg: #121212;
-    --app-card-bg: #1e1e1e;
-    --app-text: #e9ecef;
-    --app-border: #333333;
+    /* Variablen für Dark Mode */
+    --app-bg: #1a1d20;      
+    --app-card-bg: #212529; 
+    --app-text: #f8f9fa;    
+    --app-border: #495057;  
     --app-muted: #adb5bd;
 
+    /* Input Variablen für Dark Mode */
     --input-bg: #2b3035;
     --input-border: #495057;
 
-    /* Bootstrap System-Farben überschreiben */
+    /* Bootstrap Overrides */
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
     --bs-border-color: var(--app-border);
-    --bs-secondary-bg: #2b3035; /* Fix für .bg-light im Darkmode */
-    --bs-tertiary-bg: #343a40;
+    
+    /* HIER IST DER FIX FÜR DEN HINTERGRUND: */
+    --bs-secondary-bg: #2b3035; 
+    --bs-tertiary-bg:  #343a40; /* Dunklerer Hintergrund für verschachtelte Boxen */
 }
 
-/* =========================================
-   2. GLOBALE STYLES
-   ========================================= */
 body {
     min-height: 100vh;
+    overflow-x: hidden;
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     transition: background-color 0.3s ease, color 0.3s ease;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    overflow-x: hidden;
 }
 
-/* Links & Typography */
-a { text-decoration: none; }
 
-/* =========================================
-   3. KOMPONENTEN: BUTTONS & INPUTS
-   ========================================= */
-
-/* Buttons */
-.btn {
-    border-radius: 0.5rem;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.btn-primary, .btn-success, .btn-osa-primary {
-    background-color: var(--osa-green) !important;
-    border-color: var(--osa-green) !important;
-    color: #fff !important;
-}
-
-.btn-primary:hover, .btn-success:hover {
-    background-color: var(--osa-green-hover) !important;
-    border-color: var(--osa-green-hover) !important;
-}
-
-/* Inputs */
-.form-control, .form-select, .input-group-text {
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--bs-body-color);
-    border-radius: 0.5rem;
-    padding: 0.6rem 1rem;
-}
-
-.form-control:focus, .form-select:focus {
-    background-color: var(--input-bg);
-    color: var(--bs-body-color);
-    border-color: var(--input-focus-border);
-    box-shadow: 0 0 0 4px var(--input-focus-shadow);
-    outline: none;
-}
-
-::placeholder {
-    color: var(--app-muted) !important;
-    opacity: 0.7;
-}
-
-/* =========================================
-   4. CARDS & TABELLEN
-   ========================================= */
-.card {
-    background-color: var(--app-card-bg);
-    border: 1px solid var(--app-border);
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.card-header {
-    background-color: transparent;
-    border-bottom: 1px solid var(--app-border);
-    font-weight: 600;
-}
-
-/* Dark Mode Anpassungen für Tabellen */
-[data-bs-theme="dark"] .table {
-    --bs-table-color: var(--app-text);
-    --bs-table-bg: transparent;
-    --bs-table-border-color: var(--app-border);
-    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
-    --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
-    --bs-table-hover-color: #fff;
-}
-
-/* =========================================
-   5. TOASTS (DIE NEUEN POPUPS)
-   ========================================= */
+/* Toast Container Positionierung */
 .toast-container {
-    z-index: 1090; /* Über Modals und allem anderen */
+    z-index: 1060; /* Über den Modals */
 }
 
+/* Der schicke Glas-Effekt */
 .custom-toast {
     background: rgba(255, 255, 255, 0.85) !important;
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: none;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: hidden;
-    color: #000; /* Text im Toast immer dunkel lassen oder anpassen */
 }
 
-[data-bs-theme="dark"] .custom-toast {
-    background: rgba(30, 30, 30, 0.85) !important;
-    color: #fff;
-    border: 1px solid #444;
-}
-
-/* Fortschrittsbalken */
+/* Der Verschwindebalken (Progress Bar) */
 .toast-progress {
     position: absolute;
     bottom: 0;
     left: 0;
     height: 4px;
-    background: rgba(128, 128, 128, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     width: 100%;
 }
 
+/* Animation für den Balken */
 .toast-progress-fill {
     height: 100%;
-    background-color: currentColor; /* Nimmt Farbe von text-success/danger */
+    background-color: currentColor; /* Nutzt die Textfarbe (success/danger) */
     width: 100%;
     animation: toast-countdown linear forwards;
 }
@@ -174,27 +97,130 @@ a { text-decoration: none; }
     to { width: 0%; }
 }
 
+
 /* =========================================
-   6. SIDEBAR & NAVIGATION
+   2. MODERNE FORMULARE & BUTTONS (ZENTRAL)
+   ========================================= */
+
+/* Inputs moderner gestalten */
+.form-control, 
+.form-select, 
+.input-group-text {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--bs-body-color);
+    border-radius: 0.5rem; /* Rundere Ecken */
+    padding: 0.6rem 1rem;  /* Mehr Platz innen */
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Fokus-Effekt: Dein Grün statt Bootstrap-Blau */
+.form-control:focus, 
+.form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--bs-body-color);
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 4px var(--input-focus-shadow); /* Sanfterer Glow */
+    outline: none;
+}
+
+/* Placeholder Farbe anpassen */
+::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 0.7;
+}
+
+/* Buttons auch etwas runder und größer */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+
+/* =========================================
+   3. DARK MODE FIXES (SPEZIALFÄLLE)
+   ========================================= */
+
+[data-bs-theme="dark"] {
+    
+    /* Zwingt .bg-light dazu, dunkel zu sein (Dein Hauptproblem!) */
+    .bg-light {
+        background-color: var(--bs-secondary-bg) !important;
+        color: var(--app-text) !important;
+    }
+
+    /* Zwingt .bg-body-tertiary dunkel zu sein */
+    .bg-body-tertiary {
+        background-color: var(--bs-tertiary-bg) !important;
+        color: var(--app-text) !important;
+    }
+
+    /* Alerts / Infoboxen dunkel */
+    .alert-light, .alert-secondary {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--app-border);
+        color: var(--app-text);
+    }
+    
+    /* Tabellen */
+    .table {
+        --bs-table-color: var(--app-text);
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--app-border);
+        --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+        --bs-table-striped-color: var(--app-text);
+        --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+        --bs-table-hover-color: #fff;
+    }
+    
+    /* Cards */
+    .card {
+        background-color: var(--app-card-bg);
+        border-color: var(--app-border);
+    }
+    
+    .card-header {
+        border-bottom-color: var(--app-border);
+        background-color: rgba(0,0,0, 0.2);
+    }
+}
+
+
+/* =========================================
+   4. SIDEBAR (DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
     color: #ecf0f1;
-    height: 100%;
+    height: 100%; 
     width: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden; 
 }
 
 .sidebar .nav-link {
     color: rgba(255, 255, 255, 0.7);
-    padding: 12px 20px;
+    padding: 12px 20px; /* Etwas mehr Platz */
+    font-size: 0.95rem;
     border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    border-radius: 0 4px 4px 0; /* Rechts leicht abgerundet */
     margin-right: 10px;
-    border-radius: 0 4px 4px 0;
 }
 
-.sidebar .nav-link:hover, .sidebar .nav-link.active {
+.sidebar .nav-link i {
+    width: 25px; 
+    text-align: center;
+    margin-right: 10px;
+}
+
+.sidebar .nav-link:hover, 
+.sidebar .nav-link.active {
     color: #fff;
     background-color: rgba(255, 255, 255, 0.1);
     border-left-color: var(--sidebar-accent);
@@ -203,80 +229,148 @@ a { text-decoration: none; }
 .sidebar-brand {
     padding: 20px 15px;
     font-size: 1.3rem;
+    font-weight: bold;
     color: white;
     background-color: rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    display: block;
+}
+
+.sidebar-wrapper {
+    background-color: var(--sidebar-bg-color);
+    width: var(--sidebar-width);
+    display: flex; 
+    flex-direction: column;
 }
 
 /* =========================================
-   7. DROPDOWNS & PLUGINS
+   5. DROPDOWN STYLING
    ========================================= */
-.dropdown-menu {
-    background-color: var(--app-card-bg);
-    border-color: var(--app-border);
-    z-index: 2000 !important; /* Sehr hoch, wie gewünscht */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+.dropdown-menu,
+.dropdown-menu-osa {
+    background-color: #144018 !important; 
+    color: #ffffff !important;           
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    z-index: 2000 !important;
+    border-radius: 0.5rem; /* Auch hier runder */
 }
 
-.dropdown-item {
-    color: var(--app-text);
+.dropdown-menu .dropdown-item,
+.dropdown-menu-osa .dropdown-item {
+    color: rgba(255, 255, 255, 0.85) !important;
+    padding: 8px 20px;
+    font-size: 0.95rem;
 }
 
-.dropdown-item:hover {
-    background-color: var(--osa-green);
-    color: #fff;
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15) !important; 
 }
 
-/* Dark Mode Dropdown Override für Sidebar-Kontext */
-.dropdown-menu-dark {
-    background-color: var(--sidebar-bg-color) !important;
-    border-color: #444;
+.dropdown-menu .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 10px;
+    color: var(--sidebar-accent);
 }
 
-/* Bootstrap Select Fixes */
-.bootstrap-select > .dropdown-toggle {
-    background-color: var(--input-bg) !important;
-    border: 1px solid var(--input-border) !important;
-    color: var(--bs-body-color) !important;
+.dropdown-menu .dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
-.bootstrap-select .dropdown-menu {
-    background-color: var(--app-card-bg) !important;
-    border: 1px solid var(--app-border) !important;
+.dropdown-menu .dropdown-header {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.bootstrap-select .dropdown-menu li a {
-    color: var(--app-text) !important;
+/* Checkboxen im Dropdown */
+.dropdown-menu .form-check-input {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+.dropdown-menu .form-check-input:checked {
+    background-color: var(--sidebar-accent) !important;
+    border-color: var(--sidebar-accent) !important;
+}
+.dropdown-menu .form-check-label {
+    color: white !important;
 }
 
-.bootstrap-select .dropdown-menu li a:hover {
-    background-color: var(--osa-green) !important;
-    color: #fff !important;
-}
 
 /* =========================================
-   8. RESPONSIVE LAYOUT
+   6. RESPONSIVE LAYOUT
    ========================================= */
+
 @media (min-width: 992px) {
     .sidebar-wrapper {
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
         position: fixed;
-        top: 0; left: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        bottom: 0;
         width: var(--sidebar-width);
         z-index: 100;
         overflow-y: auto;
     }
+
     .main-content {
         margin-left: var(--sidebar-width);
-        padding: 30px;
+        padding: 30px; /* Mehr Platz am Desktop */
     }
-    .mobile-header { display: none !important; }
+
+    .mobile-header, .offcanvas-header {
+        display: none !important;
+    }
 }
 
 @media (max-width: 991px) {
-    .main-content { margin-left: 0; padding: 0; }
-    .container-fluid { padding: 0; }
-    .card { border-radius: 0; border-left: 0; border-right: 0; }
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 0 !important; 
+    }
     
-    .offcanvas, .offcanvas-lg, .sidebar-wrapper {
+    .container-fluid {
+        padding: 0 !important;
+    }
+
+    .card {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+    }
+
+    .mobile-header {
+        border-bottom: 1px solid var(--app-border);
         background-color: var(--sidebar-bg-color);
+        color: white;
+    }
+}
+
+.offcanvas.show {
+    z-index: 1055 !important;
+}
+
+@media (max-width: 991px) {
+    /* Zwingt das Offcanvas-Menü auf die exakte sichtbare Höhe */
+    .offcanvas, .offcanvas-lg, .offcanvas-start, .sidebar-wrapper {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+    }
+    
+    /* Stellt sicher, dass die Sidebar den Platz füllt */
+    .sidebar {
+        height: 100% !important;
     }
 }
