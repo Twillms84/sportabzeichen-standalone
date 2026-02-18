@@ -19,48 +19,68 @@
         </thead>
         <tbody>
             {% for institution in institutions %}
-                <tr>
-                    <td><strong>{{ institution.name }}</strong></td>
-                    <td>{{ institution.city|default('N/A') }}</td>
-                    <td>
-                        {% set admin_found = false %}
-                        {% for user in institution.users %}
-                            {% if 'ROLE_ADMIN' in user.roles or 'ROLE_INSTITUTION_ADMIN' in user.roles %}
-                                {% set admin_found = true %}
-                                <div class="mb-1">
-                                    <span class="badge bg-primary">
-                                        <i class="fas fa-user-shield"></i> {{ user.email }}
-                                    </span>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
+                {# 1. WICHTIG: Variable am Anfang zurücksetzen #}
+                {% set admin = null %}
 
-                        {% if not admin_found %}
+                {# 2. Wir suchen den Admin im Hintergrund, ohne etwas anzuzeigen #}
+                {% for user in institution.users %}
+                    {% if 'ROLE_ADMIN' in user.roles or 'ROLE_INSTITUTION_ADMIN' in user.roles %}
+                        {% set admin = user %}
+                    {% endif %}
+                {% endfor %}
+
+                <tr>
+                    {# Name der Schule #}
+                    <td><strong>{{ institution.name }}</strong></td>
+                    
+                    {# Ort #}
+                    <td>{{ institution.city|default('N/A') }}</td>
+
+                    {# Registrar / Admin #}
+                    <td>
+                        {% if admin %}
+                            {# Admin gefunden #}
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">
+                                    {{ admin.firstname }} {{ admin.lastname }}
+                                </span>
+                                <span class="badge bg-primary mt-1" style="width: fit-content;">
+                                    <i class="fas fa-user-shield"></i> Admin
+                                </span>
+                            </div>
+                        {% else %}
+                            {# Kein Admin gefunden #}
                             <span class="text-muted small fst-italic">Kein Admin zugewiesen</span>
                         {% endif %}
                     </td>
+
+                    {# E-Mail (Hier war dein Fehler in Zeile 43) #}
                     <td>
                         {% if admin %}
                             <a href="mailto:{{ admin.email }}">{{ admin.email }}</a>
+                        {% else %}
+                            <span class="text-muted">-</span>
                         {% endif %}
                     </td>
+
+                    {# User-Anzahl #}
                     <td>
                         <span class="badge bg-info text-dark">
                             {{ institution.users|length }} User
                         </span>
                     </td>
+
+                    {# Buttons #}
                     <td class="text-end pe-4">
                         <div class="btn-group">
-                            {# Dein vorhandener Edit-Button #}
                             <a href="{{ path('admin_institution_settings', {'id': institution.id}) }}" 
                             class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-pencil-alt"></i>
                             </a>
 
-                            {# Der neue Lösch-Button #}
                             <form method="post" action="{{ path('admin_institution_delete', {'id': institution.id}) }}" 
                                 style="display:inline-block" 
-                                onsubmit="return confirm('Sind Sie sicher? Alle Daten dieser Schule werden unwiderruflich gelöscht!');">
+                                onsubmit="return confirm('Sind Sie sicher?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ institution.id) }}">
                                 <button class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-trash"></i>
@@ -71,7 +91,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="5">Noch keine Schulen registriert.</td>
+                    <td colspan="6" class="text-center">Noch keine Schulen registriert.</td>
                 </tr>
             {% endfor %}
         </tbody>
