@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prüfung: {{ exam.name }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid p-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('admin_exam_overview') }}">Übersicht</a></li>
+            <li class="breadcrumb-item active">{{ exam.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        {# Linke Spalte: Statistiken & Infos #}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="fw-bold">{{ exam.name }}</h4>
+                    <p class="text-muted"><i class="bi bi-calendar"></i> {{ exam.date|date('d.m.Y') }}</p>
+                    <hr>
+                    <h6>Prüfer:</h6>
+                    <p class="badge bg-info text-dark">
+                        {{ exam.examiner ? exam.examiner.lastname ~ ', ' ~ exam.examiner.firstname : 'Kein Prüfer zugewiesen' }}
+                    </p>
+                </div>
+            </div>
+            
+            {# Liste der noch fehlenden Personen (aus den zugewiesenen Gruppen) #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Verfügbare Personen hinzufügen</h6>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                    {% for user in potentialParticipants %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ user.lastname }}, {{ user.firstname }}</span>
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-muted small">Alle Personen aus den Gruppen sind bereits in der Prüfung.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Rechte Spalte: Aktuelle Teilnehmerliste #}
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Aktuelle Teilnehmer</h5>
+                    <span class="badge bg-primary">{{ exam.examParticipants|length }} Personen</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Teilnehmer</th>
+                                <th>Status</th>
+                                <th>Ergebnis</th>
+                                <th class="text-end">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ep in exam.examParticipants %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ ep.participant.user ? ep.participant.user.lastname ~ ', ' ~ ep.participant.user.firstname : ep.participant.username }}</div>
+                                        <small class="text-muted">{{ ep.participant.groupName }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill bg-light text-dark border">In Bearbeitung</span>
+                                    </td>
+                                    <td>
+                                        {# Hier Medaillen-Vorschau #}
+                                        <span class="text-warning"><i class="bi bi-trophy-fill"></i> {{ ep.finalMedal|default('-') }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="#" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

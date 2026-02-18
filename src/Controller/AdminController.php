@@ -95,4 +95,17 @@ final class AdminController extends AbstractController
 
         return $this->json(['success' => true]);
     }
+
+    #[Route('/exam/{id}', name: 'exam_show')]
+    public function show(Exam $exam, ExamRepository $examRepo): Response
+    {
+        // Wir holen uns die User, die theoretisch teilnehmen könnten (aus den Gruppen)
+        $potentialParticipants = $examRepo->findMissingUsersForExam($exam);
+
+        return $this->render('admin/exam_show.html.twig', [
+            'exam' => $exam,
+            'potentialParticipants' => $potentialParticipants,
+            'activeTab' => 'exams',
+        ]);
+    }
 }
