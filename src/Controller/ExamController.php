@@ -351,6 +351,16 @@ final class ExamController extends AbstractController
         return false;
     }
 
+    private function importParticipantsFromGroup(\App\Entity\Exam $exam, \App\Entity\Group $group): void
+    {
+        foreach ($group->getUsers() as $user) {
+            // Wir prüfen, ob der User schon im Exam ist, um Duplikate zu vermeiden
+            if (!$exam->getUsers()->contains($user)) {
+                $exam->addUser($user);
+            }
+        }
+    }
+
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
     public function delete(int $id, Request $request, ExamRepository $examRepo): Response
     {
