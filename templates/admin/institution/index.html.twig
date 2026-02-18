@@ -23,22 +23,20 @@
                     <td><strong>{{ institution.name }}</strong></td>
                     <td>{{ institution.city|default('N/A') }}</td>
                     <td>
-                        {# Wir suchen den ersten Admin der Schule raus #}
-                        {% set admin = null %}
+                        {% set admin_found = false %}
                         {% for user in institution.users %}
-                            <span class="badge bg-secondary">
-                                {{ user.email }} 
-                                {# Optional: Rollen anzeigen #}
-                                {% if 'ROLE_ADMIN' in user.roles %}(Admin){% endif %}
-                            </span>
-                        {% else %}
-                            <span class="text-muted small">Kein Personal</span>
+                            {% if 'ROLE_ADMIN' in user.roles or 'ROLE_INSTITUTION_ADMIN' in user.roles %}
+                                {% set admin_found = true %}
+                                <div class="mb-1">
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-user-shield"></i> {{ user.email }}
+                                    </span>
+                                </div>
+                            {% endif %}
                         {% endfor %}
 
-                        {% if admin %}
-                            {{ admin.firstname }} {{ admin.lastname }}
-                        {% else %}
-                            <span class="text-muted">Kein Admin gefunden</span>
+                        {% if not admin_found %}
+                            <span class="text-muted small fst-italic">Kein Admin zugewiesen</span>
                         {% endif %}
                     </td>
                     <td>

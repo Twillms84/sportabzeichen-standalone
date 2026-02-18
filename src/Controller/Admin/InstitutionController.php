@@ -60,23 +60,17 @@ class InstitutionController extends AbstractController
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
     #[IsGranted('ROLE_SUPER_ADMIN')]
-    public function delete(Request $request, Institution $institution, EntityManagerInterface $em): Response
+    public function delete(Request $request, Institution $institution, EntityManagerInterface $entityManager): Response
     {
-        // CSRF-Schutz zur Sicherheit (verhindert ungewollte Klicks von extern)
-        if ($this->isCSRFTokenValid('delete' . $institution->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$institution->getId(), $request->request->get('_token'))) {
             
-            // Optional: Prüfen, ob die Schule noch User hat
-            if ($institution->getUsers()->count() > 0) {
-                $this->addFlash('danger', 'Schule kann nicht gelöscht werden, da noch Benutzer zugeordnet sind.');
-                return $this->redirectToRoute('admin_institution_index');
-            }
-
-            $em->remove($institution);
-            $em->flush();
-
-            $this->addFlash('success', 'Die Schule inklusive aller zugehörigen Benutzer und Gruppen wurde erfolgreich gelöscht.');
+            // ACHTUNG: Das hier löscht die Schule UND alle zugehörigen User (Kaskade)!
+            $entityManager->remove($institution);
+            $entityManager->flush();
+            
+            $this->addFlash('success', 'Schule und alle zugehörigen Benutzer wurden gelöscht.');
         }
 
-        return $this->redirectToRoute('admin_institution_index');
+        return $this->redirectToRoute('app_admin_institution_index', [], Response::HTTP_SEE_OTHER);
     }
 }
