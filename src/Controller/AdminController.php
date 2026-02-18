@@ -31,12 +31,22 @@ final class AdminController extends AbstractController
     #[Route('/exams', name: 'exam_overview')]
     public function exams(ExamRepository $examRepo, UserRepository $userRepo): Response
     {
-        $exams = $examRepo->findAllWithStats();
+        // 1. Hol den aktuell angemeldeten User
+        /** @var User $user */
+        $user = $this->getUser();
+        
+        // 2. Institution ermitteln (falls der User einer zugeordnet ist)
+        // Ich gehe davon aus, dass dein User ein Feld 'getInstitution()' hat
+        $currentInstitution = $user->getInstitution();
+
+        // 3. Jetzt die Methode aufrufen (die wir im Repository erstellt haben)
         $examiners = $userRepo->findAvailableExaminers($currentInstitution);
+
+        // ... Rest deines Codes (Stats berechnen, $examsData bauen etc.) ...
 
         return $this->render('admin/exam_overview.html.twig', [
             'examsData' => $examsData,
-            'examiners' => $examiners, // Diese Liste geht ans Dropdown
+            'examiners' => $examiners,
             'activeTab' => 'exams',
         ]);
     }
