@@ -72,26 +72,40 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
     public function findByRole(string $role, ?Institution $institution = null): array
     {
-        $qb = $this->createQueryBuilder('u')
-            ->andWhere('u.roles LIKE :role')
-            ->setParameter('role', '%"' . $role . '"%'); // JSON Suche mit Anführungszeichen für Exaktheit
+        $entityManager = $this->getEntityManager();
+        
+        // 1. Mapping Builder: Damit Doctrine weiß, wie das SQL-Ergebnis in User-Objekte umgewandelt wird
+        $rsm = new ResultSetMappingBuilder($entityManager);
+        $rsm->addRootEntityFromClassMetadata(User::class, 'u');
 
-        // Wenn eine Institution übergeben wurde, filtern wir zusätzlich
+        // 2. Tabellennamen dynamisch holen (falls er nicht "user" heißt)
+        $tableName = $this->getClassMetadata()->getTableName();
+
+        // 3. Native SQL Query bauen
+        // WICHTIG: "u.roles::text" ist der Postgres-Trick, um JSON als Text durchsuchbar zu machen
+        $sql = "SELECT " . $rsm->generateSelectClause() . "
+                FROM " . $tableName . " u
+                WHERE u.roles::text LIKE :role";
+
+        // Optional: Filter nach Institution
         if ($institution) {
-            // ANPASSEN: Je nachdem wie deine Relation heißt (z.B. 'institution' oder 'institutions')
-            
-            // FALL A: User gehört zu GENAU EINER Institution (Many-to-One)
-            $qb->andWhere('u.institution = :institution')
-               ->setParameter('institution', $institution);
-
-            // FALL B: User kann MEHREREN Institutionen angehören (Many-to-Many)
-            // $qb->andWhere(':institution MEMBER OF u.institutions')
-            //    ->setParameter('institution', $institution);
+            // Annahme: Die Spalte in der DB heißt 'institution_id'. 
+            // Falls sie anders heißt, muss das hier angepasst werden.
+            $sql .= " AND u.institution_id = :instId";
         }
 
-        return $qb->orderBy('u.lastname', 'ASC')
-            ->addOrderBy('u.firstname', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $sql .= " ORDER BY u.lastname ASC, u.firstname ASC";
+
+        // 4. Query erstellen
+        $query = $entityManager->createNativeQuery($sql, $rsm);
+        
+        // Parameter setzen (JSON Suche braucht Anführungszeichen)
+        $query->setParameter('role', '%"' . $role . '"%');
+
+        if ($institution) {
+            $query->setParameter('instId', $institution->getId());
+        }
+
+        return $query->getResult();
     }
 }
