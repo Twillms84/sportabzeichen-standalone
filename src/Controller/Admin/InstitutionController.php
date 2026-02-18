@@ -56,4 +56,26 @@ class InstitutionController extends AbstractController
             'activeTab' => 'institution_edit',
         ]);
     }
+
+    #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function delete(Request $request, Institution $institution, EntityManagerInterface $em): Response
+    {
+        // CSRF-Schutz zur Sicherheit (verhindert ungewollte Klicks von extern)
+        if ($this->isCSRFTokenValid('delete' . $institution->getId(), $request->request->get('_token'))) {
+            
+            // Optional: Prüfen, ob die Schule noch User hat
+            if ($institution->getUsers()->count() > 0) {
+                $this->addFlash('danger', 'Schule kann nicht gelöscht werden, da noch Benutzer zugeordnet sind.');
+                return $this->redirectToRoute('admin_institution_index');
+            }
+
+            $em->remove($institution);
+            $em->flush();
+
+            $this->addFlash('success', 'Die Institution wurde vollständig entfernt.');
+        }
+
+        return $this->redirectToRoute('admin_institution_index');
+    }
 }

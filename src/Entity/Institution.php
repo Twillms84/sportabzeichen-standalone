@@ -58,6 +58,9 @@ class Institution
         $this->users = new ArrayCollection();
     }
 
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, orphanRemoval: true, cascade: ['remove'])]
+    private Collection $groups;
+
     // --- GETTER & SETTER ---
 
     public function getId(): ?int

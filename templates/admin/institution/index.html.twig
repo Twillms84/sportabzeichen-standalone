@@ -47,6 +47,25 @@
                             {{ institution.users|length }} User
                         </span>
                     </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group">
+                            {# Dein vorhandener Edit-Button #}
+                            <a href="{{ path('admin_institution_settings', {'id': institution.id}) }}" 
+                            class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
+
+                            {# Der neue Lösch-Button #}
+                            <form method="post" action="{{ path('admin_institution_delete', {'id': institution.id}) }}" 
+                                style="display:inline-block" 
+                                onsubmit="return confirm('Sind Sie sicher? Alle Daten dieser Schule werden unwiderruflich gelöscht!');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ institution.id) }}">
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             {% else %}
                 <tr>
