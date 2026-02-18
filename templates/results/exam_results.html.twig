@@ -15,8 +15,11 @@
     
     <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
         
-    {# A) ANSICHT FILTER (Disziplinen/Ansicht) #}
+    <div class="filter-toolbar mb-3 d-flex align-items-center flex-wrap">
+        
+    {# A) ANSICHT FILTER #}
     <div class="dropdown d-inline-block mb-3 me-2">
+        {# ÄNDERUNG: btn-sm hinzugefügt #}
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                 type="button" 
                 id="viewFilterBtn" 
@@ -36,6 +39,7 @@
 
     {# B) GRUPPEN FILTER #}
     <div class="dropdown d-inline-block mb-3">
+        {# ÄNDERUNG: btn-sm hinzugefügt #}
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                 type="button" 
                 id="groupFilterBtn"
@@ -56,29 +60,32 @@
         </ul>
     </div>
 
-        {# C) ACTION BUTTONS (Jetzt hier rechts, Style angepasst) #}
-        <div class="d-flex gap-2 ms-2">
-            {# DRUCKEN #}
-            {# d-none d-md-block sorgt dafür, dass auf Handys nur das Icon zu sehen ist, um Platz zu sparen #}
-            <a id="btn-print-groupcard" 
-               href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
-               class="btn btn-outline-secondary btn-sm d-flex align-items-center" target="_blank" title="Drucken">
-                <i class="bi bi-printer"></i> <span class="ms-2 d-none d-md-inline">{{ 'Drucken'|trans }}</span>
-            </a>
+    {# C) ACTION BUTTONS #}
+    {# ÄNDERUNG: mb-3 hinzugefügt, damit sie auf gleicher Höhe wie Dropdowns sitzen #}
+    <div class="d-flex gap-2 ms-2 mb-3">
+        {# DRUCKEN #}
+        <a id="btn-print-groupcard" 
+           href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+           class="btn btn-outline-secondary btn-sm d-flex align-items-center" target="_blank" title="Drucken">
+            <i class="bi bi-printer"></i> <span class="ms-2 d-none d-md-inline">{{ 'Drucken'|trans }}</span>
+        </a>
 
-            {# ZURÜCK #}
-            <a href="{{ path('app_exams_dashboard') }}" 
-               class="btn btn-outline-secondary btn-sm d-flex align-items-center" title="Zurück">
-                <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-md-inline">{{ 'Zurück'|trans }}</span>
-            </a>
-        </div>
+        {# ZURÜCK #}
+        <a href="{{ path('app_exams_dashboard') }}" 
+           class="btn btn-outline-secondary btn-sm d-flex align-items-center" title="Zurück">
+            <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-md-inline">{{ 'Zurück'|trans }}</span>
+        </a>
+    </div>
 
-        {# D) SUCHLEISTE (Nimmt verfügbaren Platz ein -> flex-grow-1) #}
-        <div class="d-flex align-items-center flex-grow-1 search-container">
-            <div class="input-group input-group-sm">
-                <input type="text" id="client-search-input" class="form-control form-control-osa" placeholder="Schüler suchen...">
-            </div>
+    {# D) SUCHLEISTE #}
+    {# ÄNDERUNG: mb-3 auch hier sicherheitshalber hinzufügen #}
+    <div class="d-flex align-items-center flex-grow-1 search-container mb-3 ms-2">
+        <div class="input-group input-group-sm">
+            <input type="text" id="client-search-input" class="form-control form-control-osa" placeholder="Schüler suchen...">
         </div>
+    </div>
+    
+</div>
         
     </div>
 
