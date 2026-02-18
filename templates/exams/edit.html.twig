@@ -19,7 +19,9 @@
                         <i class="fas fa-info-circle me-2"></i>{{ 'Stammdaten'|trans }}
                     </div>
                     <div class="card-body p-4">
+                        {# 1. FORM STARTET HIER #}
                         <form method="post">
+                            
                             {# Hidden-Field zur Identifikation #}
                             <input type="hidden" name="update_exam_data" value="1">
 
@@ -27,6 +29,7 @@
                                 <label class="form-label fw-bold">{{ 'Bezeichnung'|trans }}</label>
                                 <input type="text" name="exam_name" class="form-control" value="{{ exam.name }}">
                             </div>
+                            
                             <div class="row">
                                 <div class="col-6 mb-3">
                                     <label class="form-label fw-bold">{{ 'Jahr'|trans }}</label>
@@ -34,34 +37,41 @@
                                 </div>
                                 <div class="col-6 mb-3">
                                     <label class="form-label fw-bold">{{ 'Datum'|trans }}</label>
-                                    <input type="date" name="exam_date" class="form-control" value="{{ exam.date }}">
+                                    <input type="date" name="exam_date" class="form-control" value="{{ exam.date ? exam.date|date('Y-m-d') : '' }}">
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-osa-primary w-100 shadow-sm mt-2">
-                                <i class="fas fa-save me-2"></i>{{ 'Änderungen speichern'|trans }}
-                            </button>
-                        </form>
-                        <div class="mb-3">
-                            <label for="examiner_id" class="form-label">Verantwortlicher Prüfer</label>
-                            <select name="examiner_id" id="examiner_id" class="form-select">
-                                <option value="">-- Bitte wählen --</option>
-                                {% for colleague in colleagues %}
-                                    <option value="{{ colleague.id }}" 
-                                        {# Wenn dieser Kollege der aktuelle Prüfer ist -> auswählen #}
-                                        {% if exam.examiner and exam.examiner.id == colleague.id %}selected{% endif %}>
-                                        
-                                        {{ colleague.lastname }}, {{ colleague.firstname }} ({{ colleague.act }})
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <div class="form-text">
-                                Hier kannst du die Prüfung an einen anderen Kollegen übergeben.
-                            </div>
-                        </div>
 
-                        <button type="submit" name="update_exam_data" value="1" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Stammdaten speichern
-                        </button>
+                            {# Hier war früher das </form> und ein Button - beides entfernt #}
+
+                            <hr>
+
+                            {# --- PRÜFER AUSWAHL (Jetzt innerhalb des Forms) --- #}
+                            <div class="mb-3">
+                                <label for="examiner_id" class="form-label fw-bold">Verantwortlicher Prüfer</label>
+                                <select name="examiner_id" id="examiner_id" class="form-select">
+                                    <option value="">-- Bitte wählen --</option>
+                                    {% for colleague in colleagues %}
+                                        <option value="{{ colleague.id }}" 
+                                            {# Wenn dieser Kollege der aktuelle Prüfer ist -> auswählen #}
+                                            {% if exam.examiner and exam.examiner.id == colleague.id %}selected{% endif %}>
+                                            
+                                            {{ colleague.lastname }}, {{ colleague.firstname }} 
+                                            {# Optional: Rolle anzeigen falls vorhanden #}
+                                            {% if colleague.roles is defined %}({{ colleague.roles|join(', ') }}){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Hier kannst du die Prüfung an einen anderen Kollegen übergeben.
+                                </div>
+                            </div>
+
+                            {# 2. HAUPT-BUTTON AM ENDE #}
+                            <button type="submit" name="update_exam_data" value="1" class="btn btn-primary w-100">
+                                <i class="fas fa-save me-2"></i> Stammdaten & Prüfer speichern
+                            </button>
+
+                        </form> {# 3. FORM ENDET ERST HIER GANZ UNTEN #}
                     </div>
                 </div>
             </div>
