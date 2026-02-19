@@ -42,7 +42,7 @@ final class ParticipantController extends AbstractController
         return $institution;
     }
 
-    #[Route('/', name: 'index')] // Ergibt: admin_participants_index
+    #[Route('/', name: 'index')]
     public function index(Request $request): Response
     {
         $institution = $this->getInstitutionOrDeny();
@@ -50,6 +50,7 @@ final class ParticipantController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 50;
         $q = trim((string)$request->query->get('q'));
+        $filter = $request->query->get('filter'); // Neu für den "Ohne Gruppe" Filter
 
         $qb = $this->em->getRepository(Participant::class)->createQueryBuilder('p')
             ->leftJoin('p.user', 'u')
@@ -60,6 +61,11 @@ final class ParticipantController extends AbstractController
             ->setParameter('institution', $institution)
             ->orderBy('u.lastname', 'ASC')
             ->addOrderBy('u.firstname', 'ASC');
+
+        // NEU: Filter für Teilnehmer ohne Gruppe
+        if ($filter === 'no_group') {
+            $qb->andWhere('g.id IS NULL');
+        }
 
         if ($q !== '') {
             $qb->andWhere(
@@ -81,15 +87,22 @@ final class ParticipantController extends AbstractController
         $totalCount = count($paginator);
         $maxPages = max(1, (int) ceil($totalCount / $limit));
 
+        // NEU: Gruppen für das Bulk-Dropdown laden
+        $availableGroups = $this->em->getRepository(Group::class)->findBy(
+            ['institution' => $institution],
+            ['name' => 'ASC']
+        );
+
         return $this->render('admin/participants/index.html.twig', [
-            'participants' => $paginator,
-            'activeTab'    => 'participants_manage',
-            'currentPage'  => $page,
-            'maxPages'     => $maxPages,
-            'totalCount'   => $totalCount,
-            'searchTerm'   => $q,
-            'searchQuery'  => $q, // Für Kompatibilität mit dem neuen Template
-            'pagesCount'   => $maxPages // Für Kompatibilität
+            'participants'    => $paginator,
+            'availableGroups' => $availableGroups, // Wichtig für das Template!
+            'activeTab'       => 'participants_manage',
+            'currentPage'     => $page,
+            'maxPages'        => $maxPages,
+            'totalCount'      => $totalCount,
+            'searchTerm'      => $q,
+            'searchQuery'     => $q, 
+            'pagesCount'      => $maxPages 
         ]);
     }
 
@@ -300,5 +313,42 @@ final class ParticipantController extends AbstractController
             ])
             ->add('save', SubmitType::class, ['label' => $label, 'attr' => ['class' => 'btn btn-success']])
             ->getForm();
+    }
+
+    #[Route('/bulk-assign-group', name: 'bulk_assign_group', methods: ['POST'])]
+    public function bulkAssignGroup(Request $request): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        $institution = $this->getInstitutionOrDeny();
+        $data = json_decode($request->getContent(), true);
+        
+        $userIds = $data['ids'] ?? [];
+        $groupId = $data['groupId'] ?? null;
+
+        if (empty($userIds) || !$groupId) {
+            return $this->json(['success' => false, 'message' => 'Daten unvollständig'], 400);
+        }
+
+        $group = $this->em->getRepository(Group::class)->find($groupId);
+        if (!$group || $group->getInstitution() !== $institution) {
+            return $this->json(['success' => false, 'message' => 'Gruppe nicht gefunden'], 403);
+        }
+
+        $users = $this->em->getRepository(User::class)->findBy([
+            'id' => $userIds,
+            'institution' => $institution
+        ]);
+
+        foreach ($users as $user) {
+            // Falls ein User nur in einer Gruppe sein darf, hier optional:
+            // foreach($user->getGroups() as $oldGroup) { $user->removeGroup($oldGroup); }
+            
+            if (!$user->getGroups()->contains($group)) {
+                $user->addGroup($group);
+            }
+        }
+
+        $this->em->flush();
+
+        return $this->json(['success' => true]);
     }
 }
