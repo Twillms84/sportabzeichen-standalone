@@ -5,23 +5,6 @@
 {% block body %}
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'admin_group_index'} %}
 
-
-    <div class="mb-4">
-        <ul class="nav nav-tabs">
-            {% for tab in tabs %}
-                {% if tab.role is not defined or is_granted(tab.role) %}
-                    <li class="nav-item">
-                        <a class="nav-link {{ activeTab|default('') == tab.id ? 'active' : '' }}" 
-                           href="{{ path(tab.route) }}">
-                            <i class="fas {{ tab.icon }}"></i> {{ tab.label }}
-                        </a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-    {# --- ENDE TABS --- #}
-
     {# Der Hauptcontainer verbindet sich mit dem Stimulus Controller #}
     <div data-controller="groups" data-groups-save-url-value="{{ path('admin_group_save') }}">
         
