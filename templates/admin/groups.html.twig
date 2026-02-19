@@ -1,0 +1,113 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gruppenverwaltung{% endblock %}
+
+{% block body %}
+    {# --- TABS MENÜ --- #}
+    {% set tabs = [
+        { id: 'exams', route: 'admin_exam_overview', icon: 'fa-home', label: 'Übersicht' },
+        { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Personal' }, 
+        { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
+        { id: 'groups', route: 'admin_group_index', icon: 'fa-layer-group', label: 'Gruppen' },
+        { id: 'institution_edit', route: 'admin_institution_settings', icon: 'fa-university', label: 'Schuldaten' },
+        { id: 'institutions', route: 'admin_institution_index', icon: 'fa-university', label: 'Schulen / Inst.', role: 'ROLE_SUPER_ADMIN' },
+        { id: 'requirements', route: 'admin_requirements_upload', icon: 'fa-list-alt', label: 'Anforderungen', role: 'ROLE_SUPER_ADMIN' }
+    ] %}
+
+    <div class="mb-4">
+        <ul class="nav nav-tabs">
+            {% for tab in tabs %}
+                {% if tab.role is not defined or is_granted(tab.role) %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ activeTab|default('') == tab.id ? 'active' : '' }}" 
+                           href="{{ path(tab.route) }}">
+                            <i class="fas {{ tab.icon }}"></i> {{ tab.label }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {# --- ENDE TABS --- #}
+
+    {# Der Hauptcontainer verbindet sich mit dem Stimulus Controller #}
+    <div data-controller="groups" data-groups-save-url-value="{{ path('admin_group_save') }}">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3 mb-0 text-gray-800">Gruppenverwaltung</h2>
+            <button class="btn btn-success shadow-sm" data-action="click->groups#openCreate">
+                <i class="bi bi-plus-circle me-1"></i> Neue Gruppe
+            </button>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Bestehende Gruppen</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Gruppenname</th>
+                                <th>Teilnehmer</th>
+                                <th class="text-end pe-4">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in groups %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">{{ group.name }}</td>
+                                    <td><span class="badge bg-secondary">{{ group.users|length }}</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" 
+                                                title="Umbenennen"
+                                                data-action="click->groups#openEdit"
+                                                data-id="{{ group.id }}"
+                                                data-name="{{ group.name }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {# Den Mülleimer habe ich hier schon mal als Platzhalter eingefügt #}
+                                        <button class="btn btn-sm btn-outline-danger" title="Löschen">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">
+                                        Noch keine Gruppen angelegt.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" tabindex="-1" data-groups-target="modal">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content custom-modal">
+                    <div class="modal-header">
+                        <h5 class="modal-title" data-groups-target="modalTitle">Gruppe anlegen / bearbeiten</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form data-action="submit->groups#save">
+                            <input type="hidden" data-groups-target="idInput">
+                            <div class="mb-3">
+                                <label class="form-label">Name der Gruppe</label>
+                                <input type="text" class="form-control" data-groups-target="nameInput" placeholder="z.B. Klasse 8b" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                        <button type="button" class="btn btn-success" data-action="click->groups#save">Speichern</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

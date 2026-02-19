@@ -25,8 +25,9 @@ class GroupController extends AbstractController
             ['name' => 'ASC'] // Alphabetisch sortieren
         );
 
-        return $this->render('admin/group/index.html.twig', [
+        return $this->render('admin/groups.html.twig', [ // <-- Pfad angepasst!
             'groups' => $groups,
+            'activeTab' => 'groups', // <-- Wichtig für das Menü!
         ]);
     }
 
