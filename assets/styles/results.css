@@ -27,41 +27,74 @@
     background-color: rgba(255,255,255,0.1); 
 }
 
-/* Dropdowns & Inputs in der Toolbar (Dynamisch über App-Variablen) */
+/* -----------------------------------------
+   Dropdowns & Inputs in der Toolbar (View, Group)
+   ----------------------------------------- */
+
+/* LIGHT MODE (Default) */
 .filter-toolbar .form-select,
-.filter-toolbar .form-control {
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--input-text); 
-    font-weight: 500;
+.filter-toolbar .form-control,
+.filter-toolbar .btn-outline-secondary {
+    /* Helles Grün als Hintergrund, dunkle Schrift */
+    background-color: rgba(46, 204, 113, 0.15) !important; 
+    border: 1px solid rgba(46, 204, 113, 0.4) !important;
+    color: var(--osa-green-hover, #1e4223) !important; 
+    font-weight: 600;
+}
+
+/* Dunkelgrüner Pfeil für Lightmode-Dropdowns */
+.filter-toolbar .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e4223' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
 }
 
 .filter-toolbar .form-select:focus,
 .filter-toolbar .form-control:focus {
-    box-shadow: 0 0 0 4px var(--input-focus-shadow); 
-    border-color: var(--osa-green);
+    background-color: rgba(46, 204, 113, 0.25) !important;
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.3) !important; 
+    border-color: var(--osa-green) !important;
 }
 
-/* Buttons in der Toolbar */
-.filter-toolbar .btn-outline-secondary {
-    color: #fff;
-    border-color: rgba(255,255,255,0.4);
-    background-color: rgba(255,255,255,0.1); 
+/* DARK MODE */
+[data-bs-theme="dark"] .filter-toolbar .form-select,
+[data-bs-theme="dark"] .filter-toolbar .form-control,
+[data-bs-theme="dark"] .filter-toolbar .btn-outline-secondary {
+    /* Kräftiges Grün als Hintergrund, helle Schrift */
+    background-color: var(--osa-green, #2c5e32) !important;
+    border: 1px solid var(--sidebar-accent, #2ecc71) !important;
+    color: #ffffff !important; 
 }
 
-.filter-toolbar .btn-outline-secondary:hover,
-.filter-toolbar .btn-outline-secondary:focus,
-.filter-toolbar .show > .btn-outline-secondary.dropdown-toggle {
-    background-color: var(--input-bg);
-    color: var(--input-text); 
-    border-color: var(--input-border);
+/* Weißer Pfeil für Darkmode-Dropdowns */
+[data-bs-theme="dark"] .filter-toolbar .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+[data-bs-theme="dark"] .filter-toolbar .form-select:focus,
+[data-bs-theme="dark"] .filter-toolbar .form-control:focus {
+    background-color: var(--osa-green-hover, #1e4223) !important;
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.3) !important;
+    border-color: var(--sidebar-accent, #2ecc71) !important;
+}
+
+/* Hover-Effekte für Buttons in der Toolbar */
+.filter-toolbar .btn-outline-secondary:hover {
+    background-color: var(--osa-green) !important;
+    color: #fff !important;
 }
 
 /* Toolbar Utilities */
 .filter-dropdown-scroll { min-width: 250px; max-height: 400px; overflow-y: auto; }
 .search-container { min-width: 200px; }
-.search-icon-box { border-color: var(--input-border) !important; background-color: var(--input-bg); color: var(--input-text); }
-
+.search-icon-box { 
+    border-color: rgba(46, 204, 113, 0.4) !important; 
+    background-color: rgba(46, 204, 113, 0.15) !important; 
+    color: var(--osa-green-hover, #1e4223) !important; 
+}
+[data-bs-theme="dark"] .search-icon-box {
+    border-color: var(--sidebar-accent, #2ecc71) !important; 
+    background-color: var(--osa-green, #2c5e32) !important; 
+    color: #ffffff !important; 
+}
 
 /* =========================================
    2. TABELLEN-CONTAINER (Wrapper)
