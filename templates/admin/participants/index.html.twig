@@ -5,7 +5,7 @@
 {% block body %}
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_manage'} %}
 
-    <div class="container-fluid">
+    <div class="container-fluid" data-controller="admin-participant">
         
         {# HEADER & BUTTONS #}
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -14,7 +14,7 @@
                 <span class="badge bg-secondary rounded-pill ms-2 fs-6">{{ totalCount }}</span>
             </h3>
             
-            <div class="btn-group">
+            <div class="btn-group shadow-sm">
                 <a href="{{ path('admin_participants_new') }}" class="btn btn-success btn-sm">
                     <i class="bi bi-plus-lg"></i> {{ 'Neu anlegen'|trans }}
                 </a>
@@ -27,23 +27,63 @@
             </div>
         </div>
 
+        {# --- BULK ACTIONS BAR (Wird eingeblendet per Stimulus) --- #}
+        <div class="card bg-primary text-white mb-3 shadow-sm d-none" data-admin-participant-target="bulkBar">
+            <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check2-circle fs-4 me-3"></i>
+                    <div>
+                        <span class="fw-bold" data-admin-participant-target="selectedCount">0</span> 
+                        {{ 'Teilnehmer ausgewählt'|trans }}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <select class="form-select form-select-sm me-2" style="min-width: 200px;" data-admin-participant-target="groupSelect">
+                        <option value="">-- {{ 'Gruppe zuweisen'|trans }} --</option>
+                        {% for group in availableGroups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-light btn-sm fw-bold" 
+                            data-action="click->admin-participant#assignGroup"
+                            data-url="{{ path('admin_participants_bulk_assign_group') }}">
+                        {{ 'Anwenden'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm">
             <div class="card-body">
                 
-                {# --- SUCHLEISTE (Server-Side) --- #}
+                {# --- SUCHLEISTE & FILTER --- #}
                 <form method="get" class="mb-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" name="q" class="form-control" 
-                               placeholder="{{ 'Nach Name oder E-Mail suchen...'|trans }}" 
-                               value="{{ searchQuery }}">
-                        <button class="btn btn-primary" type="submit">{{ 'Suchen'|trans }}</button>
-                        {% if searchQuery %}
-                            <a href="{{ path('admin_participants_index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg"></i>
-                            </a>
-                        {% endif %}
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                <input type="text" name="q" class="form-control" 
+                                       placeholder="{{ 'Nach Name oder E-Mail suchen...'|trans }}" 
+                                       value="{{ searchQuery }}">
+                                <button class="btn btn-primary" type="submit">{{ 'Suchen'|trans }}</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="filter" class="form-select" onchange="this.form.submit()">
+                                <option value="">{{ '-- Alle Teilnehmer --'|trans }}</option>
+                                <option value="no_group" {{ app.request.query.get('filter') == 'no_group' ? 'selected' }}>
+                                    ⚠️ {{ 'Ohne Gruppe'|trans }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
+                    {% if searchQuery or app.request.query.get('filter') %}
+                        <div class="mt-2">
+                            <a href="{{ path('admin_participants_index') }}" class="text-decoration-none small text-muted">
+                                <i class="bi bi-x-circle"></i> {{ 'Filter zurücksetzen'|trans }}
+                            </a>
+                        </div>
+                    {% endif %}
                 </form>
 
                 {# --- TABELLE --- #}
@@ -51,6 +91,9 @@
                     <table class="table table-striped table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" data-action="change->admin-participant#toggleAll">
+                                </th>
                                 <th>{{ 'Name'|trans }}</th>
                                 <th>{{ 'Klasse/Gruppe'|trans }}</th>
                                 <th>{{ 'Geburtstag'|trans }}</th>
@@ -61,6 +104,12 @@
                         <tbody>
                         {% for p in participants %}
                             <tr>
+                                <td>
+                                    {# Die ID des Users wird für die Gruppenzuweisung genutzt #}
+                                    <input type="checkbox" class="form-check-input participant-checkbox" 
+                                           value="{{ p.user.id }}" 
+                                           data-action="change->admin-participant#updateSelection">
+                                </td>
                                 <td>
                                     {% if p.user %}
                                         <strong>{{ p.user.lastname }}</strong>, {{ p.user.firstname }}
@@ -74,16 +123,17 @@
                                 <td>
                                     {% if p.user and p.user.groups is not empty %}
                                         {% for group in p.user.groups %}
-                                            <span class="badge bg-secondary">{{ group.name }}</span>
+                                            <span class="badge bg-info text-dark">{{ group.name }}</span>
                                         {% endfor %}
                                     {% else %}
-                                        <span class="text-muted small">-</span>
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">
+                                            <i class="bi bi-exclamation-triangle"></i> {{ 'Keine Gruppe'|trans }}
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>{{ p.birthdate ? p.birthdate|date('d.m.Y') : '-' }}</td>
                                 <td>
                                     {% set genders = {'MALE': 'M', 'FEMALE': 'W', 'DIVERSE': 'D'} %}
-                                    {# Kleines Badge für bessere Sichtbarkeit #}
                                     <span class="badge bg-light text-dark border">
                                         {{ genders[p.gender] ?? p.gender }}
                                     </span>
@@ -115,7 +165,8 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-people fs-1 d-block mb-2"></i>
                                     {{ 'Keine Teilnehmer gefunden.'|trans }}
                                 </td>
                             </tr>
@@ -128,21 +179,21 @@
             {# --- PAGINATION FOOTER --- #}
             {% if pagesCount > 1 %}
             <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-                <small class="text-muted">Seite {{ currentPage }} von {{ pagesCount }}</small>
+                <small class="text-muted">{{ 'Seite'|trans }} {{ currentPage }} {{ 'von'|trans }} {{ pagesCount }}</small>
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {{ currentPage == 1 ? 'disabled' }}">
-                            <a class="page-link" href="{{ path('admin_participants_index', {page: currentPage - 1, q: searchQuery}) }}">
+                            <a class="page-link" href="{{ path('admin_participants_index', {page: currentPage - 1, q: searchQuery, filter: app.request.query.get('filter')}) }}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                         {% for i in 1..pagesCount %}
                             <li class="page-item {{ currentPage == i ? 'active' }}">
-                                <a class="page-link" href="{{ path('admin_participants_index', {page: i, q: searchQuery}) }}">{{ i }}</a>
+                                <a class="page-link" href="{{ path('admin_participants_index', {page: i, q: searchQuery, filter: app.request.query.get('filter')}) }}">{{ i }}</a>
                             </li>
                         {% endfor %}
                         <li class="page-item {{ currentPage == pagesCount ? 'disabled' }}">
-                            <a class="page-link" href="{{ path('admin_participants_index', {page: currentPage + 1, q: searchQuery}) }}">
+                            <a class="page-link" href="{{ path('admin_participants_index', {page: currentPage + 1, q: searchQuery, filter: app.request.query.get('filter')}) }}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
@@ -154,9 +205,8 @@
     </div>
 
     {# --- GENERIC MODAL --- #}
-    {# Hinweis: Bootstrap 5 nutzt 'data-bs-toggle' und 'data-bs-dismiss' statt 'data-toggle' #}
     <div class="modal fade" id="genericEditModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <form method="post" action="#" id="genericEditForm" data-url-template="{{ path('admin_participants_update', {id: 'PLACEHOLDER_ID'}) }}">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -165,21 +215,21 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="modalDob" class="form-label">{{'Geburtsdatum'}}</label>
+                            <label for="modalDob" class="form-label">{{'Geburtsdatum'|trans}}</label>
                             <input type="date" name="dob" id="modalDob" class="form-control">
                         </div>
                         <div class="mb-3">
-                            <label for="modalGender" class="form-label">{{'Geschlecht'}}</label>
+                            <label for="modalGender" class="form-label">{{'Geschlecht'|trans}}</label>
                             <select name="gender" id="modalGender" class="form-select">
-                                <option value="MALE">{{'Männlich'}} (M)</option>
-                                <option value="FEMALE">{{'Weiblich'}} (W)</option>
-                                <option value="DIVERSE">{{'Divers'}} (D)</option>
+                                <option value="MALE">{{'Männlich'|trans}} (M)</option>
+                                <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
+                                <option value="DIVERSE">{{'Divers'|trans}} (D)</option>
                             </select>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{'Abbrechen'}}</button>
-                        <button type="submit" class="btn btn-primary">{{'Speichern'}}</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{'Abbrechen'|trans}}</button>
+                        <button type="submit" class="btn btn-primary">{{'Speichern'|trans}}</button>
                     </div>
                 </div>
             </form>
