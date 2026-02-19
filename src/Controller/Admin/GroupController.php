@@ -73,7 +73,7 @@ class GroupController extends AbstractController
             ]
         ]);
     }
-    #[Route('/admin/group/{id}/delete', name: 'admin_group_delete', methods: ['DELETE'])]
+    #[Route('/admin/group/{id}/delete', name: 'delete', methods: ['DELETE'])]
     public function delete(Group $group, EntityManagerInterface $em): JsonResponse
     {
         // Sicherheitscheck: Darf der User das?
