@@ -71,8 +71,20 @@
                         <div class="col-md-4">
                             <select name="filter" class="form-select" onchange="this.form.submit()">
                                 <option value="">{{ '-- Alle Teilnehmer --'|trans }}</option>
+                                
+                                {# Option für Teilnehmer ohne Gruppe #}
                                 <option value="no_group" {{ app.request.query.get('filter') == 'no_group' ? 'selected' }}>
                                     ⚠️ {{ 'Ohne Gruppe'|trans }}
+                                </option>
+
+                                {# Trenner zur besseren Optik #}
+                                <option disabled>──────────</option>
+
+                                {# Dynamische Liste aller Gruppen #}
+                                {% for group in availableGroups %}
+                                    <option value="group_{{ group.id }}" {{ app.request.query.get('filter') == 'group_' ~ group.id ? 'selected' }}>
+                                        {{ group.name }}
+                                    {% endfor %}
                                 </option>
                             </select>
                         </div>
