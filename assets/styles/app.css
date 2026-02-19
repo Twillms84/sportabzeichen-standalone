@@ -2,12 +2,21 @@
    1. KONFIGURATION & BASIS
    ========================================= */
 :root {
-    /* Deine Sidebar-Farben */
+    /* DEINE ORIGINALEN OSA-VARIABLEN */
+    --osa-bg: #121212;
+    --osa-card-bg: #1e1e1e;
+    --osa-border: #333333;
+    --osa-green: #2c5e32;
+    --osa-green-hover: #1e4223;
+    --osa-text: #e9ecef;
+    --osa-input-bg: #2b3035;
+
+    /* Sidebar-Farben */
     --sidebar-bg-color: #144018; 
     --sidebar-accent: #2ecc71; 
     --sidebar-width: 250px;
 
-    /* Dynamische App-Farben (Light Mode Standard) */
+    /* App-Farben (Light Mode Standard) */
     --app-bg: #f4f7f6;      
     --app-card-bg: #ffffff;
     --app-text: #2c3e50;
@@ -17,54 +26,149 @@
     /* Hintergrund für Inputs (Light) */
     --input-bg: #ffffff;
     --input-border: #ced4da;
-    --input-focus-border: #2ecc71; /* Dein Grün */
+    --input-focus-border: #2ecc71; 
     --input-focus-shadow: rgba(46, 204, 113, 0.25);
 }
 
-/* WICHTIG: Bootstrap Variablen überschreiben */
+/* Bootstrap Variablen überschreiben */
 [data-bs-theme="light"] {
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
 }
 
 [data-bs-theme="dark"] {
-    /* Variablen für Dark Mode */
     --app-bg: #1a1d20;      
     --app-card-bg: #212529; 
     --app-text: #f8f9fa;    
     --app-border: #495057;  
     --app-muted: #adb5bd;
-
-    /* Input Variablen für Dark Mode */
     --input-bg: #2b3035;
     --input-border: #495057;
 
-    /* Bootstrap Overrides */
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
     --bs-border-color: var(--app-border);
-    
-    /* HIER IST DER FIX FÜR DEN HINTERGRUND: */
     --bs-secondary-bg: #2b3035; 
-    --bs-tertiary-bg:  #343a40; /* Dunklerer Hintergrund für verschachtelte Boxen */
+    --bs-tertiary-bg:  #343a40; 
 }
 
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
+    background-color: var(--osa-bg); /* Nutzt wieder original OSA-BG */
+    color: var(--osa-text); /* Nutzt wieder original OSA-Text */
     transition: background-color 0.3s ease, color 0.3s ease;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* =========================================
+   2. BUTTONS & CARDS (ORIGINAL TEMPLATE)
+   ========================================= */
 
-/* Toast Container Positionierung */
-.toast-container {
-    z-index: 1060; /* Über den Modals */
+/* Buttons */
+.btn-primary, .btn-success, .btn-osa-primary, .btn-osa-success {
+    background-color: var(--osa-green) !important;
+    border-color: var(--osa-green) !important;
+    color: #fff !important;
+}
+.btn-primary:hover, .btn-success:hover {
+    background-color: var(--osa-green-hover) !important;
+    border-color: var(--osa-green-hover) !important;
+}
+.btn-outline-secondary { color: #adb5bd; border-color: #495057; }
+.btn-outline-secondary:hover { background-color: #343a40; color: #fff; }
+
+/* Allgemeine Button Anpassung (aus neuem Design) */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
-/* Der schicke Glas-Effekt */
+/* Cards (wieder hart auf deine Farben gesetzt) */
+.card, .osa-card {
+    background-color: var(--osa-card-bg) !important;
+    border: 1px solid var(--osa-border) !important;
+    color: var(--osa-text) !important;
+}
+.card-header {
+    background-color: var(--osa-green) !important;
+    color: #fff !important;
+    border-bottom: 1px solid var(--osa-border) !important;
+}
+.list-group-item {
+    background-color: var(--osa-card-bg) !important;
+    border-color: var(--osa-border) !important;
+    color: var(--osa-text) !important;
+}
+
+/* =========================================
+   3. DROPDOWNS & PLUGINS (ORIGINAL TEMPLATE)
+   ========================================= */
+
+/* Dropdowns (Bootstrap 5 Standard) */
+.dropdown-menu {
+    background-color: var(--osa-input-bg) !important;
+    border: 1px solid #495057 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.5);
+    z-index: 9999 !important; /* EXTREM WICHTIG - FIX FÜR DIE DROPDOWNS */
+}
+.dropdown-item { color: #dee2e6 !important; cursor: pointer; }
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: var(--osa-green) !important;
+    color: #fff !important;
+}
+
+/* Bootstrap Select Fix */
+.bootstrap-select > .dropdown-toggle {
+    background-color: var(--osa-input-bg) !important;
+    border: 1px solid #495057 !important;
+    color: #fff !important;
+}
+.bootstrap-select > .dropdown-toggle:hover, 
+.bootstrap-select > .dropdown-toggle:focus {
+    border-color: var(--osa-green) !important;
+    background-color: #343a40 !important;
+    outline: none !important;
+}
+.bootstrap-select .dropdown-menu {
+    background-color: var(--osa-input-bg) !important;
+    border: 1px solid #495057 !important;
+}
+.bootstrap-select .dropdown-menu li a {
+    color: #dee2e6 !important;
+}
+.bootstrap-select .dropdown-menu li a:hover {
+    background-color: var(--osa-green) !important;
+}
+
+/* Inputs (Original) */
+.form-control, .form-select {
+    background-color: var(--osa-input-bg); 
+    border: 1px solid #495057; 
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+}
+.form-control:focus, .form-select:focus { 
+    background-color: #33393f; 
+    color: #fff; 
+    border-color: var(--osa-green); 
+    box-shadow: 0 0 0 4px var(--input-focus-shadow);
+    outline: none;
+}
+::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 0.7;
+}
+
+/* =========================================
+   4. TOASTS (DIE NEUEN POPUPS)
+   ========================================= */
+.toast-container { z-index: 1060; }
 .custom-toast {
     background: rgba(255, 255, 255, 0.85) !important;
     backdrop-filter: blur(10px);
@@ -73,231 +177,44 @@ body {
     position: relative;
     overflow: hidden;
 }
-
-/* Der Verschwindebalken (Progress Bar) */
 .toast-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 4px;
-    background: rgba(0, 0, 0, 0.2);
-    width: 100%;
+    position: absolute; bottom: 0; left: 0;
+    height: 4px; background: rgba(0, 0, 0, 0.2); width: 100%;
 }
-
-/* Animation für den Balken */
 .toast-progress-fill {
-    height: 100%;
-    background-color: currentColor; /* Nutzt die Textfarbe (success/danger) */
-    width: 100%;
+    height: 100%; background-color: currentColor; width: 100%;
     animation: toast-countdown linear forwards;
 }
-
 @keyframes toast-countdown {
     from { width: 100%; }
     to { width: 0%; }
 }
 
-
 /* =========================================
-   2. MODERNE FORMULARE & BUTTONS (ZENTRAL)
-   ========================================= */
-
-/* Inputs moderner gestalten */
-.form-control, 
-.form-select, 
-.input-group-text {
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--bs-body-color);
-    border-radius: 0.5rem; /* Rundere Ecken */
-    padding: 0.6rem 1rem;  /* Mehr Platz innen */
-    font-size: 0.95rem;
-    transition: all 0.2s ease-in-out;
-}
-
-/* Fokus-Effekt: Dein Grün statt Bootstrap-Blau */
-.form-control:focus, 
-.form-select:focus {
-    background-color: var(--input-bg);
-    color: var(--bs-body-color);
-    border-color: var(--input-focus-border);
-    box-shadow: 0 0 0 4px var(--input-focus-shadow); /* Sanfterer Glow */
-    outline: none;
-}
-
-/* Placeholder Farbe anpassen */
-::placeholder {
-    color: var(--app-muted) !important;
-    opacity: 0.7;
-}
-
-/* Buttons auch etwas runder und größer */
-.btn {
-    border-radius: 0.5rem;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-
-/* =========================================
-   3. DARK MODE FIXES (SPEZIALFÄLLE)
-   ========================================= */
-
-[data-bs-theme="dark"] {
-    
-    /* Zwingt .bg-light dazu, dunkel zu sein (Dein Hauptproblem!) */
-    .bg-light {
-        background-color: var(--bs-secondary-bg) !important;
-        color: var(--app-text) !important;
-    }
-
-    /* Zwingt .bg-body-tertiary dunkel zu sein */
-    .bg-body-tertiary {
-        background-color: var(--bs-tertiary-bg) !important;
-        color: var(--app-text) !important;
-    }
-
-    /* Alerts / Infoboxen dunkel */
-    .alert-light, .alert-secondary {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-color: var(--app-border);
-        color: var(--app-text);
-    }
-    
-    /* Tabellen */
-    .table {
-        --bs-table-color: var(--app-text);
-        --bs-table-bg: transparent;
-        --bs-table-border-color: var(--app-border);
-        --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
-        --bs-table-striped-color: var(--app-text);
-        --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
-        --bs-table-hover-color: #fff;
-    }
-    
-    /* Cards */
-    .card {
-        background-color: var(--app-card-bg);
-        border-color: var(--app-border);
-    }
-    
-    .card-header {
-        border-bottom-color: var(--app-border);
-        background-color: rgba(0,0,0, 0.2);
-    }
-}
-
-
-/* =========================================
-   4. SIDEBAR (DUNKELGRÜN)
+   5. SIDEBAR (DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
-    color: #ecf0f1;
-    height: 100%; 
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; 
+    color: #ecf0f1; height: 100%; width: 100%;
+    display: flex; flex-direction: column; overflow: hidden; 
 }
-
 .sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.7);
-    padding: 12px 20px; /* Etwas mehr Platz */
-    font-size: 0.95rem;
-    border-left: 4px solid transparent;
-    display: flex;
-    align-items: center;
-    border-radius: 0 4px 4px 0; /* Rechts leicht abgerundet */
-    margin-right: 10px;
+    color: rgba(255, 255, 255, 0.7); padding: 12px 20px;
+    font-size: 0.95rem; border-left: 4px solid transparent;
+    display: flex; align-items: center; border-radius: 0 4px 4px 0; margin-right: 10px;
 }
-
-.sidebar .nav-link i {
-    width: 25px; 
-    text-align: center;
-    margin-right: 10px;
+.sidebar .nav-link i { width: 25px; text-align: center; margin-right: 10px; }
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    color: #fff; background-color: rgba(255, 255, 255, 0.1); border-left-color: var(--sidebar-accent);
 }
-
-.sidebar .nav-link:hover, 
-.sidebar .nav-link.active {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-left-color: var(--sidebar-accent);
-}
-
 .sidebar-brand {
-    padding: 20px 15px;
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.2);
-    text-decoration: none;
-    display: block;
+    padding: 20px 15px; font-size: 1.3rem; font-weight: bold;
+    color: white; background-color: rgba(0, 0, 0, 0.2);
+    text-decoration: none; display: block;
 }
-
 .sidebar-wrapper {
-    background-color: var(--sidebar-bg-color);
-    width: var(--sidebar-width);
-    display: flex; 
-    flex-direction: column;
-}
-
-/* =========================================
-   5. DROPDOWN STYLING
-   ========================================= */
-.dropdown-menu,
-.dropdown-menu-osa {
-    background-color: #144018 !important; 
-    color: #ffffff !important;           
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-    z-index: 2000 !important;
-    border-radius: 0.5rem; /* Auch hier runder */
-}
-
-.dropdown-menu .dropdown-item,
-.dropdown-menu-osa .dropdown-item {
-    color: rgba(255, 255, 255, 0.85) !important;
-    padding: 8px 20px;
-    font-size: 0.95rem;
-}
-
-.dropdown-menu .dropdown-item:hover,
-.dropdown-menu .dropdown-item:focus {
-    color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.15) !important; 
-}
-
-.dropdown-menu .dropdown-item i {
-    width: 20px;
-    text-align: center;
-    margin-right: 10px;
-    color: var(--sidebar-accent);
-}
-
-.dropdown-menu .dropdown-divider {
-    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-.dropdown-menu .dropdown-header {
-    color: rgba(255, 255, 255, 0.5) !important;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Checkboxen im Dropdown */
-.dropdown-menu .form-check-input {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-}
-.dropdown-menu .form-check-input:checked {
-    background-color: var(--sidebar-accent) !important;
-    border-color: var(--sidebar-accent) !important;
-}
-.dropdown-menu .form-check-label {
-    color: white !important;
+    background-color: var(--sidebar-bg-color); width: var(--sidebar-width);
+    display: flex; flex-direction: column;
 }
 
 
