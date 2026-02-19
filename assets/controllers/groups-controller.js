@@ -8,6 +8,11 @@ export default class extends Controller {
     static values = { saveUrl: String };
 
     connect() {
+        console.log("🚀 BINGO! Der Groups-Controller ist geladen!"); // <--- DAS HIER EINFÜGEN
+        this.modalInstance = new Modal(this.modalTarget);
+    }
+
+    connect() {
         // Initialisiert das Bootstrap-Modal, sobald der Controller geladen ist
         this.modalInstance = new Modal(this.modalTarget);
     }
