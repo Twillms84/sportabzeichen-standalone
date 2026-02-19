@@ -86,10 +86,19 @@
 [data-bs-theme="dark"] .filter-toolbar .form-select,
 [data-bs-theme="dark"] .filter-toolbar .form-control,
 [data-bs-theme="dark"] .filter-toolbar .btn-outline-secondary {
-    /* Kräftiges Grün als Hintergrund, helle Schrift */
-    background-color: var(--osa-green, #2c5e32) !important;
-    border: 1px solid var(--sidebar-accent, #2ecc71) !important;
+    /* Dunkles Grün als Hintergrund, helle Schrift */
+    background-color: var(--osa-green-hover, #1e4223) !important;
+    border: 1px solid transparent !important; /* Rahmen weg */
     color: #ffffff !important; 
+}
+
+[data-bs-theme="dark"] .filter-toolbar .form-select:hover,
+[data-bs-theme="dark"] .filter-toolbar .form-control:hover,
+[data-bs-theme="dark"] .filter-toolbar .btn-outline-secondary:hover,
+[data-bs-theme="dark"] .filter-toolbar .form-select:focus,
+[data-bs-theme="dark"] .filter-toolbar .form-control:focus {
+    border-color: var(--sidebar-accent, #2ecc71) !important;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2) !important;
 }
 
 /* Weißer Pfeil für Darkmode-Dropdowns */
@@ -97,17 +106,28 @@
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
 }
 
-[data-bs-theme="dark"] .filter-toolbar .form-select:focus,
-[data-bs-theme="dark"] .filter-toolbar .form-control:focus {
-    background-color: var(--osa-green-hover, #1e4223) !important;
-    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.3) !important;
-    border-color: var(--sidebar-accent, #2ecc71) !important;
+/* --- GEÖFFNETES DROPDOWN-MENÜ (Dark Mode) --- */
+[data-bs-theme="dark"] .filter-toolbar .dropdown-menu,
+[data-bs-theme="dark"] .bootstrap-select .dropdown-menu {
+    background-color: var(--osa-green-hover, #1e4223) !important; /* Dunkelgrüner Texthintergrund */
+    border: 1px solid var(--sidebar-accent, #2ecc71) !important;
+}
+[data-bs-theme="dark"] .filter-toolbar .dropdown-item,
+[data-bs-theme="dark"] .bootstrap-select .dropdown-item {
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .filter-toolbar .dropdown-item:hover,
+[data-bs-theme="dark"] .bootstrap-select .dropdown-item:hover {
+    background-color: rgba(46, 204, 113, 0.3) !important;
 }
 
-/* Hover-Effekte für Buttons in der Toolbar */
-.filter-toolbar .btn-outline-secondary:hover {
-    background-color: var(--osa-green) !important;
-    color: #fff !important;
+/* Der aktive Haken im Darkmode (Helles Grün als Highlight) */
+[data-bs-theme="dark"] .filter-toolbar .dropdown-item.active, 
+[data-bs-theme="dark"] .filter-toolbar .dropdown-item:active,
+[data-bs-theme="dark"] .bootstrap-select .dropdown-item.active,
+[data-bs-theme="dark"] .bootstrap-select .dropdown-item.selected {
+    background-color: var(--sidebar-accent, #2ecc71) !important;
+    color: #000 !important;
 }
 
 /* Toolbar Utilities */
