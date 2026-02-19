@@ -5,13 +5,7 @@
 {% block body %}
 <div class="container-fluid">
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'import'} %}
-
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ path('admin_exam_overview') }}">Übersicht</a></li>
-            <li class="breadcrumb-item active">{{ exam.name }}</li>
-        </ol>
-    </nav>
+    
     {# Header Bereich #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
