@@ -35,11 +35,22 @@
 .filter-toolbar .form-select,
 .filter-toolbar .form-control,
 .filter-toolbar .btn-outline-secondary {
-    /* Helles Grün als Hintergrund, dunkle Schrift */
-    background-color: rgba(46, 204, 113, 0.15) !important; 
-    border: 1px solid rgba(46, 204, 113, 0.4) !important;
+    /* Helles Mintgrün als Hintergrund, dunkle Schrift */
+    background-color: #eafaf1 !important; 
+    border: 1px solid transparent !important; /* Rahmen standardmäßig unsichtbar */
     color: var(--osa-green-hover, #1e4223) !important; 
     font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+/* Grüner Rahmen nur bei Hover & Focus */
+.filter-toolbar .form-select:hover,
+.filter-toolbar .form-control:hover,
+.filter-toolbar .btn-outline-secondary:hover,
+.filter-toolbar .form-select:focus,
+.filter-toolbar .form-control:focus {
+    border-color: var(--sidebar-accent, #2ecc71) !important; 
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2) !important;
 }
 
 /* Dunkelgrüner Pfeil für Lightmode-Dropdowns */
@@ -47,11 +58,28 @@
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e4223' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
 }
 
-.filter-toolbar .form-select:focus,
-.filter-toolbar .form-control:focus {
-    background-color: rgba(46, 204, 113, 0.25) !important;
-    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.3) !important; 
-    border-color: var(--osa-green) !important;
+/* --- GEÖFFNETES DROPDOWN-MENÜ (Light Mode) --- */
+.filter-toolbar .dropdown-menu,
+.bootstrap-select .dropdown-menu {
+    background-color: #eafaf1 !important; /* Mintgrüner Texthintergrund */
+    border: 1px solid var(--sidebar-accent, #2ecc71) !important;
+}
+.filter-toolbar .dropdown-item,
+.bootstrap-select .dropdown-item {
+    color: #144018 !important;
+}
+.filter-toolbar .dropdown-item:hover,
+.bootstrap-select .dropdown-item:hover {
+    background-color: rgba(46, 204, 113, 0.2) !important;
+}
+
+/* Der aktive Haken (Dunkelgrün statt Bootstrap-Blau) */
+.filter-toolbar .dropdown-item.active, 
+.filter-toolbar .dropdown-item:active,
+.bootstrap-select .dropdown-item.active,
+.bootstrap-select .dropdown-item.selected {
+    background-color: var(--osa-green, #2c5e32) !important;
+    color: #fff !important;
 }
 
 /* DARK MODE */
