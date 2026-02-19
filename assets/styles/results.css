@@ -288,10 +288,10 @@
 /* Die Grundbox des "Stempels" (Punkte / Gesamt) */
 .result-badge-box {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-width: 55px; padding: 2px 8px; border-radius: 8px;
+    width: 70px; 
+    padding: 2px 4px;
     border: 1px solid #ced4da !important;
     
-    /* FIX: Immer heller Hintergrund und dunkle Schrift, egal welches Theme! */
     background-color: #f8f9fa !important; 
     color: #212529 !important; 
     
