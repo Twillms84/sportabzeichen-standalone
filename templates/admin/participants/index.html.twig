@@ -44,10 +44,12 @@
                             <option value="{{ group.id }}">{{ group.name }}</option>
                         {% endfor %}
                     </select>
-                    <button class="btn btn-light btn-sm fw-bold" 
-                            data-action="click->admin-participant#assignGroup"
+                    <button class="btn btn-light btn-sm fw-bold shadow-sm" 
+                            data-action="click->admin-participant#confirmAction"
+                            data-confirm-message="{{ 'Möchtest du die gewählten Teilnehmer der ausgewählten Gruppe zuweisen?'|trans }}"
+                            data-confirm-type="primary"
                             data-url="{{ path('admin_participants_bulk_assign_group') }}">
-                        {{ 'Anwenden'|trans }}
+                        <i class="bi bi-check-lg me-1"></i> {{ 'Anwenden'|trans }}
                     </button>
                 </div>
             </div>
@@ -156,9 +158,11 @@
                                         </button>
                                         
                                         <form method="post" 
-                                              action="{{ path('admin_participants_delete', {id: p.id}) }}" 
-                                              class="d-inline" 
-                                              onsubmit="return confirm('{{ 'Teilnehmer wirklich löschen?'|trans }}');">
+                                            action="{{ path('admin_participants_delete', {id: p.id}) }}" 
+                                            class="d-inline" 
+                                            data-action="submit->admin-participant#confirmAction"
+                                            data-confirm-message="{{ 'Möchtest du diesen Teilnehmer wirklich unwiderruflich löschen?'|trans }}"
+                                            data-confirm-type="danger">
                                             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ p.id) }}">
                                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                                 <i class="bi bi-trash"></i>
