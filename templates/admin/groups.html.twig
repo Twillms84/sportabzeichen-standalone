@@ -3,16 +3,8 @@
 {% block title %}Gruppenverwaltung{% endblock %}
 
 {% block body %}
-    {# --- TABS MENÜ --- #}
-    {% set tabs = [
-        { id: 'exams', route: 'admin_exam_overview', icon: 'fa-home', label: 'Übersicht' },
-        { id: 'users', route: 'admin_user_index', icon: 'fa-user-tie', label: 'Personal' }, 
-        { id: 'participants_manage', route: 'admin_participants_index', icon: 'fa-users', label: 'Teilnehmer' },
-        { id: 'groups', route: 'admin_group_index', icon: 'fa-layer-group', label: 'Gruppen' },
-        { id: 'institution_edit', route: 'admin_institution_settings', icon: 'fa-university', label: 'Schuldaten' },
-        { id: 'institutions', route: 'admin_institution_index', icon: 'fa-university', label: 'Schulen / Inst.', role: 'ROLE_SUPER_ADMIN' },
-        { id: 'requirements', route: 'admin_requirements_upload', icon: 'fa-list-alt', label: 'Anforderungen', role: 'ROLE_SUPER_ADMIN' }
-    ] %}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'admin_group_index'} %}
+
 
     <div class="mb-4">
         <ul class="nav nav-tabs">
