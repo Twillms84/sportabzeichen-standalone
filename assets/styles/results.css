@@ -31,117 +31,65 @@
    Dropdowns & Inputs in der Toolbar (Einheitlich für Light & Dark Mode)
    ----------------------------------------- */
 
-/* ZUGEKLAPPTER MODUS (Immer leicht dunkler als die Toolbar) */
-.filter-toolbar .form-select,
-.filter-toolbar .form-control,
-.filter-toolbar .btn-outline-secondary,
-.bootstrap-select > .dropdown-toggle {
-    background-color: rgba(0, 0, 0, 0.25) !important; /* Verdunkelt das Grün der Toolbar */
-    border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-    color: #ffffff !important; 
-    font-weight: 600;
-    transition: all 0.2s ease;
+/* 1. Hintergrund des Menüs auf Hell zwingen (Light & Dark Mode) */
+.filter-toolbar .bootstrap-select .dropdown-menu,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu {
+    background-color: #f8f9fa !important;
 }
 
-/* Hover & Focus (Rahmen wird sichtbar) */
-.filter-toolbar .form-select:hover,
-.filter-toolbar .form-control:hover,
-.filter-toolbar .btn-outline-secondary:hover,
-.bootstrap-select > .dropdown-toggle:hover,
-.filter-toolbar .form-select:focus,
-.filter-toolbar .form-control:focus,
-.bootstrap-select > .dropdown-toggle:focus {
-    background-color: rgba(0, 0, 0, 0.4) !important; /* Noch einen Tick dunkler */
-    border-color: var(--sidebar-accent, #2ecc71) !important; 
-    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2) !important;
+/* 2. Textfarbe der Optionen auf Dunkel zwingen (Light & Dark Mode) */
+.filter-toolbar .bootstrap-select .dropdown-menu li a,
+.filter-toolbar .bootstrap-select .dropdown-menu li a span.text,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a span.text {
+    color: #212529 !important;
 }
 
-/* Weißer Pfeil für Dropdowns (da Hintergrund immer dunkel ist) */
-.filter-toolbar .form-select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+/* 3. Hover-Effekt auf Listenelemente (Helles Mintgrün) */
+.filter-toolbar .bootstrap-select .dropdown-menu li a:hover,
+.filter-toolbar .bootstrap-select .dropdown-menu li a:hover span.text,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a:hover,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a:hover span.text {
+    background-color: rgba(46, 204, 113, 0.15) !important;
+    color: #144018 !important;
 }
 
-/* =========================================
-   GEÖFFNETES DROPDOWN-MENÜ (CSS-Variablen überschreiben)
-   ========================================= */
-
-/* 1. Wir zwingen Bootstrap, seine eigenen Darkmode-Variablen für diese Dropdowns zu ignorieren */
-.filter-toolbar .dropdown-menu,
-.bootstrap-select .dropdown-menu,
-[data-bs-theme="dark"] .filter-toolbar .dropdown-menu,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-menu {
-    --bs-dropdown-bg: #f8f9fa !important;
-    --bs-dropdown-color: #212529 !important;
-    --bs-dropdown-link-color: #212529 !important;
-    --bs-dropdown-link-hover-color: #144018 !important;
-    --bs-dropdown-link-hover-bg: rgba(46, 204, 113, 0.15) !important;
-    --bs-dropdown-link-active-color: #144018 !important;
-    --bs-dropdown-link-active-bg: rgba(46, 204, 113, 0.25) !important;
-    
-    background-color: var(--bs-dropdown-bg) !important;
-    border: 1px solid #ced4da !important;
+/* 4. Aktives / Ausgewähltes Element (Grüner Hintergrund, dunkle Schrift) */
+.filter-toolbar .bootstrap-select .dropdown-menu li.selected a,
+.filter-toolbar .bootstrap-select .dropdown-menu li.active a,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li.selected a,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li.active a {
+    background-color: rgba(46, 204, 113, 0.3) !important;
 }
 
-/* 2. Den tatsächlichen Text-Container in bootstrap-select angreifen */
-.bootstrap-select .dropdown-item,
-.filter-toolbar .dropdown-item,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item,
-[data-bs-theme="dark"] .filter-toolbar .dropdown-item,
-.bootstrap-select .dropdown-item span.text,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item span.text {
-    color: var(--bs-dropdown-link-color) !important;
+.filter-toolbar .bootstrap-select .dropdown-menu li.selected a span.text,
+.filter-toolbar .bootstrap-select .dropdown-menu li.active a span.text,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li.selected a span.text,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li.active a span.text {
+    color: #144018 !important; /* Text bleibt dunkelgrün, auch bei Auswahl */
 }
 
-/* 3. Hover-Effekt auf den Text */
-.bootstrap-select .dropdown-item:hover span.text,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item:hover span.text {
-    color: var(--bs-dropdown-link-hover-color) !important;
-}
-
-/* =========================================
-   HAKEN & AUSGEWÄHLTE ELEMENTE
-   ========================================= */
-
-/* Hintergrund & Text der aktiven Zeile */
-.bootstrap-select .dropdown-item.active,
-.bootstrap-select .dropdown-item.selected,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item.active,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item.selected {
-    background-color: var(--bs-dropdown-link-active-bg) !important;
-}
-
-.bootstrap-select .dropdown-item.active span.text,
-.bootstrap-select .dropdown-item.selected span.text,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item.active span.text,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item.selected span.text {
-    color: var(--bs-dropdown-link-active-color) !important;
-}
-
-/* Der Haken selbst (grün statt blau) */
-.bootstrap-select .dropdown-item .check-mark,
-[data-bs-theme="dark"] .bootstrap-select .dropdown-item .check-mark {
+/* 5. Der Blaue Haken - radikal auf Grün zwingen */
+/* Bootstrap Select zeichnet den Haken oft über den Rahmen eines Pseudo-Elements (::after) */
+.filter-toolbar .bootstrap-select .dropdown-menu li a .check-mark,
+.filter-toolbar .bootstrap-select .dropdown-menu li a .check-mark::after,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a .check-mark,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .dropdown-menu li a .check-mark::after {
+    border-color: #2c5e32 !important; 
     color: #2c5e32 !important; 
 }
 
-/* =========================================
-   "ALLE" / "KEINE" BUTTONS (bs-actionsbox)
-   ========================================= */
-
-.bootstrap-select .bs-actionsbox .actions-btn,
-.bootstrap-select .bs-actionsbox .btn,
-[data-bs-theme="dark"] .bootstrap-select .bs-actionsbox .actions-btn,
-[data-bs-theme="dark"] .bootstrap-select .bs-actionsbox .btn {
-    color: #2c5e32 !important; 
+/* 6. Alle/Keine Buttons (Kein Blau mehr!) */
+.filter-toolbar .bootstrap-select .bs-actionsbox .btn,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .bs-actionsbox .btn {
+    color: #2c5e32 !important;
     background-color: transparent !important;
     border: none !important;
-    font-weight: 600;
-    box-shadow: none !important;
 }
-
-.bootstrap-select .bs-actionsbox .actions-btn:hover,
-.bootstrap-select .bs-actionsbox .btn:hover {
-    color: #144018 !important; 
-    text-decoration: underline;
+.filter-toolbar .bootstrap-select .bs-actionsbox .btn:hover,
+[data-bs-theme="dark"] .filter-toolbar .bootstrap-select .bs-actionsbox .btn:hover {
+    color: #144018 !important;
+    text-decoration: underline !important;
 }
 
 /* --- SEARCH ICON BOX (Falls eine Suchleiste in der Toolbar ist) --- */
