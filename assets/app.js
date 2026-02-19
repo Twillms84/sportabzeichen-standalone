@@ -12,23 +12,22 @@ window.jQuery = window.$ = $;
 import * as bootstrap from 'bootstrap'; 
 import 'bootstrap-select';
 
+// --- STIMULUS SETUP ---
+import { Application } from '@hotwired/stimulus';
+const app = Application.start();
 
-import { Application } from '@hotwired/stimulus'; // Stimulus Application importieren
-const app = Application.start(); // Stimulus starten
-
-// Deine Controller importieren
+// Controller-Klassen importieren
 import GroupsController from './controllers/groups_controller.js';
+import ParticipantController from './controllers/admin_participant_controller.js';
+// (Falls du die anderen auch als Stimulus-Klassen hast, hier importieren)
 
-// Controller manuell bei Stimulus registrieren
+// Controller manuell registrieren
 app.register('groups', GroupsController);
+app.register('admin-participant', ParticipantController); // <--- WICHTIG: passend zum Twig-Namen
 
-
-console.log('App started & Bootstrap loaded');
-// Deine Controller
+// --- ANDERE JS LOGIK (Non-Stimulus oder Legacy) ---
 import './controllers/exam_results_autosave.js';
 import './controllers/exam_results_filter.js';
-
-import './controllers/admin_participant.js';
 import './controllers/exam_dashboard.js';
 
 // Styles
