@@ -116,7 +116,7 @@ body {
     color: #fff !important;
 }
 
-/* Bootstrap Select Plugin Fix */
+/* Bootstrap Select Plugin Fix (Entschärft für results.css Overrides) */
 .bootstrap-select > .dropdown-toggle {
     background-color: var(--input-bg) !important;
     border: 1px solid var(--input-border) !important;
@@ -128,11 +128,16 @@ body {
     outline: none !important;
 }
 .bootstrap-select .dropdown-menu {
-    background-color: var(--input-bg) !important;
-    border: 1px solid var(--app-border) !important;
+    background-color: var(--input-bg);
+    border: 1px solid var(--app-border);
 }
-.bootstrap-select .dropdown-menu li a { color: var(--app-text) !important; }
-.bootstrap-select .dropdown-menu li a:hover { background-color: var(--osa-green) !important; color: #fff !important; }
+.bootstrap-select .dropdown-menu li a { 
+    color: var(--app-text); /* WICHTIG: Kein !important mehr hier */
+}
+.bootstrap-select .dropdown-menu li a:hover { 
+    background-color: var(--osa-green); 
+    color: #fff; 
+}
 
 /* Normale Inputs */
 .form-control, .form-select {
