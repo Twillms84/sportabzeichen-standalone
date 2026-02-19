@@ -71,4 +71,26 @@ export default class extends Controller {
             alert('Netzwerkfehler beim Speichern der Gruppe.');
         });
     }
+
+    delete(event) {
+        const { id, name, url } = event.currentTarget.dataset;
+
+        if (!confirm(`Möchtest du die Gruppe "${name}" wirklich löschen?`)) {
+            return;
+        }
+
+        fetch(url, {
+            method: 'DELETE',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Fehler beim Löschen: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 }
