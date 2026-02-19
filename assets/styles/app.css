@@ -1,50 +1,47 @@
 /* =========================================
-   1. KONFIGURATION & BASIS
+   1. KONFIGURATION & THEMES (LIGHT / DARK)
    ========================================= */
-:root {
-    /* DEINE ORIGINALEN OSA-VARIABLEN */
-    --osa-bg: #121212;
-    --osa-card-bg: #1e1e1e;
-    --osa-border: #333333;
+:root, [data-bs-theme="light"] {
+    /* --- BRAND FARBEN (Immer gleich) --- */
     --osa-green: #2c5e32;
     --osa-green-hover: #1e4223;
-    --osa-text: #e9ecef;
-    --osa-input-bg: #2b3035;
-
-    /* Sidebar-Farben */
     --sidebar-bg-color: #144018; 
     --sidebar-accent: #2ecc71; 
     --sidebar-width: 250px;
 
-    /* App-Farben (Light Mode Standard) */
+    /* --- LIGHT MODE VARIABLEN --- */
     --app-bg: #f4f7f6;      
     --app-card-bg: #ffffff;
     --app-text: #2c3e50;
     --app-border: #dee2e6;
     --app-muted: #6c757d;
     
-    /* Hintergrund für Inputs (Light) */
+    /* Inputs & Dropdowns (Light) */
     --input-bg: #ffffff;
     --input-border: #ced4da;
+    --input-text: #2c3e50;
     --input-focus-border: #2ecc71; 
     --input-focus-shadow: rgba(46, 204, 113, 0.25);
-}
 
-/* Bootstrap Variablen überschreiben */
-[data-bs-theme="light"] {
+    /* Bootstrap System-Variablen überschreiben */
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
 }
 
 [data-bs-theme="dark"] {
-    --app-bg: #1a1d20;      
-    --app-card-bg: #212529; 
-    --app-text: #f8f9fa;    
-    --app-border: #495057;  
+    /* --- DARK MODE VARIABLEN --- */
+    --app-bg: #121212;      
+    --app-card-bg: #1e1e1e; 
+    --app-text: #e9ecef;    
+    --app-border: #333333;  
     --app-muted: #adb5bd;
+    
+    /* Inputs & Dropdowns (Dark) */
     --input-bg: #2b3035;
     --input-border: #495057;
+    --input-text: #ffffff;
 
+    /* Bootstrap System-Variablen überschreiben */
     --bs-body-bg: var(--app-bg);
     --bs-body-color: var(--app-text);
     --bs-border-color: var(--app-border);
@@ -52,20 +49,28 @@
     --bs-tertiary-bg:  #343a40; 
 }
 
+/* =========================================
+   2. GLOBALES LAYOUT
+   ========================================= */
 body {
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: var(--osa-bg); /* Nutzt wieder original OSA-BG */
-    color: var(--osa-text); /* Nutzt wieder original OSA-Text */
+    background-color: var(--app-bg);
+    color: var(--app-text);
     transition: background-color 0.3s ease, color 0.3s ease;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* =========================================
-   2. BUTTONS & CARDS (ORIGINAL TEMPLATE)
+   3. BUTTONS & CARDS
    ========================================= */
-
 /* Buttons */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
 .btn-primary, .btn-success, .btn-osa-primary, .btn-osa-success {
     background-color: var(--osa-green) !important;
     border-color: var(--osa-green) !important;
@@ -75,87 +80,73 @@ body {
     background-color: var(--osa-green-hover) !important;
     border-color: var(--osa-green-hover) !important;
 }
-.btn-outline-secondary { color: #adb5bd; border-color: #495057; }
-.btn-outline-secondary:hover { background-color: #343a40; color: #fff; }
+.btn-outline-secondary { color: var(--app-muted); border-color: var(--app-border); }
+.btn-outline-secondary:hover { background-color: var(--input-bg); color: var(--app-text); }
 
-/* Allgemeine Button Anpassung (aus neuem Design) */
-.btn {
-    border-radius: 0.5rem;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-/* Cards (wieder hart auf deine Farben gesetzt) */
+/* Cards */
 .card, .osa-card {
-    background-color: var(--osa-card-bg) !important;
-    border: 1px solid var(--osa-border) !important;
-    color: var(--osa-text) !important;
+    background-color: var(--app-card-bg) !important;
+    border: 1px solid var(--app-border) !important;
+    color: var(--app-text) !important;
 }
 .card-header {
     background-color: var(--osa-green) !important;
     color: #fff !important;
-    border-bottom: 1px solid var(--osa-border) !important;
+    border-bottom: 1px solid var(--app-border) !important;
 }
 .list-group-item {
-    background-color: var(--osa-card-bg) !important;
-    border-color: var(--osa-border) !important;
-    color: var(--osa-text) !important;
+    background-color: var(--app-card-bg) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
 }
 
 /* =========================================
-   3. DROPDOWNS & PLUGINS (ORIGINAL TEMPLATE)
+   4. DROPDOWNS & INPUTS (inkl. Bootstrap Select)
    ========================================= */
-
-/* Dropdowns (Bootstrap 5 Standard) */
+/* Normale Dropdowns */
 .dropdown-menu {
-    background-color: var(--osa-input-bg) !important;
-    border: 1px solid #495057 !important;
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--app-border) !important;
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.5);
-    z-index: 9999 !important; /* EXTREM WICHTIG - FIX FÜR DIE DROPDOWNS */
+    z-index: 9999 !important; /* EXTREM WICHTIG */
 }
-.dropdown-item { color: #dee2e6 !important; cursor: pointer; }
+.dropdown-item { color: var(--app-text) !important; cursor: pointer; }
 .dropdown-item:hover, .dropdown-item:focus {
     background-color: var(--osa-green) !important;
     color: #fff !important;
 }
 
-/* Bootstrap Select Fix */
+/* Bootstrap Select Plugin Fix */
 .bootstrap-select > .dropdown-toggle {
-    background-color: var(--osa-input-bg) !important;
-    border: 1px solid #495057 !important;
-    color: #fff !important;
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    color: var(--input-text) !important;
 }
 .bootstrap-select > .dropdown-toggle:hover, 
 .bootstrap-select > .dropdown-toggle:focus {
     border-color: var(--osa-green) !important;
-    background-color: #343a40 !important;
     outline: none !important;
 }
 .bootstrap-select .dropdown-menu {
-    background-color: var(--osa-input-bg) !important;
-    border: 1px solid #495057 !important;
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--app-border) !important;
 }
-.bootstrap-select .dropdown-menu li a {
-    color: #dee2e6 !important;
-}
-.bootstrap-select .dropdown-menu li a:hover {
-    background-color: var(--osa-green) !important;
-}
+.bootstrap-select .dropdown-menu li a { color: var(--app-text) !important; }
+.bootstrap-select .dropdown-menu li a:hover { background-color: var(--osa-green) !important; color: #fff !important; }
 
-/* Inputs (Original) */
+/* Normale Inputs */
 .form-control, .form-select {
-    background-color: var(--osa-input-bg); 
-    border: 1px solid #495057; 
-    color: #fff;
+    background-color: var(--input-bg); 
+    border: 1px solid var(--input-border); 
+    color: var(--input-text);
     border-radius: 0.5rem;
     padding: 0.6rem 1rem;
     font-size: 0.95rem;
     transition: all 0.2s ease-in-out;
 }
 .form-control:focus, .form-select:focus { 
-    background-color: #33393f; 
-    color: #fff; 
+    background-color: var(--input-bg); 
+    color: var(--input-text); 
     border-color: var(--osa-green); 
     box-shadow: 0 0 0 4px var(--input-focus-shadow);
     outline: none;
@@ -166,7 +157,7 @@ body {
 }
 
 /* =========================================
-   4. TOASTS (DIE NEUEN POPUPS)
+   5. TOASTS (DIE NEUEN POPUPS)
    ========================================= */
 .toast-container { z-index: 1060; }
 .custom-toast {
@@ -176,10 +167,16 @@ body {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: hidden;
+    color: #000;
+}
+[data-bs-theme="dark"] .custom-toast {
+    background: rgba(30, 30, 30, 0.85) !important;
+    color: #fff;
+    border: 1px solid #444;
 }
 .toast-progress {
     position: absolute; bottom: 0; left: 0;
-    height: 4px; background: rgba(0, 0, 0, 0.2); width: 100%;
+    height: 4px; background: rgba(128, 128, 128, 0.2); width: 100%;
 }
 .toast-progress-fill {
     height: 100%; background-color: currentColor; width: 100%;
@@ -191,7 +188,7 @@ body {
 }
 
 /* =========================================
-   5. SIDEBAR (DUNKELGRÜN)
+   6. SIDEBAR (DUNKELGRÜN)
    ========================================= */
 .sidebar {
     background-color: var(--sidebar-bg-color);
@@ -217,77 +214,32 @@ body {
     display: flex; flex-direction: column;
 }
 
-
 /* =========================================
-   6. RESPONSIVE LAYOUT
+   7. RESPONSIVE LAYOUT
    ========================================= */
-
 @media (min-width: 992px) {
     .sidebar-wrapper {
-        transform: none !important;
-        visibility: visible !important;
-        display: block !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: var(--sidebar-width);
-        z-index: 100;
-        overflow-y: auto;
+        transform: none !important; visibility: visible !important;
+        display: block !important; position: fixed;
+        top: 0; left: 0; bottom: 0; width: var(--sidebar-width);
+        z-index: 100; overflow-y: auto;
     }
-
-    .main-content {
-        margin-left: var(--sidebar-width);
-        padding: 30px; /* Mehr Platz am Desktop */
-    }
-
-    .mobile-header, .offcanvas-header {
-        display: none !important;
-    }
+    .main-content { margin-left: var(--sidebar-width); padding: 30px; }
+    .mobile-header, .offcanvas-header { display: none !important; }
 }
-
 @media (max-width: 991px) {
-    .main-content {
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 768px) {
-    .main-content {
-        padding: 0 !important; 
-    }
-    
-    .container-fluid {
-        padding: 0 !important;
-    }
-
-    .card {
-        border-radius: 0 !important;
-        border-left: none !important;
-        border-right: none !important;
-        box-shadow: none !important;
-    }
-
-    .mobile-header {
-        border-bottom: 1px solid var(--app-border);
-        background-color: var(--sidebar-bg-color);
-        color: white;
-    }
-}
-
-.offcanvas.show {
-    z-index: 1055 !important;
-}
-
-@media (max-width: 991px) {
-    /* Zwingt das Offcanvas-Menü auf die exakte sichtbare Höhe */
+    .main-content { margin-left: 0; }
     .offcanvas, .offcanvas-lg, .offcanvas-start, .sidebar-wrapper {
-        height: 100dvh !important;
-        max-height: 100dvh !important;
+        height: 100dvh !important; max-height: 100dvh !important;
     }
-    
-    /* Stellt sicher, dass die Sidebar den Platz füllt */
-    .sidebar {
-        height: 100% !important;
+    .sidebar { height: 100% !important; }
+}
+@media (max-width: 768px) {
+    .main-content { padding: 0 !important; }
+    .container-fluid { padding: 0 !important; }
+    .card { border-radius: 0 !important; border-left: none !important; border-right: none !important; box-shadow: none !important; }
+    .mobile-header {
+        border-bottom: 1px solid var(--app-border); background-color: var(--sidebar-bg-color); color: white;
     }
 }
+.offcanvas.show { z-index: 1055 !important; }
