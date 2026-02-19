@@ -80,3 +80,8 @@
     </div>
 </div>
 {% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('controllers/groups-controller.js') }}"></script>
+{% endblock %}

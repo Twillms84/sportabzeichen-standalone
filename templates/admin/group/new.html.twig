@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Neue Gruppe anlegen{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">Neue Gruppe anlegen</h2>
+        <a href="{{ path('app_admin_group_index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Zurück zur Übersicht
+        </a>
+    </div>
+
+    <div class="card shadow-sm col-lg-6">
+        <div class="card-body">
+            {{ form_start(form) }}
+                {{ form_row(form.name) }}
+                <div class="mt-4">
+                    <button class="btn btn-success"><i class="fas fa-save"></i> Speichern</button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
