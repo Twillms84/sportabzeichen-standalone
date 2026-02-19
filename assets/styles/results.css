@@ -134,13 +134,13 @@
 .filter-dropdown-scroll { min-width: 250px; max-height: 400px; overflow-y: auto; }
 .search-container { min-width: 200px; }
 .search-icon-box { 
-    border-color: rgba(46, 204, 113, 0.4) !important; 
-    background-color: rgba(46, 204, 113, 0.15) !important; 
+    border-color: transparent !important; 
+    background-color: #eafaf1 !important; 
     color: var(--osa-green-hover, #1e4223) !important; 
 }
 [data-bs-theme="dark"] .search-icon-box {
-    border-color: var(--sidebar-accent, #2ecc71) !important; 
-    background-color: var(--osa-green, #2c5e32) !important; 
+    border-color: transparent !important; 
+    background-color: var(--osa-green-hover, #1e4223) !important; 
     color: #ffffff !important; 
 }
 
