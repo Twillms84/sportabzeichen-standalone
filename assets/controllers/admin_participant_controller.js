@@ -96,32 +96,37 @@ export default class extends Controller {
     }
     confirmAction(event) {
         event.preventDefault();
-        
         const target = event.currentTarget;
         const form = target.closest('form');
-        const message = target.dataset.confirmMessage || "Möchtest du das wirklich tun?";
-        const type = target.dataset.confirmType || 'warning'; // default, danger, info...
+        
+        // Wir holen uns die Nachricht und den Typ aus den data-Attributen
+        const message = target.dataset.confirmMessage;
+        const type = target.dataset.confirmType || 'warning';
 
         const modalEl = document.getElementById('confirmActionModal');
         const modal = new bootstrap.Modal(modalEl);
         
-        // UI Anpassungen
+        // Modal-Styling anpassen
         const header = modalEl.querySelector('.modal-header');
-        const btn = modalEl.querySelector('#confirmModalBtn');
+        const confirmBtn = modalEl.querySelector('#confirmModalBtn');
         modalEl.querySelector('#confirmModalBody').textContent = message;
 
-        // Klassen zurücksetzen & neu setzen für das Design
-        header.className = 'modal-header border-0 text-white ' + (type === 'danger' ? 'bg-danger' : 'bg-primary');
-        btn.className = 'btn px-4 shadow-sm ' + (type === 'danger' ? 'btn-danger' : 'btn-primary');
+        header.className = `modal-header border-0 ${type === 'danger' ? 'bg-danger text-white' : 'bg-primary text-white'}`;
+        confirmBtn.className = `btn px-4 shadow-sm ${type === 'danger' ? 'btn-danger' : 'btn-primary'}`;
         
-        // Button Logik
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
+        // Event-Listener für den "Ja"-Button im Modal
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
         
         newBtn.addEventListener('click', () => {
             modal.hide();
-            if (form) form.submit();
-            else this.assignGroup(event); // Falls es kein Form-Submit ist
+            if (form) {
+                // Wenn es ein Formular ist (Löschen), einfach absenden
+                form.submit();
+            } else {
+                // Wenn es kein Formular ist (Bulk-Action), die bestehende Logik aufrufen
+                this.assignGroup(event); 
+            }
         });
         
         modal.show();
