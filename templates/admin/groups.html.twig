@@ -3,7 +3,7 @@
 {% block title %}Gruppenverwaltung{% endblock %}
 
 {% block body %}
-    {% include 'admin/_tabs.html.twig' with {'activeTab': 'admin_group_index'} %}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'groups'} %}
 
     {# Der Hauptcontainer verbindet sich mit dem Stimulus Controller #}
     <div data-controller="groups" data-groups-save-url-value="{{ path('admin_group_save') }}">
@@ -43,7 +43,12 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         {# Den Mülleimer habe ich hier schon mal als Platzhalter eingefügt #}
-                                        <button class="btn btn-sm btn-outline-danger" title="Löschen">
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                title="Löschen"
+                                                data-action="click->groups#delete"
+                                                data-id="{{ group.id }}"
+                                                data-name="{{ group.name }}"
+                                                data-url="{{ path('admin_group_delete', {id: group.id}) }}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </td>
