@@ -27,18 +27,19 @@
     background-color: rgba(255,255,255,0.1); 
 }
 
-/* Dropdowns & Inputs in der Toolbar */
+/* Dropdowns & Inputs in der Toolbar (Dynamisch über App-Variablen) */
 .filter-toolbar .form-select,
 .filter-toolbar .form-control {
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid transparent;
-    color: #144018; 
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text); 
     font-weight: 500;
 }
 
 .filter-toolbar .form-select:focus,
 .filter-toolbar .form-control:focus {
-    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.4); 
+    box-shadow: 0 0 0 4px var(--input-focus-shadow); 
+    border-color: var(--osa-green);
 }
 
 /* Buttons in der Toolbar */
@@ -51,23 +52,16 @@
 .filter-toolbar .btn-outline-secondary:hover,
 .filter-toolbar .btn-outline-secondary:focus,
 .filter-toolbar .show > .btn-outline-secondary.dropdown-toggle {
-    background-color: #fff;
-    color: var(--sidebar-bg-color, #144018); 
-    border-color: #fff;
+    background-color: var(--input-bg);
+    color: var(--input-text); 
+    border-color: var(--input-border);
 }
 
 /* Toolbar Utilities */
-.filter-dropdown-scroll {
-    min-width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-.search-container {
-    min-width: 200px;
-}
-.search-icon-box {
-    border-color: #ccc !important;
-}
+.filter-dropdown-scroll { min-width: 250px; max-height: 400px; overflow-y: auto; }
+.search-container { min-width: 200px; }
+.search-icon-box { border-color: var(--input-border) !important; background-color: var(--input-bg); color: var(--input-text); }
+
 
 /* =========================================
    2. TABELLEN-CONTAINER (Wrapper)
@@ -77,7 +71,7 @@
     border: none; 
     border-radius: 0 0 16px 16px; 
     overflow: hidden; 
-    background-color: var(--app-card-bg, #fff);
+    background-color: var(--app-card-bg);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     max-height: calc(100vh - 180px);
 }
@@ -108,8 +102,8 @@
     position: sticky !important;
     left: 0;
     z-index: 110 !important; 
-    background-color: var(--app-card-bg, #fff);
-    border-right: 2px solid var(--app-border, #dee2e6) !important; 
+    background-color: var(--app-card-bg) !important;
+    border-right: 2px solid var(--app-border) !important; 
     box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 
@@ -122,31 +116,19 @@
 }
 
 /* D. Tabellen-Rahmen (Global) */
-.table-results-compact {
-    border-color: #cfd4da !important; 
-}
+.table-results-compact,
 .table-results-compact th,
 .table-results-compact td {
-    border-color: #cfd4da !important; 
+    border-color: var(--app-border) !important; 
 }
 
-/* Dark Mode: Sticky & Header */
-@media (prefers-color-scheme: dark) {
-    .sticky-header th { 
-        background-color: #0e2e11 !important; 
-        color: #ecf0f1 !important; 
-    }
-    .col-sticky-left { 
-        background-color: #212529; 
-    }
-    .sticky-header th.col-sticky-left { 
-        background-color: #0e2e11 !important; 
-    }
-    .table-results-compact,
-    .table-results-compact th,
-    .table-results-compact td {
-        border-color: #495057 !important; 
-    }
+/* Dark Mode: Sticky & Header Fixes */
+[data-bs-theme="dark"] .sticky-header th { 
+    background-color: #0e2e11 !important; 
+    color: #ecf0f1 !important; 
+}
+[data-bs-theme="dark"] .sticky-header th.col-sticky-left { 
+    background-color: #0e2e11 !important; 
 }
 
 
@@ -156,75 +138,49 @@
 
 /* Namens-Spalte */
 .col-name {
-    width: 160px;
-    min-width: 160px;
-    max-width: 160px;
-    white-space: nowrap;
-    overflow: hidden;
-    background-color: var(--app-card-bg, #fff); 
+    width: 160px; min-width: 160px; max-width: 160px;
+    white-space: nowrap; overflow: hidden;
+    background-color: var(--app-card-bg); 
     z-index: 10; 
 }
-.name-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 5px;
-}
+.name-container { display: flex; flex-direction: column; justify-content: center; padding-left: 5px; }
 .name-main { font-size: 0.9rem; font-weight: 700; line-height: 1.1; color: var(--app-text); }
-.name-age { font-size: 0.8rem; color: #888; margin-top: 1px; }
+.name-age { font-size: 0.8rem; color: var(--app-muted); margin-top: 1px; }
 
 /* Disziplin & Schwimm Spalten (Heller Grünton) */
 .col-discipline, 
 .col-swimming {
     background-color: rgba(20, 64, 24, 0.03); 
-    border-right: 1px solid rgba(0,0,0,0.05); 
+    border-right: 1px solid var(--app-border); 
     vertical-align: middle; 
 }
-.col-discipline {
-    width: 170px;
-    min-width: 170px;
-    text-align: center;
-}
-.col-swimming {
-    width: 100px;      
-    min-width: 100px;
-    max-width: 100px; 
-    padding: 4px !important;
-}
+.col-discipline { width: 170px; min-width: 170px; text-align: center; }
+.col-swimming { width: 100px; min-width: 100px; max-width: 100px; padding: 4px !important; }
 
 /* Ergebnis Spalte */
 .col-result {
-    width: 90px;
-    min-width: 90px;
-    text-align: center;
-    background-color: var(--app-card-bg, #fff); 
+    width: 90px; min-width: 90px; text-align: center;
+    background-color: var(--app-card-bg); 
 }
 .col-hidden { display: none !important; }
 
 /* Dark Mode: Spalten */
-@media (prefers-color-scheme: dark) {
-    .col-name { background-color: #212529 !important; }
-    
-    .col-discipline, 
-    .col-swimming {
-        background-color: rgba(46, 204, 113, 0.05) !important; 
-        border-right-color: #343a40;
-    }
-    .col-result { background-color: #212529 !important; }
+[data-bs-theme="dark"] .col-discipline, 
+[data-bs-theme="dark"] .col-swimming {
+    background-color: rgba(46, 204, 113, 0.05) !important; 
 }
 
 
 /* =========================================
-   5. INPUT FIELDS & FORM ELEMENTS
+   5. INPUT FIELDS IN ZELLEN
    ========================================= */
-
-/* Basis Styles für Inputs in den Zellen */
+/* Wir nutzen jetzt zu 100% die dynamischen App-Variablen! */
 .col-discipline .form-select,
 .col-discipline .form-control,
 .col-swimming .form-select {
-    background-color: rgba(255, 255, 255, 0.6); 
-    border-color: #ced4da;
-    color: #212529;
+    background-color: var(--input-bg); 
+    border-color: var(--input-border);
+    color: var(--input-text);
     transition: all 0.2s ease-in-out;
 }
 
@@ -232,34 +188,16 @@
 .col-discipline .form-select:focus,
 .col-discipline .form-control:focus,
 .col-swimming .form-select:focus {
-    background-color: #fff;
-    border-color: #2ecc71; 
-    box-shadow: 0 0 0 0.2rem rgba(46, 204, 113, 0.25); 
+    background-color: var(--input-bg);
+    border-color: var(--osa-green); 
+    color: var(--input-text);
+    box-shadow: 0 0 0 0.2rem var(--input-focus-shadow); 
 }
 
-/* Dark Mode: Inputs */
-@media (prefers-color-scheme: dark) {
-    .col-discipline .form-select,
-    .col-discipline .form-control,
-    .col-swimming .form-select {
-        background-color: #2b3035; 
-        border-color: #495057;
-        color: #dee2e6;
-    }
-
-    .col-discipline .form-select,
-    .col-swimming .form-select {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-    }
-
-    .col-discipline .form-select:focus,
-    .col-discipline .form-control:focus {
-        background-color: #1a1d20;
-        border-color: #2ecc71; 
-        color: #fff;
-    }
-    
-    .form-control::placeholder { color: #6c757d; }
+/* Dark Mode: Select Dropdown Pfeil anpassen */
+[data-bs-theme="dark"] .col-discipline .form-select,
+[data-bs-theme="dark"] .col-swimming .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 
@@ -268,29 +206,20 @@
    ========================================= */
 /* Die Grundbox des "Stempels" */
 .result-badge-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 55px;           /* Breite für "Bronze" oder "Pkt" */
-    padding: 2px 8px;
-    border-radius: 8px;        /* Abgerundete Ecken für Plaketten-Look */
-    border: 1px solid #dee2e6;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 55px; padding: 2px 8px; border-radius: 8px;
+    border: 1px solid var(--app-border);
+    background-color: var(--app-card-bg); /* Dynamisch statt f8f9fa */
+    color: var(--app-text);
     box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.05);
     transition: all 0.2s ease;
-    background-color: #f8f9fa;
 }
 
-/* Die kleine Beschriftung oben im Badge (Pkt / Rang) */
 .badge-label-small {
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    margin-bottom: -2px;
-    text-transform: uppercase;
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;
+    margin-bottom: -2px; text-transform: uppercase;
 }
 
-/* Hover-Effekt auf dem Teilnehmer-Badge */
 .result-badge-box:hover {
     transform: translateY(-1px);
     box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1);
@@ -303,25 +232,17 @@ tr.bg-bronze-transparent td.col-sticky-left { border-left: 5px solid #d98a4e !im
 /* Gold Stempel */
 .medal-gold, .bg-gold-transparent { 
     background: linear-gradient(180deg, #ffed85 0%, #ffdc2e 100%) !important; 
-    color: #5c4a00 !important; 
-    border: 1px solid #d4af37 !important; 
-    border-left: 4px solid #d4af37 !important; /* Betont den Stempel links */
+    color: #5c4a00 !important; border: 1px solid #d4af37 !important; border-left: 4px solid #d4af37 !important; 
 }
-
 /* Silber Stempel */
 .medal-silber, .medal-silver, .bg-silver-transparent { 
     background: linear-gradient(180deg, #ffffff 0%, #e9ecef 100%) !important; 
-    color: #343a40 !important; 
-    border: 1px solid #adb5bd !important; 
-    border-left: 4px solid #adb5bd !important;
+    color: #343a40 !important; border: 1px solid #adb5bd !important; border-left: 4px solid #adb5bd !important;
 }
-
 /* Bronze Stempel */
 .medal-bronze, .bg-bronze-transparent { 
     background: linear-gradient(180deg, #f2b383 0%, #d98a4e 100%) !important; 
-    color: #fff !important; 
-    border: 1px solid #a65e26 !important; 
-    border-left: 4px solid #a65e26 !important;
+    color: #fff !important; border: 1px solid #a65e26 !important; border-left: 4px solid #a65e26 !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
@@ -330,120 +251,55 @@ tr.bg-bronze-transparent td.col-sticky-left { border-left: 5px solid #d98a4e !im
 .bg-silver-transparent { background-color: rgba(233, 236, 239, 0.4) !important; border-left: 4px solid #adb5bd !important; }
 .bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.15) !important; border-left: 4px solid #d98a4e !important; }
 
+/* Dark Mode: Transparente Medaillen-Reihen dimmen */
+[data-bs-theme="dark"] .bg-gold-transparent { background-color: rgba(255, 220, 46, 0.08) !important; color: #fff !important;}
+[data-bs-theme="dark"] .bg-silver-transparent { background-color: rgba(255, 255, 255, 0.05) !important; color: #fff !important;}
+[data-bs-theme="dark"] .bg-bronze-transparent { background-color: rgba(217, 138, 78, 0.1) !important; color: #fff !important;}
+
 
 /* =========================================
    7. UI HELFER (Schwimmen & Hinweise)
    ========================================= */
 
 /* Schwimm-Container */
-.swimming-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
+.swimming-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 
 /* Checkmark Box */
-.swim-badge-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #198754; 
-}
-.swim-info-text {
-    font-size: 0.8rem;   
-    line-height: 1.1;    
-    white-space: normal;
-    word-wrap: break-word; 
-    text-align: center;
-    display: block;
-}
+.swim-badge-container { display: flex; flex-direction: column; align-items: center; color: var(--osa-green); }
+.swim-info-text { font-size: 0.8rem; line-height: 1.1; white-space: normal; word-wrap: break-word; text-align: center; display: block; color: var(--app-text); }
 
 /* Mülleimer Icon */
 .btn-delete-swimming {
-    border: none;
-    background: transparent !important; 
-    color: #dc3545 !important; 
-    opacity: 0.6;              
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 2px 6px;
-    margin-top: 4px;
-    transition: all 0.2s;
+    border: none; background: transparent !important; color: #dc3545 !important; 
+    opacity: 0.6; font-size: 0.9rem; cursor: pointer; padding: 2px 6px; margin-top: 4px; transition: all 0.2s;
 }
-.btn-delete-swimming:hover {
-    opacity: 1;           
-    transform: scale(1.2); 
-    background: rgba(220, 53, 69, 0.1) !important; 
-    border-radius: 4px;
-}
-/* Kleiner Fix für Custom Größe */
-.btn-delete-swimming-custom {
-    font-size: 0.7rem;
-}
+.btn-delete-swimming:hover { opacity: 1; transform: scale(1.2); background: rgba(220, 53, 69, 0.1) !important; border-radius: 4px; }
+.btn-delete-swimming-custom { font-size: 0.7rem; }
 
 /* Anforderungen (kleine Zahlen unter Input) */
-.req-hint {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-top: 4px;
-    color: #aaa; 
-}
-
+.req-hint { display: flex; justify-content: center; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 4px; color: var(--app-muted); }
 .req-val-b { color: #d98a4e; }
 .req-val-s { color: #7f8c8d; } 
 .req-val-g { color: #b8860b; }
-.req-unit { font-weight: normal; font-size: 0.75rem; color: #aaa; margin-left: 2px; }
+.req-unit { font-weight: normal; font-size: 0.75rem; color: var(--app-muted); margin-left: 2px; }
 
 /* Dark Mode Hints */
-@media (prefers-color-scheme: dark) {
-    .req-val-s { color: #adb5bd; }
-    .req-val-g { color: #ffda6a; }
-    .req-unit { color: #6c757d; }
-}
+[data-bs-theme="dark"] .req-val-s { color: #adb5bd; }
+[data-bs-theme="dark"] .req-val-g { color: #ffda6a; }
 
 /* Card Hover Effekt */
-.exam-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.exam-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-}
+.exam-card { transition: transform 0.2s, box-shadow 0.2s; }
+.exam-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
 
 /* Typografie Helfer */
-.x-small {
-    font-size: 0.7rem;
-    letter-spacing: 0.5px;
-}
+.x-small { font-size: 0.7rem; letter-spacing: 0.5px; }
 
 /* Medaillen Bubbles */
 .medal-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #fff;
-    font-size: 1.1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: #fff; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.bg-gold {
-    background: linear-gradient(135deg, #f1c40f, #f39c12);
-    color: #fff;
-}
-.bg-silver {
-    background: linear-gradient(135deg, #bdc3c7, #95a5a6);
-    color: #fff;
-}
-.bg-bronze {
-    background: linear-gradient(135deg, #e67e22, #d35400);
-    color: #fff;
-}
+.bg-gold { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #fff; }
+.bg-silver { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: #fff; }
+.bg-bronze { background: linear-gradient(135deg, #e67e22, #d35400); color: #fff; }
