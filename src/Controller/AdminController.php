@@ -137,4 +137,50 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_exam_overview');
     }
+    
+    #[Route('/exam/new', name: 'exam_new', methods: ['POST'])]
+    public function new(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $institution = $user->getInstitution();
+
+        // 1. Daten aus dem Request holen
+        $name = $request->request->get('name');
+        $year = (int)$request->request->get('year');
+        $dateString = $request->request->get('date');
+
+        // 2. Validierung (minimal)
+        if (!$name || !$dateString) {
+            $this->addFlash('danger', 'Name und Datum müssen ausgefüllt sein.');
+            return $this->redirectToRoute('admin_exam_overview');
+        }
+
+        // 3. Entity erstellen und befüllen
+        $exam = new Exam();
+        $exam->setName($name);
+        $exam->setYear($year);
+        
+        try {
+            $exam->setDate(new \DateTime($dateString));
+        } catch (\Exception $e) {
+            $this->addFlash('danger', 'Ungültiges Datumsformat.');
+            return $this->redirectToRoute('admin_exam_overview');
+        }
+
+        // Automatisch die Institution setzen
+        $exam->setInstitution($institution);
+        
+        // Falls deine Entity CreatedAt/UpdatedAt nutzt:
+        if (method_exists($exam, 'setCreatedAt')) {
+            $exam->setCreatedAt(new \DateTimeImmutable());
+        }
+
+        $em->persist($exam);
+        $em->flush();
+
+        $this->addFlash('success', sprintf('Prüfung "%s" wurde erfolgreich angelegt.', $name));
+
+        return $this->redirectToRoute('admin_exam_overview');
+    }
 }
