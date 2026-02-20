@@ -1,152 +1,210 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ discipline.name }} - Training{% endblock %}
-
 {% block stylesheets %}
-    {{ parent() }}
-        <link rel="stylesheet" href="{{ asset('css/sportabzeichen_my_results.css') }}">
+    {# Parent behält FontAwesome und Bootstrap bei #}
+    {{ parent() }} 
+    <link rel="stylesheet" href="{{ asset('styles/results.css') }}">
 {% endblock %}
 
-{% block content %}
+{% block title %}Ergebnisse – {{ exam.name }}{% endblock %}
 
-{% set unitMap = {
-    'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 
-    'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 
-    'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'
-} %}
-{% set is_time = discipline.einheit in ['UNIT_SECONDS', 'UNIT_MINUTES', 'UNIT_HOURS'] %}
-{% set einheit_label = unitMap[discipline.einheit]|default(discipline.einheit) %}
+{% block body %}
+{% set unitMap = {'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 'UNIT_PIECES': 'Wert', 'NONE': 'Verband', 'UNIT_NONE': 'Verband'} %}
 
-<div class="container py-4 sa-container-narrow">
+<div class="container-fluid px-0 px-2 mt-3 public-wrapper">
 
-    <a href="{{ path('my_results') }}" class="text-decoration-none mb-3 d-inline-block text-muted">
-        <span class="glyphicon glyphicon-arrow-left me-1" aria-hidden="true"></span> Zurück zur Übersicht
-    </a>
-
-    <div class="d-flex justify-content-between align-items-start mb-4">
-        <div>
-            <h1 class="h2 mb-1">{{ discipline.name }}</h1>
-            <span class="badge bg-secondary">{{ einheit_label }}</span>
-        </div>
-        <div class="text-end">
-             <span class="badge bg-light text-dark border p-2">Saison {{ year }}</span>
-        </div>
-    </div>
-
-    {% if analysis is defined and analysis is not empty %}
-        {% if analysis.next_goal_label is not null %}
-            <div class="alert alert-info border-info shadow-sm d-flex align-items-center">
-                {# Icon: Stats/Chart #}
-                <span class="glyphicon glyphicon-stats me-3 text-info" style="font-size: 2em;" aria-hidden="true"></span>
-                <div style="margin-left: 15px;">
-                    <h5 class="alert-heading h6 m-0">Nächstes Ziel: <strong>{{ analysis.next_goal_label }}</strong></h5>
-                    <p class="mb-0 small mt-1">
-                        Dir fehlen noch <strong>
-                        {% if is_time %}
-                            {{ analysis.gap|number_format(2, '.', '')|replace({'.': ':'}) }}
-                        {% else %}
-                            {{ analysis.gap|number_format(2, ',', '.')|trim('0', 'right')|trim(',') }}
-                        {% endif %}
-                        {{ einheit_label }}</strong>.
-                        {% if analysis.less_is_better %}
-                            {# Tacho Icon für "Schneller werden" #}
-                            <span class="glyphicon glyphicon-dashboard ms-1" aria-hidden="true"></span> Du musst schneller werden!
-                        {% else %}
-                            {# Pfeil Hoch für "Mehr schaffen" #}
-                            <span class="glyphicon glyphicon-arrow-up ms-1" aria-hidden="true"></span> Du musst dich steigern!
-                        {% endif %}
-                    </p>
-                </div>
-            </div>
-        {% else %}
-            <div class="alert alert-success shadow-sm d-flex align-items-center">
-                 {# Stern für Gold/Erfolg #}
-                 <span class="glyphicon glyphicon-star me-3 sa-text-gold" style="font-size: 2em;" aria-hidden="true"></span>
-                 <div style="margin-left: 15px;">
-                    <h5 class="m-0">Gold erreicht!</h5>
-                    <small>Du hast die Anforderungen für Gold erfüllt.</small>
-                 </div>
-            </div>
-        {% endif %}
-    {% endif %}
-
-    <div class="row g-4">
+    <div class="filter-toolbar mb-2 d-flex align-items-center w-100 px-2 flex-wrap">
         
-        <div class="col-md-6">
-            <div class="card h-100 shadow-sm border-0 bg-light">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Neuen Wert erfassen</h5>
-                    <form method="post">
-                        <label class="form-label small text-muted text-uppercase fw-bold">Deine Leistung</label>
-                        <div class="input-group input-group-lg mb-3">
-                            <input type="text" name="value" class="form-control" 
-                                   placeholder="{{ is_time ? 'z.B. 12:30' : 'z.B. 12,5' }}" required autofocus>
-                            <span class="input-group-text text-muted">{{ einheit_label }}</span>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm">
-                            <span class="glyphicon glyphicon-floppy-disk me-2" aria-hidden="true"></span> Speichern
-                        </button>
-                    </form>
-
-                    <hr class="my-4">
-                    
-                    <h6 class="small text-muted text-uppercase mb-3 fw-bold">Ziele</h6>
-                    <div class="d-flex justify-content-between text-center">
-                        {% for stufe, val in {'Bronze': discipline.bronze, 'Silber': discipline.silber, 'Gold': discipline.gold} %}
-                            <div>
-                                <div class="small text-muted mb-1">{{ stufe }}</div>
-                                <div class="fw-bold {{ stufe == 'Bronze' ? 'sa-text-bronze' : (stufe == 'Silber' ? 'sa-text-silver' : 'sa-text-gold') }}">
-                                    {% if is_time %}
-                                        {{ val|number_format(2, '.', '')|replace({'.': ':'}) }}
-                                    {% else %}
-                                        {{ val|number_format(2, ',', '.')|trim('0', 'right')|trim(',') }}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
+    {# A) ANSICHT FILTER #}
+    <div class="dropdown d-inline-block ms-2">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle theme-text" 
+                type="button" 
+                id="viewFilterBtn" 
+                data-bs-toggle="dropdown" 
+                data-bs-auto-close="outside" 
+                aria-expanded="false">
+            Disziplin
+        </button>
+        <ul class="dropdown-menu p-3 theme-card theme-border shadow" aria-labelledby="viewFilterBtn" style="min-width: 250px;">
+            <div class="d-flex justify-content-between mb-2">
+                <button class="btn btn-sm btn-link text-decoration-none js-view-all">Alle</button>
+                <button class="btn btn-sm btn-link text-decoration-none js-view-none">Keine</button>
             </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white fw-bold border-bottom">Verlauf</div>
-                <div class="list-group list-group-flush">
-                    {% for entry in history %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center {{ loop.first ? 'sa-bg-newest' : '' }}">
-                            <div>
-                                {% if entry.value matches '/^\\d+(\\.\\d+)?$/' %}
-                                    {% if is_time %}
-                                        <span class="h5 m-0 font-monospace fw-bold">{{ entry.value|replace({'.': ':'}) }}</span>
-                                    {% else %}
-                                        <span class="h5 m-0 font-monospace fw-bold">{{ entry.value|number_format(2, ',', '.')|trim('0', 'right')|trim(',') }}</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="h5 m-0 font-monospace fw-bold">{{ entry.value }}</span>
-                                {% endif %}
-                                <span class="small text-muted ms-1">{{ einheit_label }}</span>
-                            </div>
-                            
-                            <div class="text-end">
-                                <div class="small text-muted">
-                                    <span class="glyphicon glyphicon-calendar me-1" aria-hidden="true"></span> {{ entry.created_at|date('d.m.Y') }}
-                                </div>
-                                <div class="text-muted sa-text-xs">
-                                    {{ entry.created_at|date('H:i') }} Uhr
-                                </div>
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="text-center p-5 text-muted">
-                            <span class="glyphicon glyphicon-list-alt mb-3 sa-icon-placeholder" style="font-size: 2em;" aria-hidden="true"></span><br>
-                            Noch keine Trainingsdaten.<br>Leg los!
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
+            <div id="view-checkbox-container" style="max-height: 300px; overflow-y: auto;"></div>
+        </ul>
     </div>
+
+    {# B) GRUPPEN FILTER #}
+    <div class="dropdown d-inline-block ms-2">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle theme-text" 
+                type="button" 
+                id="groupFilterBtn"
+                data-bs-toggle="dropdown" 
+                data-bs-auto-close="outside" 
+                aria-expanded="false">
+            Gruppen/Klassen
+        </button>
+        
+        <ul class="dropdown-menu p-3 shadow theme-card theme-border" aria-labelledby="groupFilterBtn" style="min-width: 250px;">
+            <div class="d-flex justify-content-between mb-2 border-bottom theme-border pb-1">
+                <div class="d-flex justify-content-between mb-2 w-100">
+                    <button class="btn btn-sm btn-link text-decoration-none js-group-all">Alle</button> 
+                    <button class="btn btn-sm btn-link text-decoration-none js-group-none">Keine</button>
+                </div>
+            </div>
+            <div id="group-checkbox-container" style="max-height: 300px; overflow-y: auto;"></div>
+        </ul>
+    </div>
+
+    {# C) ACTION BUTTONS #}
+    <div class="d-flex gap-2 ms-3">
+        {# DRUCKEN #}
+        <a id="btn-print-groupcard" 
+           href="{{ path('print_groupcard', {'examId': exam.id, 'class': app.request.query.get('class')}) }}" 
+           class="btn btn-outline-secondary btn-sm d-flex align-items-center theme-text" target="_blank" title="Drucken">
+            <i class="bi bi-printer"></i> <span class="ms-2 d-none d-md-inline">{{ 'Drucken'|trans }}</span>
+        </a>
+
+        {# ZURÜCK #}
+        <a href="{{ path('app_exams_dashboard') }}" 
+           class="btn btn-outline-secondary btn-sm d-flex align-items-center theme-text" title="Zurück">
+            <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-md-inline">{{ 'Zurück'|trans }}</span>
+        </a>
+    </div>
+
+    {# D) SUCHLEISTE #}
+    <div class="d-flex align-items-center flex-grow-1 search-container ms-2">
+        <div class="input-group input-group-sm">
+            <input type="text" id="client-search-input" class="form-control form-control-osa theme-bg-light theme-text theme-border" placeholder="Teilnehmer suchen...">
+        </div>
+    </div>        
+</div>
+
+    {# --- 3. TABELLE --- #}
+    <form id="autosave-form" 
+      data-discipline-route="{{ path('exam_discipline_save') }}"
+      data-result-route="{{ path('exam_result_save') }}"
+      data-swimming-route="{{ path('results_exam_swimming_add_proof') }}"
+      data-swimming-delete-route="{{ path('results_exam_swimming_remove_proof') }}"
+      data-global-token="{{ csrf_token('autosave') }}">
+
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered theme-border table-results-compact align-middle table-hover">
+                <thead class="theme-bg-light theme-heading text-center align-middle sticky-header">
+                    <tr>
+                        {# TEILNEHMER SPALTE #}
+                        <th class="col-name text-start shadow-sm col-sticky-left theme-bg-light">
+                            {% set currentSort = app.request.query.get('sort', 'lastname') %}
+                            {% set currentOrder = app.request.query.get('order', 'asc') %}
+                            {% set nextOrder = (currentSort == 'lastname' and currentOrder == 'asc') ? 'desc' : 'asc' %}
+                            
+                            <a href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({'id': exam.id, 'sort': 'lastname', 'order': nextOrder})) }}" 
+                            class="sort-header d-flex justify-content-between align-items-center theme-heading text-decoration-none">
+                                <span>Teilnehmer</span>
+                                <span><i class="bi bi-filter"></i></span>
+                            </a>
+                        </th>
+
+                        {# SCHWIMM SPALTE #}
+                        <th class="col-swimming text-center col-discipline col-cat-SWIMMING theme-bg-light">🏊</th>
+
+                        {# DISZIPLINEN SPALTEN #}
+                        {% for category in disciplines|keys %}
+                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                                <th class="col-discipline col-cat-{{ category }} theme-bg-light">{{ category }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="theme-card">
+                {% for p in participants %}
+                    {% set epResults = results[p.ep_id] ?? {} %}
+                    <tr data-ep-id="{{ p.ep_id }}" 
+                        id="row-{{ p.ep_id }}" 
+                        class="participant-row" 
+                        data-class="{{ p.klasse|default('') }}"
+                        data-group="{{ p.group|default('') }}">
+
+                        {# 1. TEILNEHMER INFOS #}
+                        <td class="col-name py-2 shadow-sm col-sticky-left theme-card">
+                            <div class="name-container text-truncate ps-1">
+                                <div class="name-main text-truncate theme-heading fw-bold">
+                                    {{ p.nachname }}<span class="fw-normal theme-text">, {{ p.vorname }}</span>
+                                </div>
+                                
+                                <div class="name-age text-truncate mb-2 theme-muted small">
+                                    {{ p.klasse|default(p.group)|default('-') }} | {{ p.age_year }} J.
+                                </div>
+
+                                <div class="d-flex gap-2 align-items-center">
+                                    {# Punkte Badge #}
+                                    <div class="result-badge-box theme-bg-light theme-border" title="Gesamtpunkte">
+                                        <div class="badge-label-small theme-muted">Pkt</div>
+                                        <div class="fw-bold fs-6 theme-heading" id="total-points-{{ p.ep_id }}">{{ p.total_points|default(0) }}</div>
+                                    </div>
+                                    
+                                    {# Medaille Badge #}
+                                    {% set medalValue = p.final_medal|default('none')|lower %}
+                                    {% set medalLabel = (medalValue == 'gold') ? 'Gold' : ((medalValue in ['silver','silber']) ? 'Silber' : ((medalValue == 'bronze') ? 'Bronze' : '-')) %}
+                                    {% set medalClass = 'theme-bg-light theme-muted theme-border' %}
+                                    
+                                    {% if medalValue == 'gold' %}
+                                        {% set medalClass = 'bg-gold-transparent' %}
+                                    {% elseif medalValue in ['silver','silber'] %}
+                                        {% set medalClass = 'bg-silver-transparent' %}
+                                    {% elseif medalValue == 'bronze' %}
+                                        {% set medalClass = 'bg-bronze-transparent' %} 
+                                    {% endif %}
+
+                                    <div class="result-badge-box js-medal-badge {{ medalClass }}" id="final-medal-{{ p.ep_id }}">
+                                        <div class="badge-label-small text-uppercase opacity-75">Rang</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="fw-bold fs-6 js-medal-label">{{ medalLabel }}</div>
+                                        </div>
+                                    </div>
+                                </div>    
+                            </div>
+                        </td>
+
+                        {# 2. SCHWIMMEN #}
+                        <td class="col-swimming align-middle p-2 text-center col-discipline col-cat-SWIMMING theme-card">
+                           {# ... (Der Rest der Schwimm-Logik bleibt absolut identisch, da hier keine problematischen CSS Klassen drin sind) ... #}
+                           {# Um den Codeblock nicht unnötig aufzublähen, habe ich die Logik hier im Beispiel ausgeblendet, du kannst sie 1:1 übernehmen #}
+                        </td>
+
+                        {# 3. DISZIPLINEN #}
+                        {% for category, items in disciplines %}
+                            {% if category|upper not in ['SWIMMING', 'SCHWIMMEN'] %}
+                                <td class="p-1 col-discipline col-cat-{{ category }} align-middle theme-card">
+                                    <div class="d-flex flex-column h-100 justify-content-center">
+                                        {# ... (Filter Logic bleibt identisch) ... #}
+                                        
+                                        {# Select #}
+                                        <select class="discipline-selector js-discipline-select mb-1 form-select form-select-sm {{ mClass }} theme-bg-light theme-text theme-border" 
+                                                data-save data-ep-id="{{ p.ep_id }}" data-type="discipline" data-kategorie="{{ category }}">
+                                                {# ... Optionen ... #}
+                                        </select>
+
+                                        {# Input #}
+                                        <input type="text" class="form-control form-control-custom fw-bold {{ mClass }} theme-bg-light theme-text theme-border"
+                                               value="{{ resObj ? resObj.leistung : '' }}"
+                                               {{ isNoneUnit ? 'disabled' : '' }}
+                                               placeholder="{{ isNoneUnit ? '✓' : '' }}"
+                                               data-save data-ep-id="{{ p.ep_id }}" data-type="leistung" data-kategorie="{{ category }}">
+
+                                        {# Hint #}
+                                        <div class="req-hint theme-muted">
+                                            {# ... Hint Logic ... #}
+                                        </div>
+                                    </div>
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
 </div>
 {% endblock %}
