@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class PublicController extends AbstractController
 {
-    #[Route('/', name: 'app_home')]
+    #[Route('/', name: 'app_home', priority: -10)] // <--- Priority hinzugefügt
     public function index(ExamRepository $examRepo): Response
     {
         return $this->render('public/landingpage.html.twig', [
