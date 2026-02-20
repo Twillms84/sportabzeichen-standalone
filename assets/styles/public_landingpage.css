@@ -1,8 +1,6 @@
 /* =========================================
    1. LANDINGPAGE LAYOUT & THEME-MAPPING
    ========================================= */
-
-/* Die speziellen Landingpage-Klassen greifen direkt auf deine app.css Variablen zu */
 .public-wrapper { 
     background-color: var(--app-bg); 
     color: var(--app-muted); 
@@ -20,42 +18,31 @@
     border-color: var(--app-border) !important; 
 }
 
-/* Nutzt die sekundären Hintergründe aus der app.css */
 .theme-bg-light { 
     background-color: var(--input-bg) !important; 
     border-color: var(--app-border) !important; 
 }
 
-.theme-heading { 
-    color: var(--app-text) !important; 
-}
-
-.theme-text, .theme-muted { 
-    color: var(--app-muted) !important; 
-}
-
-.theme-border { 
-    border-color: var(--app-border) !important; 
-}
+.theme-heading { color: var(--app-text) !important; }
+.theme-text, .theme-muted { color: var(--app-muted) !important; }
+.theme-border { border-color: var(--app-border) !important; }
 
 
 /* =========================================
-   2. PUBLIC DARK MODE FALLBACK
+   2. PUBLIC DARK MODE FALLBACK (Geixt!)
    ========================================= */
-
-/* Falls ein Besucher noch nicht eingeloggt ist (und kein data-bs-theme="dark" im body hat), 
-   aber sein Betriebssystem auf Dark Mode steht, zwingen wir Bootstrap-Standardklassen 
-   auf der Landingpage in den dunklen Look.
-*/
+/* Wir binden es hart an das html-Tag, solange dort NICHT "light" erzwungen wird */
 @media (prefers-color-scheme: dark) {
-    /* Wenn kein data-bs-theme explizit gesetzt ist, lade Dark-Variablen als Fallback */
-    :root:not([data-bs-theme="light"]) {
-        --app-bg: #121212;      
-        --app-card-bg: #1e1e1e; 
-        --app-text: #e9ecef;    
-        --app-border: #333333;  
-        --app-muted: #adb5bd;
-        --input-bg: #2b3035;
+    html:not([data-bs-theme="light"]) {
+        /* !important überschreibt die Standard-Werte aus der app.css garantiert */
+        --app-bg: #121212 !important;      
+        --app-card-bg: #1e1e1e !important; 
+        --app-text: #e9ecef !important;    
+        --app-border: #333333 !important;  
+        --app-muted: #adb5bd !important;
+        --input-bg: #2b3035 !important;
+        --bs-body-bg: #121212 !important;
+        --bs-body-color: #e9ecef !important;
     }
 
     /* Bootstrap Hardcoded-Klassen auf der Landingpage überschreiben */
@@ -75,18 +62,27 @@
 
 
 /* =========================================
-   3. ANIMATIONEN & EXTRAS (Nur Landingpage)
+   3. ANIMATIONEN & SCROLL-REVEAL
    ========================================= */
-
 .transform-mockup {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .transform-mockup:hover {
     transform: translateY(-5px) !important;
     box-shadow: 0 1rem 3rem rgba(0,0,0,.15) !important;
 }
-
 .tracking-wider {
     letter-spacing: 0.1em;
+}
+
+/* Scroll-Animationen (Smooth Fade-In Up) */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.5, 0, 0, 1), transform 0.8s cubic-bezier(0.5, 0, 0, 1);
+    will-change: opacity, transform;
+}
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }
