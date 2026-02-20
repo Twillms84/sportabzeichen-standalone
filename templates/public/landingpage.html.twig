@@ -5,7 +5,7 @@
 {% block layout %}
 
 {# Public Navbar #}
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top px-4">
+<nav class="navbar navbar-expand-lg public-navbar shadow-sm sticky-top px-4">
     <a class="navbar-brand fw-bold text-success d-flex align-items-center" href="#">
         <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
             <i class="fas fa-medal small"></i>
@@ -13,23 +13,23 @@
         OSA Cockpit
     </a>
     <div class="ms-auto d-flex align-items-center gap-3">
-        <a href="#features" class="text-decoration-none text-secondary d-none d-md-block">Features</a>
-        <a href="#pricing" class="text-decoration-none text-secondary d-none d-md-block">Preise</a>
+        <a href="#features" class="text-decoration-none theme-text d-none d-md-block">Features</a>
+        <a href="#pricing" class="text-decoration-none theme-text d-none d-md-block">Preise</a>
         <a href="{{ path('app_login') }}" class="btn btn-outline-secondary rounded-pill px-4 ms-3">Login</a>
         <a href="{{ path('app_register') }}" class="btn btn-success rounded-pill px-4 shadow-sm">Kostenlos testen</a>
     </div>
 </nav>
 
-<div class="public-wrapper" style="background-color: #f4f6f9; min-height: 100vh;">
+<div class="public-wrapper">
     
     {# Hero Section #}
     <section class="hero-section py-5 text-center">
         <div class="container py-5 mt-3">
             <span class="badge rounded-pill bg-success bg-opacity-10 text-success mb-3 px-3 py-2 text-uppercase fw-bold border border-success">
-                Die #1 Plattform für Schulen & Vereine
+                Für Schulen & Sportvereine
             </span>
-            <h1 class="display-4 fw-bold mb-4 text-dark">Weniger Zettelwirtschaft.<br>Mehr <span class="text-success">Sportabzeichen</span>.</h1>
-            <p class="lead text-secondary mx-auto mb-5" style="max-width: 700px;">
+            <h1 class="display-4 fw-bold mb-4 theme-heading">Weniger Zettelwirtschaft.<br>Mehr <span class="text-success">Sportabzeichen</span>.</h1>
+            <p class="lead theme-text mx-auto mb-5" style="max-width: 700px;">
                 Von der mobilen Eingabe durch den Prüfer bis zur automatischen Gruppenprüfkarte für die Schule. Verwalte Teilnehmer, teile Trainingsdaten und generiere Urkunden-Daten auf Knopfdruck.
             </p>
             <div class="d-flex justify-content-center gap-3">
@@ -41,54 +41,26 @@
     {# Feature Bento Grid #}
     <section id="features" class="py-5 container">
         <div class="text-center mb-5">
-            <h2 class="fw-bold">Alles, was Prüfer & Teilnehmer brauchen</h2>
-            <p class="text-muted">Designt für den Sportplatz, optimiert für den Desktop.</p>
+            <h2 class="fw-bold theme-heading">Alles, was Prüfer & Teilnehmer brauchen</h2>
+            <p class="theme-muted">Designt für den Sportplatz, optimiert für den Desktop.</p>
         </div>
 
         <div class="row g-4">
             
-            {# Feature 1: Dark & Light Mode #}
-            <div class="col-lg-8">
-                <div class="card h-100 border-0 shadow-sm overflow-hidden" style="background: linear-gradient(135deg, #1e293b 50%, #f8fafc 50%);">
-                    <div class="card-body p-4 p-md-5 position-relative">
-                        <div class="bg-white p-2 rounded shadow-sm d-inline-block mb-3">
-                            <i class="fas fa-moon text-dark"></i> / <i class="fas fa-sun text-warning"></i>
-                        </div>
-                        <h3 class="fw-bold text-white blend-text">Light & Dark Mode</h3>
-                        <p class="text-white blend-text opacity-75 mb-4" style="max-width: 300px;">Egal ob bei strahlendem Sonnenschein auf dem Rasen oder abends am Schreibtisch. Das Design passt sich dir an.</p>
-                        
-                        <div class="d-flex gap-3 mt-4">
-                            {# Dark Card Mockup #}
-                            <div class="bg-dark rounded-3 p-3 shadow border border-secondary" style="width: 200px; transform: rotate(-5deg);">
-                                <div class="bg-secondary rounded mb-2" style="height: 12px; width: 60%;"></div>
-                                <div class="bg-secondary rounded mb-2" style="height: 8px; width: 40%;"></div>
-                                <div class="progress mt-3" style="height: 4px;"><div class="progress-bar bg-success" style="width: 70%"></div></div>
-                            </div>
-                            {# Light Card Mockup #}
-                            <div class="bg-white rounded-3 p-3 shadow border" style="width: 200px; transform: rotate(5deg) translateY(20px);">
-                                <div class="bg-light rounded mb-2" style="height: 12px; width: 60%;"></div>
-                                <div class="bg-light rounded mb-2" style="height: 8px; width: 40%;"></div>
-                                <div class="progress mt-3" style="height: 4px;"><div class="progress-bar bg-primary" style="width: 70%"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {# Feature 2: Mobile Prüfer-Ansicht #}
-            <div class="col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 bg-white overflow-hidden text-center">
-                    <h4 class="fw-bold">Mobile Prüfer-App</h4>
-                    <p class="text-muted small">Perfekt bedienbar am Smartphone direkt an der Sprunggrube.</p>
+            {# Feature 1: Mobile Prüfer-Ansicht #}
+            <div class="col-md-5">
+                <div class="card h-100 border-0 shadow-sm p-4 theme-card overflow-hidden text-center">
+                    <h3 class="fw-bold theme-heading">Mobile Prüfer-App</h3>
+                    <p class="theme-muted small mb-4">Perfekt bedienbar am Smartphone direkt an der Sprunggrube.</p>
                     
                     {# Mobile Phone Mockup #}
-                    <div class="mx-auto mt-3 border border-4 border-dark rounded-4 shadow-sm bg-light" style="width: 160px; height: 250px; position: relative;">
-                        <div class="bg-dark rounded-bottom mx-auto" style="width: 60px; height: 15px;"></div>
+                    <div class="mx-auto border border-4 border-secondary rounded-4 shadow-sm theme-bg-light" style="width: 180px; height: 260px; position: relative;">
+                        <div class="bg-secondary rounded-bottom mx-auto" style="width: 70px; height: 15px;"></div>
                         <div class="p-2 text-start mt-2">
                             <span class="badge bg-primary mb-2">Weitsprung</span>
-                            <div class="bg-white p-2 rounded shadow-sm mb-2">
-                                <small class="d-block fw-bold">Max M.</small>
-                                <input type="text" class="form-control form-control-sm mt-1" placeholder="4,20 m">
+                            <div class="theme-card p-2 rounded shadow-sm mb-2 border">
+                                <small class="d-block fw-bold theme-heading">Max M.</small>
+                                <input type="text" class="form-control form-control-sm mt-1" placeholder="4,20 m" readonly>
                             </div>
                             <button class="btn btn-success btn-sm w-100 mt-1">Speichern</button>
                         </div>
@@ -96,25 +68,25 @@
                 </div>
             </div>
 
-            {# Feature 3: Teilnehmer Login #}
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm p-4 bg-white text-start">
+            {# Feature 2: Teilnehmer Login #}
+            <div class="col-md-7">
+                <div class="card h-100 border-0 shadow-sm p-4 p-md-5 theme-card text-start d-flex flex-column justify-content-center">
                     <div class="text-success mb-3"><i class="fas fa-mobile-alt fa-2x"></i></div>
-                    <h3 class="fw-bold">Teilnehmer-Portal</h3>
-                    <p class="text-muted">Gib Athleten und Schülern eigene Logins. Sie können ihre Trainingsdaten eintragen und sehen sofort, welche offiziellen Werte der Prüfer bestätigt hat.</p>
+                    <h3 class="fw-bold theme-heading">Teilnehmer-Portal</h3>
+                    <p class="theme-muted">Gib Athleten und Schülern eigene Logins. Sie können ihre Trainingsdaten eintragen und sehen sofort, welche offiziellen Werte der Prüfer bestätigt hat.</p>
                     
-                    <div class="mt-3 bg-light border rounded p-3">
+                    <div class="mt-3 theme-bg-light border rounded p-3 transform-mockup">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold">Kugelstoßen</span>
+                            <span class="fw-bold theme-heading">Kugelstoßen</span>
                             <span class="badge bg-success">Offiziell geprüft</span>
                         </div>
-                        <div class="row text-center border-top pt-2 mt-2">
+                        <div class="row text-center border-top pt-3 mt-2">
                             <div class="col-6 border-end">
-                                <small class="text-muted d-block">Dein Training</small>
-                                <span class="fw-bold">8,10 m</span>
+                                <small class="theme-muted d-block">Dein Training</small>
+                                <span class="fw-bold theme-heading">8,10 m</span>
                             </div>
                             <div class="col-6">
-                                <small class="text-muted d-block">Prüfer-Wert</small>
+                                <small class="theme-muted d-block">Prüfer-Wert</small>
                                 <span class="fw-bold text-success">8,45 m <i class="fas fa-medal text-warning ms-1"></i></span>
                             </div>
                         </div>
@@ -122,14 +94,14 @@
                 </div>
             </div>
 
-            {# Feature 4: Statistiken & Bestenlisten #}
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm p-4 bg-dark text-white">
+            {# Feature 3: Statistiken & Bestenlisten #}
+            <div class="col-md-7">
+                <div class="card h-100 border-0 shadow-sm p-4 p-md-5 text-white" style="background-color: #2c3e50;">
                     <div class="text-warning mb-3"><i class="fas fa-chart-line fa-2x"></i></div>
                     <h3 class="fw-bold">Statistiken & Rekorde</h3>
                     <p class="text-white-50">Wer ist der schnellste Sprinter der Schule? Welche Klasse hat die meisten Abzeichen? Analysiere Bestwerte auf Knopfdruck.</p>
                     
-                    <div class="mt-3 bg-secondary bg-opacity-25 border border-secondary rounded p-3">
+                    <div class="mt-3 bg-white bg-opacity-10 border border-secondary rounded p-3 transform-mockup">
                         <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary">
                             <span>1. Leon S. (Klasse 9a)</span>
                             <span class="text-warning fw-bold">6,8 sek</span>
@@ -146,26 +118,25 @@
                 </div>
             </div>
 
-            {# Feature 5: Druck & Gruppenprüfkarten #}
-            <div class="col-md-7">
-                <div class="card h-100 border-0 shadow-sm p-4 bg-white d-flex flex-row align-items-center">
-                    <div class="pe-4">
-                        <span class="badge bg-danger mb-2">PDF Export</span>
-                        <h3 class="fw-bold">Gruppenprüfkarten Druck</h3>
-                        <p class="text-muted mb-0">Spare dir stundenlanges Abschreiben. Generiere fertige, normgerechte Gruppenprüfkarten als PDF, ready für den DOSB.</p>
+            {# Feature 4: Druck & Gruppenprüfkarten #}
+            <div class="col-md-5">
+                <div class="card h-100 border-0 shadow-sm p-4 theme-card d-flex flex-column justify-content-center text-center">
+                    <div class="text-danger mb-3 transform-mockup">
+                        <i class="fas fa-file-pdf" style="font-size: 4rem;"></i>
                     </div>
-                    <div class="ms-auto text-danger opacity-75 transform-mockup">
-                        <i class="fas fa-file-pdf" style="font-size: 5rem;"></i>
-                    </div>
+                    <h3 class="fw-bold theme-heading">Gruppenprüfkarten</h3>
+                    <p class="theme-muted mb-0">Spare dir stundenlanges Abschreiben. Generiere fertige, normgerechte Gruppenprüfkarten als PDF, ready für den DOSB.</p>
                 </div>
             </div>
 
-            {# Feature 6: Eduplaces #}
-            <div class="col-md-5">
-                <div class="card h-100 border-0 shadow-sm p-4 text-center" style="background-color: #e0f2fe;">
-                    <div class="text-primary mb-2"><i class="fas fa-university fa-2x"></i></div>
-                    <h4 class="fw-bold text-dark">Eduplaces Ready</h4>
-                    <p class="text-dark opacity-75 small mb-0">In Vorbereitung: Single Sign-On für Lehrkräfte und nahtlose Klassenlisten-Synchronisation.</p>
+            {# Feature 5: Eduplaces Banner #}
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4 text-center d-flex flex-md-row align-items-center justify-content-center gap-4" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);">
+                    <div class="text-primary"><i class="fas fa-university fa-3x"></i></div>
+                    <div class="text-md-start">
+                        <h4 class="fw-bold text-dark mb-1">Eduplaces Ready (In Vorbereitung)</h4>
+                        <p class="text-dark opacity-75 small mb-0">Single Sign-On für Lehrkräfte und nahtlose Klassenlisten-Synchronisation kommen bald.</p>
+                    </div>
                 </div>
             </div>
 
@@ -173,92 +144,162 @@
     </section>
 
     {# --- PRICING SECTION --- #}
-    <section id="pricing" class="py-5 bg-white border-top">
+    <section id="pricing" class="py-5 border-top theme-border">
         <div class="container py-5">
             <div class="text-center mb-5">
                 <span class="text-success fw-bold text-uppercase tracking-wider">Preise</span>
-                <h2 class="display-5 fw-bold mt-2">Einfach. Transparent. Fair.</h2>
-                <p class="text-muted">Keine versteckten Kosten. Wähle den Plan, der zu deiner Gruppengröße passt.</p>
+                <h2 class="display-5 fw-bold mt-2 theme-heading">Einfach. Transparent. Fair.</h2>
+                <p class="theme-muted">Jährliche Abrechnung. Alle kostenpflichtigen Pläne zzgl. gesetzlicher MwSt.</p>
             </div>
 
             <div class="row g-4 justify-content-center">
-                {# Starter Plan #}
-                <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 border-0 shadow-sm p-4 text-center transform-mockup">
-                        <div class="card-body">
-                            <h4 class="fw-bold text-secondary">Starter</h4>
-                            <div class="display-4 fw-bold my-3">0 € <span class="fs-5 text-muted fw-normal">/ Jahr</span></div>
-                            <p class="text-muted small mb-4">Für Familien & kleine Testgruppen.</p>
-                            <ul class="list-unstyled text-start mb-4">
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Max. 5 Teilnehmer</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 1 Prüfer-Account</li>
+                
+                {# Plan 1: Starter #}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm p-4 text-center transform-mockup theme-card">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="fw-bold theme-muted">Starter</h5>
+                            <div class="display-5 fw-bold my-3 theme-heading">0 € <span class="fs-6 theme-muted fw-normal">/ Jahr</span></div>
+                            <p class="theme-muted small mb-4">Ideal zum Testen & für kleine Gruppen.</p>
+                            <ul class="list-unstyled text-start mb-4 small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Bis zu <strong>5</strong> Teilnehmer</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> <strong>1</strong> Prüfer-Account</li>
                                 <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Live-Auswertung</li>
-                                <li class="mb-2 text-muted"><i class="fas fa-times me-2 opacity-50"></i> Kein PDF-Export</li>
                             </ul>
-                            <a href="{{ path('app_register') }}" class="btn btn-outline-secondary w-100 rounded-pill mt-auto">Kostenlos starten</a>
+                            <a href="{{ path('app_register') }}" class="btn btn-outline-secondary w-100 rounded-pill mt-auto">Kostenlos testen</a>
                         </div>
                     </div>
                 </div>
 
-                {# Team / Klasse Plan (Hervorgehoben) #}
-                <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 border-2 border-success shadow p-4 text-center position-relative transform-mockup" style="top: -15px;">
-                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success px-3 py-2">Beliebt für Schulklassen</span>
-                        <div class="card-body mt-2">
-                            <h4 class="fw-bold text-success">Klasse / Team</h4>
-                            <div class="display-4 fw-bold my-3">49 € <span class="fs-5 text-muted fw-normal">/ Jahr</span></div>
-                            <p class="text-muted small mb-4">Perfekt für Sportlehrer & kleine Vereine.</p>
-                            <ul class="list-unstyled text-start mb-4">
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Max. 50 Teilnehmer</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 3 Prüfer-Accounts</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Teilnehmer-Logins</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Gruppenprüfkarten Export</li>
+                {# Plan 2: Grundschulen / Kleine Vereine #}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow p-4 text-center transform-mockup theme-card">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="fw-bold text-primary">Basis</h5>
+                            <div class="display-5 fw-bold my-3 theme-heading">50 € <span class="fs-6 theme-muted fw-normal">/ Jahr</span></div>
+                            <p class="theme-muted small mb-4">Für Grundschulen & kleine Vereine.</p>
+                            <ul class="list-unstyled text-start mb-4 small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Bis zu <strong>100</strong> Teilnehmer</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Prüfer-Accounts inklusive</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> PDF-Gruppenprüfkarten</li>
+                            </ul>
+                            <a href="{{ path('app_register') }}" class="btn btn-outline-primary w-100 rounded-pill mt-auto">Auswählen</a>
+                        </div>
+                    </div>
+                </div>
+
+                {# Plan 3: Mittlere Schulen & Vereine #}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100 border-2 border-success shadow p-4 text-center position-relative transform-mockup theme-card" style="top: -10px;">
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success px-3 py-2">Beliebt</span>
+                        <div class="card-body d-flex flex-column mt-2">
+                            <h5 class="fw-bold text-success">Pro</h5>
+                            <div class="display-5 fw-bold my-3 theme-heading">70 € <span class="fs-6 theme-muted fw-normal">/ Jahr</span></div>
+                            <p class="theme-muted small mb-4">Für weiterführende Schulen & Vereine.</p>
+                            <ul class="list-unstyled text-start mb-4 small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Bis zu <strong>500</strong> Teilnehmer</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Teilnehmer-Logins (Portal)</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Erweiterte Statistiken</li>
                             </ul>
                             <a href="{{ path('app_register') }}" class="btn btn-success w-100 rounded-pill shadow-sm mt-auto">Auswählen</a>
                         </div>
                     </div>
                 </div>
 
-                {# Schule / Verein Plan #}
-                <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 border-0 shadow-sm p-4 text-center transform-mockup">
-                        <div class="card-body">
-                            <h4 class="fw-bold text-primary">Schule / Verein</h4>
-                            <div class="display-4 fw-bold my-3">149 € <span class="fs-5 text-muted fw-normal">/ Jahr</span></div>
-                            <p class="text-muted small mb-4">Für die komplette Organisation.</p>
-                            <ul class="list-unstyled text-start mb-4">
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> <strong>Unbegrenzte</strong> Teilnehmer</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> <strong>Unbegrenzte</strong> Prüfer</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Erweiterte Statistiken</li>
-                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Eduplaces Integration (bald)</li>
+                {# Plan 4: Große Zentren #}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm p-4 text-center transform-mockup theme-card">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="fw-bold text-dark theme-heading">Max</h5>
+                            <div class="display-5 fw-bold my-3 theme-heading">99 € <span class="fs-6 theme-muted fw-normal">/ Jahr</span></div>
+                            <p class="theme-muted small mb-4">Für Schulzentren & Großvereine.</p>
+                            <ul class="list-unstyled text-start mb-4 small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Bis zu <strong>1.500</strong> Teilnehmer</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Voller Funktionsumfang</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Prio-Support</li>
                             </ul>
-                            <a href="{{ path('app_register') }}" class="btn btn-outline-primary w-100 rounded-pill mt-auto">Auswählen</a>
+                            <a href="{{ path('app_register') }}" class="btn btn-outline-dark w-100 rounded-pill mt-auto">Auswählen</a>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {# Enterprise Banner #}
+            <div class="row mt-5">
+                <div class="col-lg-10 mx-auto">
+                    <div class="card border border-secondary shadow-sm theme-bg-light p-4 text-center d-flex flex-md-row align-items-center justify-content-between">
+                        <div class="text-md-start mb-3 mb-md-0">
+                            <h5 class="fw-bold theme-heading mb-1"><i class="fas fa-city text-secondary me-2"></i>Schulträger & Stadtverbände</h5>
+                            <p class="theme-muted small mb-0">Zentrale Verwaltung und Abrechnung für mehrere Schulen oder Vereinsabteilungen.</p>
+                        </div>
+                        <a href="mailto:kontakt@deinedomain.de" class="btn btn-secondary rounded-pill px-4">Preise auf Anfrage</a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 
     {# Call to Action Footer #}
-    <footer class="bg-dark text-white py-5 text-center">
+    <footer class="py-5 text-center" style="background-color: #1a1a1a; color: #ffffff;">
         <div class="container py-4">
             <h2 class="fw-bold mb-3">Zeit, den Papierkram zu beenden.</h2>
             <p class="opacity-75 mb-4">Registriere dich in 60 Sekunden und probiere es mit bis zu 5 Teilnehmern kostenlos aus.</p>
             <a href="{{ path('app_register') }}" class="btn btn-success btn-lg px-5 rounded-pill shadow-sm">Jetzt Account erstellen</a>
             <div class="mt-5 pt-4 border-top border-secondary opacity-50 small">
-                &copy; 2026 OSA Cockpit. Alle Rechte vorbehalten. | <a href="#" class="text-white">Impressum</a> | <a href="#" class="text-white">Datenschutz</a>
+                &copy; {{ 'now'|date('Y') }} OSA Cockpit. Alle Rechte vorbehalten. | <a href="#" class="text-white">Impressum</a> | <a href="#" class="text-white">Datenschutz</a>
             </div>
         </div>
     </footer>
 </div>
 
 <style>
-    /* Spezifisches Styling für die Mockups */
-    .blend-text {
-        mix-blend-mode: difference;
-    }
+    /* ---------------------------------------------------
+       AUTOMATISCHER OS-DARK MODE (prefers-color-scheme)
+       --------------------------------------------------- */
     
+    /* Standard (Light Mode) Variablen */
+    :root {
+        --bg-main: #f4f6f9;
+        --bg-card: #ffffff;
+        --bg-light: #f8f9fa;
+        --text-heading: #212529;
+        --text-body: #6c757d;
+        --border-color: #dee2e6;
+        --nav-bg: #ffffff;
+    }
+
+    /* Wenn das Betriebssystem auf Dark Mode steht, überschreiben wir die Farben */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --bg-light: #2d2d2d;
+            --text-heading: #f8f9fa;
+            --text-body: #adb5bd;
+            --border-color: #333333;
+            --nav-bg: #1e1e1e;
+        }
+        /* Überschreibe Bootstrap-Klassen für den Dark Mode */
+        .text-dark { color: #f8f9fa !important; }
+        .bg-white { background-color: #1e1e1e !important; }
+        .bg-light { background-color: #2d2d2d !important; }
+        .btn-outline-dark { color: #f8f9fa; border-color: #f8f9fa; }
+        .btn-outline-dark:hover { background-color: #f8f9fa; color: #121212; }
+    }
+
+    /* Anwendung der CSS-Variablen */
+    .public-wrapper { background-color: var(--bg-main); color: var(--text-body); transition: all 0.3s ease; }
+    .theme-card { background-color: var(--bg-card); border-color: var(--border-color); }
+    .theme-bg-light { background-color: var(--bg-light); border-color: var(--border-color); }
+    .theme-heading { color: var(--text-heading) !important; }
+    .theme-text, .theme-muted { color: var(--text-body) !important; }
+    .theme-border { border-color: var(--border-color) !important; }
+    .public-navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); transition: background-color 0.3s ease; }
+
+    /* ---------------------------------------------------
+       ANIMATIONEN & EXTRAS
+       --------------------------------------------------- */
     .transform-mockup {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
@@ -266,7 +307,6 @@
         transform: translateY(-5px) !important;
         box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
     }
-    
     .tracking-wider {
         letter-spacing: 0.1em;
     }
