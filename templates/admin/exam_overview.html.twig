@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block body %}
-{# WICHTIG: Hier den neuen Controller registrieren #}
 <div class="container-fluid" data-controller="exam-overview">
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'exams'} %}
 
@@ -17,9 +16,10 @@
             <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
             <p class="text-muted">Verwaltung aller Prüfungen und Statistiken</p>
         </div>
-        <a href="#" class="btn btn-primary shadow-sm">
+        {# MODAL TRIGGER #}
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newExamModal">
             <i class="bi bi-plus-lg"></i> Neue Prüfung
-        </a>
+        </button>
     </div>
 
     <div class="row g-4">
@@ -48,7 +48,6 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    {# LÖSCH-CONTAINER #}
                                     <div class="delete-action-container">
                                         <form action="{{ path('admin_exam_delete', {'id': exam.id}) }}" method="POST" class="d-none">
                                             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
@@ -65,7 +64,6 @@
                     </div>
 
                     <div class="card-body">
-                        {# PRÜFER SELECT - Mit neuer Action-Bindung #}
                         <div class="mb-3">
                             <label class="form-label x-small fw-bold text-muted text-uppercase">Verantwortlicher Prüfer</label>
                             <select class="form-select form-select-sm js-change-examiner" 
@@ -112,6 +110,40 @@
                 </div>
             </div>
         {% endfor %}
+    </div>
+
+    {# MODAL FÜR NEUE PRÜFUNG #}
+    <div class="modal fade" id="newExamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow border-0">
+                <div class="modal-header text-white" style="background-color: var(--osa-green, #198754);">
+                    <h5 class="modal-title fw-bold">Neue Prüfung anlegen</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ path('admin_exam_new') }}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Name der Prüfung</label>
+                            <input type="text" name="name" class="form-control" placeholder="z.B. Winterprüfung {{ "now"|date("Y") }}" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Jahr</label>
+                                <input type="number" name="year" class="form-control" value="{{ "now"|date("Y") }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Datum</label>
+                                <input type="date" name="date" class="form-control" value="{{ "now"|date("Y-m-d") }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary px-4">Erstellen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
