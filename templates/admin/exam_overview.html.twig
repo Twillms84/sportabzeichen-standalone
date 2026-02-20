@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Prüfungsübersicht{% endblock %}
+{% block title %}Prüfungs-Cockpit{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -14,9 +14,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
         <div>
             <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
-            <p class="text-muted">Verwaltung aller Prüfungen und Statistiken</p>
+            <p class="text-muted">Zentrale Verwaltung der Institution</p>
         </div>
-        {# MODAL TRIGGER #}
+        {# Button triggert das Modal weiter unten #}
         <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newExamModal">
             <i class="bi bi-plus-lg"></i> Neue Prüfung
         </button>
@@ -28,11 +28,14 @@
             {% set stats = item.stats %}
             
             <div class="col-12 col-md-6 col-xxl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-start">
+                {# HIER: exam-card Klasse hinzugefügt für die Animation aus deiner CSS #}
+                <div class="card exam-card h-100 shadow-sm">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-start" style="background-color: var(--osa-green);">
                         <div>
                             <span class="badge bg-white text-dark mb-1">{{ exam.year }}</span>
-                            <h5 class="card-title fw-bold mb-0 text-truncate" style="max-width: 200px;">{{ exam.name }}</h5>
+                            <h5 class="card-title fw-bold mb-0 text-truncate" style="max-width: 200px;">
+                                {{ exam.name }}
+                            </h5>
                             <small class="text-muted"><i class="bi bi-calendar-event"></i> {{ exam.date|date('d.m.Y') }}</small>
                         </div>
                         
@@ -43,7 +46,7 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                                 <li>
                                     <a class="dropdown-item" href="{{ path('admin_exam_show', {'id': exam.id}) }}">
-                                        <i class="bi bi-eye me-2"></i> Details
+                                        <i class="bi bi-eye me-2"></i> Details & Teilnehmer
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
@@ -66,7 +69,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label x-small fw-bold text-muted text-uppercase">Verantwortlicher Prüfer</label>
-                            <select class="form-select form-select-sm js-change-examiner" 
+                            <select class="form-select form-select-sm" 
                                     data-exam-id="{{ exam.id }}"
                                     data-action="change->exam-overview#changeExaminer">
                                 <option value="">-- Nicht zugewiesen --</option>
@@ -101,8 +104,8 @@
                         </div>
                     </div>
                     
-                    <div class="card-footer border-top py-3 d-flex justify-content-between align-items-center">
-                        <small class="text-muted"><i class="bi bi-people"></i> {{ exam.examParticipants|length }} TN</small>
+                    <div class="card-footer py-3 d-flex justify-content-between align-items-center">
+                        <small class="text-muted"><i class="bi bi-people"></i> {{ exam.getExamParticipants()|length }} TN</small>
                         <a href="{{ path('admin_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-secondary px-3">
                             Verwalten <i class="bi bi-arrow-right ms-1"></i>
                         </a>
@@ -116,7 +119,7 @@
     <div class="modal fade" id="newExamModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow border-0">
-                <div class="modal-header text-white" style="background-color: var(--osa-green, #198754);">
+                <div class="modal-header text-white" style="background-color: var(--osa-green);">
                     <h5 class="modal-title fw-bold">Neue Prüfung anlegen</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
