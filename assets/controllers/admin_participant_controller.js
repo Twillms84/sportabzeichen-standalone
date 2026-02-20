@@ -66,29 +66,36 @@ export default class extends Controller {
         const modalEl = document.getElementById('genericEditModal');
         if (!modalEl) return;
 
-        // Wir nutzen das Bootstrap Event 'show.bs.modal'
         modalEl.addEventListener('show.bs.modal', (event) => {
-            const button = event.relatedTarget; // Der Button, der geklickt wurde
+            const button = event.relatedTarget;
             if (!button) return;
 
             const form = modalEl.querySelector('#genericEditForm');
             
-            // Daten aus den data-Attributen des Buttons holen
+            // 1. Daten aus den Attributen des Buttons ziehen
             const id = button.getAttribute('data-id');
             const name = button.getAttribute('data-name');
             const dob = button.getAttribute('data-dob');
             const gender = button.getAttribute('data-gender');
+            const groupId = button.getAttribute('data-group'); // Die Gruppen-ID
 
-            // UI-Elemente im Modal befüllen
+            // 2. Felder im Modal finden
             const nameEl = modalEl.querySelector('#modalUserName');
             const dobInput = modalEl.querySelector('#modalDob');
             const genderSelect = modalEl.querySelector('#modalGender');
+            const groupSelect = modalEl.querySelector('#modalGroup'); // Das neue Gruppen-Select
 
+            // 3. Werte im Modal setzen
             if (nameEl) nameEl.textContent = name;
             if (dobInput) dobInput.value = dob;
             if (genderSelect) genderSelect.value = gender;
+            
+            // Hier wird die Gruppe ausgewählt
+            if (groupSelect) {
+                groupSelect.value = groupId || ""; 
+            }
 
-            // Formular-Action dynamisch setzen
+            // 4. Form-Action aktualisieren
             const urlTemplate = form.getAttribute('data-url-template');
             if (urlTemplate && id) {
                 form.action = urlTemplate.replace('PLACEHOLDER_ID', id);

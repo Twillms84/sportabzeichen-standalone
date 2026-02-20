@@ -151,10 +151,11 @@
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#genericEditModal"
                                                 data-id="{{ p.id }}"
-                                                data-name="{{ p.user ? p.user.firstname ~ ' ' ~ p.user.lastname : 'Teilnehmer' }}"
+                                                data-name="{{ p.user ? p.user.lastname ~ ', ' ~ p.user.firstname : 'Teilnehmer' }}"
                                                 data-dob="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}"
-                                                data-gender="{{ p.gender }}">
-                                                data-group="{{ p.user and p.user.groups is not empty ? p.user.groups|first.id : '' }}">
+                                                data-gender="{{ p.gender }}"
+                                                {# Wir holen die ID der ersten Gruppe des Users #}
+                                                data-group="{{ (p.user and p.user.groups|length > 0) ? p.user.groups|first.id : '' }}">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         
@@ -200,7 +201,6 @@
                             <select name="gender" id="modalGender" class="form-select">
                                 <option value="MALE">{{'Männlich'|trans}} (M)</option>
                                 <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
-                                <option value="DIVERSE">{{'Divers'|trans}} (D)</option>
                             </select>
                         </div>
                         <div class="mb-3">
