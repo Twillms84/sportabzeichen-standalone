@@ -38,17 +38,16 @@ security:
                 target: app_login
 
     access_control:
-        # Profiler und Assets explizit erlauben (optional, oft durch 'dev' Firewall abgedeckt)
-        - { path: ^/(_profiler|_wdt), roles: PUBLIC_ACCESS }
+        # 1. Öffentliche Bereiche (Müssen GANZ OBEN stehen)
+        - { path: ^/$, roles: PUBLIC_ACCESS }        # Die Landingpage
+        - { path: ^/login, roles: PUBLIC_ACCESS }    # Die Login-Seite
+        - { path: ^/register, roles: PUBLIC_ACCESS } # Die Registrierung
         
-        # Admin-Bereich schützen
-        - { path: ^/admin, roles: ROLE_ADMIN }
+        # 2. Interner Bereich
+        - { path: ^/admin, roles: ROLE_ADMIN }       # Admin-Bereich
         
-        # Erlaubt Zugriff auf Login (Root) und Registrierung für alle
-        - { path: ^/$, roles: PUBLIC_ACCESS }
-        - { path: ^/register, roles: PUBLIC_ACCESS }
-        
-        # Restliche Seite nur für angemeldete User
+        # 3. Der "Auffang-Schutz"
+        # Alle anderen URLs (z.B. das Dashboard für Prüfer) brauchen ROLE_USER
         - { path: ^/, roles: ROLE_USER }
 
 when@test:
