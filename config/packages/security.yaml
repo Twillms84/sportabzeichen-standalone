@@ -2,7 +2,6 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
-    # --- HIER: Rollen-Hierarchie definieren ---
     role_hierarchy:
         ROLE_ADMIN:       ROLE_EXAMINER
         ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
@@ -25,31 +24,24 @@ security:
 
             form_login:
                 login_path: app_login
-                check_path: app_login # Dieser Pfad MUSS erreichbar sein!
+                check_path: app_login
                 enable_csrf: true
                 username_parameter: email
                 password_parameter: _password
-                default_target_path: admin_exam_overview # Hierhin nach Erfolg
+                default_target_path: admin_exam_overview # <-- Hier geht's hin nach Login
             
             logout:
                 path: app_logout
-                target: app_home # Nach Logout zur Landingpage
+                target: app_home
 
     access_control:
-        # 1. Profiler & Assets
-        - { path: ^/(_profiler|_wdt), roles: PUBLIC_ACCESS }
-        
-        # 2. Öffentliche Seiten (Landingpage, Login, Register)
-        # WICHTIG: Diese müssen VOR der ROLE_USER Regel kommen
-        - { path: ^/$, roles: PUBLIC_ACCESS }
+        # WICHTIGSTE REGELN ZUERST: Öffentlich zugänglich
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
         
-        # 3. Admin-Bereich
+        # Geschützte Bereiche
         - { path: ^/admin, roles: ROLE_ADMIN }
-        
-        # 4. Der "Catch-all" für eingeloggte User
-        # Alles andere erfordert ROLE_USER
         - { path: ^/, roles: ROLE_USER }
 
 when@test:
