@@ -223,25 +223,52 @@ final class ParticipantController extends AbstractController
     #[Route('/{id}/update', name: 'update', methods: ['POST'])]
     public function update(Request $request, Participant $participant): Response
     {
-        if ($participant->getInstitution() !== $this->getInstitutionOrDeny()) {
+        $institution = $this->getInstitutionOrDeny();
+        if ($participant->getInstitution() !== $institution) {
             throw new AccessDeniedException();
         }
 
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
+        $groupId = $request->request->get('group_id'); // NEU: ID aus dem Modal-Select
 
+        // 1. Geburtsdatum aktualisieren
         if ($dob) {
-            try { $participant->setBirthdate(new \DateTime($dob)); } catch (\Exception $e) {}
+            try { 
+                $participant->setBirthdate(new \DateTime($dob)); 
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Ungültiges Datumsformat.');
+            }
         }
-        if ($gender && in_array($gender, ['MALE', 'FEMALE', 'DIVERSE'])) {
+
+        // 2. Geschlecht aktualisieren (DIVERSE hier entfernt)
+        if ($gender && in_array($gender, ['MALE', 'FEMALE'])) {
             $participant->setGender($gender);
+        }
+        
+        // 3. Gruppe aktualisieren
+        $user = $participant->getUser();
+        if ($user) {
+            // Erst alle alten Gruppen entfernen (falls ein User nur in einer Gruppe sein soll)
+            foreach ($user->getGroups() as $oldGroup) {
+                $user->removeGroup($oldGroup);
+            }
+
+            // Neue Gruppe zuweisen, falls eine ausgewählt wurde
+            if (!empty($groupId)) {
+                $group = $this->em->getRepository(Group::class)->find($groupId);
+                // Sicherheitscheck: Gruppe muss existieren und zur selben Institution gehören
+                if ($group && $group->getInstitution() === $institution) {
+                    $user->addGroup($group);
+                }
+            }
         }
         
         $participant->setUpdatedAt(new \DateTime());
         $this->em->flush();
-        $this->addFlash('success', 'Aktualisiert.');
         
-        // Zurück zur Liste mit Query-Parametern wenn möglich, sonst clean
+        $this->addFlash('success', 'Teilnehmer erfolgreich aktualisiert.');
+        
         return $this->redirectToRoute('admin_participants_index');
     }
 
