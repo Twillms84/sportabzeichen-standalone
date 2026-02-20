@@ -279,3 +279,23 @@
     });
 </script>
 {% endblock %}
+
+{# Automatischer System-Darkmode Erkennung #}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Funktion zum Setzen des Themes basierend auf dem System
+        const updateTheme = () => {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        };
+
+        // 1. Beim ersten Laden direkt ausführen
+        updateTheme();
+
+        // 2. Auf Änderungen des Systems hören (z.B. wenn der User in den Einstellungen auf Darkmode wechselt)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+    });
+</script>
