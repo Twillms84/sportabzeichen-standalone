@@ -54,3 +54,20 @@
     opacity: 1;
     transform: translateY(0);
 }
+
+/* =========================================
+   4. HOVER ANIMATIONEN (Karten, Features etc.)
+   ========================================= */
+.hover-animate {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease !important;
+}
+
+.hover-animate:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}
+
+/* Im Darkmode machen wir den Schatten etwas kräftiger/dunkler, damit er sichtbar bleibt */
+[data-bs-theme="dark"] .hover-animate:hover {
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6) !important;
+}
