@@ -2,6 +2,12 @@
 
 {% block title %}OSA Cockpit - Sportabzeichen-Verwaltung für Schulen & Vereine{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# Binde hier die neue, externe CSS-Datei ein #}
+    <link rel="stylesheet" href="{{ asset('css/public_landingpage.css') }}">
+{% endblock %}
+
 {% block layout %}
 
 {# Public Navbar #}
@@ -252,63 +258,4 @@
         </div>
     </footer>
 </div>
-
-<style>
-    /* ---------------------------------------------------
-       AUTOMATISCHER OS-DARK MODE (prefers-color-scheme)
-       --------------------------------------------------- */
-    
-    /* Standard (Light Mode) Variablen */
-    :root {
-        --bg-main: #f4f6f9;
-        --bg-card: #ffffff;
-        --bg-light: #f8f9fa;
-        --text-heading: #212529;
-        --text-body: #6c757d;
-        --border-color: #dee2e6;
-        --nav-bg: #ffffff;
-    }
-
-    /* Wenn das Betriebssystem auf Dark Mode steht, überschreiben wir die Farben */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --bg-light: #2d2d2d;
-            --text-heading: #f8f9fa;
-            --text-body: #adb5bd;
-            --border-color: #333333;
-            --nav-bg: #1e1e1e;
-        }
-        /* Überschreibe Bootstrap-Klassen für den Dark Mode */
-        .text-dark { color: #f8f9fa !important; }
-        .bg-white { background-color: #1e1e1e !important; }
-        .bg-light { background-color: #2d2d2d !important; }
-        .btn-outline-dark { color: #f8f9fa; border-color: #f8f9fa; }
-        .btn-outline-dark:hover { background-color: #f8f9fa; color: #121212; }
-    }
-
-    /* Anwendung der CSS-Variablen */
-    .public-wrapper { background-color: var(--bg-main); color: var(--text-body); transition: all 0.3s ease; }
-    .theme-card { background-color: var(--bg-card); border-color: var(--border-color); }
-    .theme-bg-light { background-color: var(--bg-light); border-color: var(--border-color); }
-    .theme-heading { color: var(--text-heading) !important; }
-    .theme-text, .theme-muted { color: var(--text-body) !important; }
-    .theme-border { border-color: var(--border-color) !important; }
-    .public-navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); transition: background-color 0.3s ease; }
-
-    /* ---------------------------------------------------
-       ANIMATIONEN & EXTRAS
-       --------------------------------------------------- */
-    .transform-mockup {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .transform-mockup:hover {
-        transform: translateY(-5px) !important;
-        box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
-    }
-    .tracking-wider {
-        letter-spacing: 0.1em;
-    }
-</style>
 {% endblock %}
