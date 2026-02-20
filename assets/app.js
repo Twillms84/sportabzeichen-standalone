@@ -19,11 +19,14 @@ const app = Application.start();
 // Controller-Klassen importieren
 import GroupsController from './controllers/groups_controller.js';
 import ParticipantController from './controllers/admin_participant_controller.js';
+import ExamOverviewController from './controllers/exam_overview_controller.js';
+
 // (Falls du die anderen auch als Stimulus-Klassen hast, hier importieren)
 
 // Controller manuell registrieren
 app.register('groups', GroupsController);
-app.register('admin-participant', ParticipantController); // <--- WICHTIG: passend zum Twig-Namen
+app.register('admin-participant', ParticipantController); 
+app.register('exam-overview', ExamOverviewController);
 
 // --- ANDERE JS LOGIK (Non-Stimulus oder Legacy) ---
 import './controllers/exam_results_autosave.js';
