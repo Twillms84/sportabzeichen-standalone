@@ -2,119 +2,131 @@
 
 {% block title %}OSA Cockpit - Sportabzeichen-Verwaltung 2.0{% endblock %}
 
-{% block body %}
-<div class="public-wrapper">
+{# WICHTIG: Wir überschreiben den Layout-Block, damit die Sidebar verschwindet! #}
+{% block layout %}
+
+{# Public Navbar (ohne Sidebar-Toggle) #}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top px-4">
+    <a class="navbar-brand fw-bold text-success" href="#">
+        <i class="fas fa-medal me-2"></i>OSA Cockpit
+    </a>
+    <div class="ms-auto">
+        <a href="{{ path('app_login') }}" class="btn btn-outline-secondary me-2">Login</a>
+        <a href="{{ path('app_register') }}" class="btn btn-success">Jetzt starten</a>
+    </div>
+</nav>
+
+<div class="public-wrapper" style="background-color: #f8f9fa; min-height: 100vh;">
     {# Hero Section #}
-    <section class="hero-section py-5 text-center bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+    <section class="hero-section py-5 text-center">
         <div class="container py-5">
-            <span class="badge rounded-pill bg-success mb-3 px-3 py-2 text-uppercase">Digitalisiere deinen Verein</span>
-            <h1 class="display-3 fw-bold mb-4">Das Cockpit für dein <span class="text-success">Sportabzeichen</span></h1>
-            <p class="lead text-muted mx-auto mb-5" style="max-width: 700px;">
-                Verabschiede dich von Klemmbrett und Excel. Mit dem OSA Cockpit verwaltest du Prüfungen, Teilnehmer und Ergebnisse intuitiv, sicher und in Echtzeit.
+            <span class="badge rounded-pill bg-success bg-opacity-10 text-success mb-3 px-3 py-2 text-uppercase fw-bold border border-success">
+                Digitalisiere deinen Verein
+            </span>
+            <h1 class="display-4 fw-bold mb-4">Das Cockpit für dein <br><span class="text-success">Sportabzeichen</span></h1>
+            <p class="lead text-muted mx-auto mb-5" style="max-width: 600px;">
+                Verabschiede dich von Klemmbrett und Excel. Verwalte Prüfungen, Teilnehmer und Medaillen in einem intuitiven Dashboard.
             </p>
             <div class="d-flex justify-content-center gap-3">
-                <a href="{{ path('app_login') }}" class="btn btn-success btn-lg px-5 shadow">Jetzt starten</a>
-                <a href="#features" class="btn btn-outline-dark btn-lg px-5">Features ansehen</a>
+                <a href="{{ path('app_register') }}" class="btn btn-success btn-lg px-4 shadow">Kostenlos registrieren</a>
+                <a href="#features" class="btn btn-light btn-lg px-4 border">So sieht's aus</a>
             </div>
         </div>
     </section>
 
-    {# Feature Bento Grid #}
+    {# Feature Bento Grid mit ECHTEN Mockups #}
     <section id="features" class="py-5 container">
         <div class="text-center mb-5">
-            <h2 class="fw-bold">Alles, was ein Sportwart braucht</h2>
-            <p class="text-muted">Entwickelt für die Praxis, optimiert für den Platz.</p>
+            <h2 class="fw-bold">Ein Blick ins System</h2>
+            <p class="text-muted">Keine graue Theorie. So übersichtlich sieht deine Arbeit ab heute aus.</p>
         </div>
 
         <div class="row g-4">
-            {# Feature 1: Cockpit #}
+            
+            {# Feature 1: Die Card-Übersicht (Echtes Mockup) #}
             <div class="col-md-7">
-                <div class="card h-100 border-0 shadow-sm bg-dark text-white overflow-hidden p-4">
-                    <div class="card-body">
-                        <h3 class="fw-bold">Intuitives Admin-Cockpit</h3>
-                        <p class="text-secondary">Behalte alle Prüfungen im Blick. Unsere Card-Übersicht zeigt dir sofort, wo noch Prüfer fehlen oder Teilnehmer unzugeordnet sind.</p>
-                        <div class="mt-4 opacity-50">
-                             {# Hier simulieren wir ein Mini-Mockup deiner Cards #}
-                             <div class="bg-secondary rounded p-2 mb-2" style="width: 80%"></div>
-                             <div class="bg-secondary rounded p-2 mb-2" style="width: 60%"></div>
+                <div class="card h-100 border-0 shadow-sm overflow-hidden" style="background-color: #2c3e50;">
+                    <div class="card-body p-4 p-md-5">
+                        <h3 class="fw-bold text-white mb-3">Intuitives Admin-Cockpit</h3>
+                        <p class="text-white-50 mb-4">Behalte alle Prüfungen im Blick. Unsere Cards zeigen dir sofort, wo noch Prüfer fehlen oder Teilnehmer unzugeordnet sind.</p>
+                        
+                        {# --- START APP MOCKUP --- #}
+                        <div class="p-3 bg-light rounded-3 shadow-lg transform-mockup">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-school text-primary me-2"></i>Grundschule am Park</h6>
+                                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i> Prüfer fehlen</span>
+                            </div>
+                            <div class="text-muted small mb-3"><i class="far fa-calendar-alt me-1"></i> 15. Juli 2025</div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 65%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Fortschritt</small>
+                                <small class="fw-bold text-dark">85 / 130 Teilnehmer</small>
+                            </div>
                         </div>
+                        {# --- END APP MOCKUP --- #}
+                        
                     </div>
                 </div>
             </div>
 
-            {# Feature 2: Echtzeit #}
+            {# Feature 2: Medaillen-Automatik (Echtes Mockup) #}
             <div class="col-md-5">
-                <div class="card h-100 border-0 shadow-sm p-4" style="background-color: #e8f5e9;">
-                    <div class="card-body text-center">
-                        <div class="display-4 text-success mb-3"><i class="bi bi-lightning-charge-fill"></i></div>
-                        <h3 class="fw-bold">Live-Statistiken</h3>
-                        <p class="text-muted">Wie viele Medaillen in Gold wurden heute erreicht? Ein Blick ins Dashboard genügt.</p>
+                <div class="card h-100 border-0 shadow-sm p-4 p-md-5 bg-white">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h3 class="fw-bold">Medaillen-Automatik</h3>
+                        <p class="text-muted mb-4">Das System berechnet basierend auf den Leistungen in Echtzeit den Medaillenrang.</p>
+                        
+                        {# --- START APP MOCKUP --- #}
+                        <div class="d-flex justify-content-around mt-auto p-3 bg-light rounded-3 border">
+                            <div class="text-center">
+                                <div class="medal-circle bg-gold shadow-sm mb-2 mx-auto">12</div>
+                                <small class="fw-bold text-dark">Gold</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="medal-circle bg-silver shadow-sm mb-2 mx-auto">24</div>
+                                <small class="fw-bold text-dark">Silber</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="medal-circle bg-bronze shadow-sm mb-2 mx-auto">8</div>
+                                <small class="fw-bold text-dark">Bronze</small>
+                            </div>
+                        </div>
+                        {# --- END APP MOCKUP --- #}
+
                     </div>
                 </div>
             </div>
 
-            {# Feature 3: Prüfer #}
-            <div class="col-md-5">
-                <div class="card h-100 border-0 shadow-sm p-4">
-                    <div class="card-body">
-                        <h3 class="fw-bold">Prüfer-Management</h3>
-                        <p class="text-muted">Weise verantwortliche Prüfer mit einem Klick zu. Jeder weiß sofort, was er zu tun hat.</p>
-                        <i class="bi bi-person-check fs-1 text-primary"></i>
-                    </div>
-                </div>
-            </div>
-
-            {# Feature 4: Medaillen #}
-            <div class="col-md-7">
-                <div class="card h-100 border-0 shadow-sm p-4 bg-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div>
-                            <h3 class="fw-bold">Medaillen-Automatik</h3>
-                            <p class="text-muted">Kein händisches Rechnen mehr. Das System erkennt basierend auf den Leistungen sofort den Medaillenrang.</p>
-                        </div>
-                        <div class="ms-auto d-flex gap-2">
-                            <div class="medal-circle bg-gold">G</div>
-                            <div class="medal-circle bg-silver">S</div>
-                            <div class="medal-circle bg-bronze">B</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
-    {# Call to Action #}
-    <section class="py-5 bg-success text-white text-center shadow-lg my-5">
-        <div class="container py-4">
-            <h2 class="display-5 fw-bold mb-3">Bereit für den digitalen Sportplatz?</h2>
-            <p class="lead mb-4 opacity-75">Schließe dich Vereinen an, die ihre Abzeichen bereits modern verwalten.</p>
-            <a href="{{ path('app_register') }}" class="btn btn-light btn-lg px-5 fw-bold text-success">Kostenlos Account erstellen</a>
+    {# Footer #}
+    <footer class="bg-white border-top py-4 mt-5">
+        <div class="container text-center text-muted small">
+            &copy; 2026 OSA Cockpit. Alle Rechte vorbehalten.
         </div>
-    </section>
+    </footer>
 </div>
 
 <style>
-    /* Spezifisch für die Landingpage */
-    .public-wrapper .medal-circle {
-        width: 45px; height: 45px; border-radius: 50%;
+    /* Spezifisch für die Landingpage Mockups */
+    .medal-circle {
+        width: 50px; height: 50px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        font-weight: bold; color: white;
+        font-size: 1.2rem; font-weight: bold; color: white;
     }
-    .bg-gold { background: linear-gradient(45deg, #FFD700, #DAA520); }
-    .bg-silver { background: linear-gradient(45deg, #C0C0C0, #808080); }
-    .bg-bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); }
+    .bg-gold { background: linear-gradient(135deg, #FFD700, #DAA520); }
+    .bg-silver { background: linear-gradient(135deg, #E0E0E0, #9E9E9E); }
+    .bg-bronze { background: linear-gradient(135deg, #CD7F32, #8D6E63); }
     
-    .hero-section {
-        padding-top: 100px !important;
-        padding-bottom: 100px !important;
-    }
-    
-    .card {
-        border-radius: 20px;
+    .transform-mockup {
+        transform: rotate(-2deg) translateY(10px);
         transition: transform 0.3s ease;
     }
-    .card:hover {
-        transform: scale(1.02);
+    .transform-mockup:hover {
+        transform: rotate(0deg) translateY(0px);
     }
 </style>
 {% endblock %}
