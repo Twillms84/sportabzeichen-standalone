@@ -3,7 +3,8 @@
 {% block title %}Prüfungsübersicht{% endblock %}
 
 {% block body %}
-<div class="container-fluid">
+{# Der Controller admin-participant übernimmt das Lösch-Modal #}
+<div class="container-fluid" data-controller="admin-participant">
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'exams'} %}
 
     {# Header Bereich #}
@@ -12,8 +13,7 @@
             <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
             <p class="text-muted">Verwaltung aller Prüfungen und Statistiken</p>
         </div>
-        {# Hier Link anpassen, falls du eine Route zum Erstellen hast #}
-        <a href="#" class="btn btn-primary">
+        <a href="#" class="btn btn-primary shadow-sm">
             <i class="bi bi-plus-lg"></i> Neue Prüfung
         </a>
     </div>
@@ -31,7 +31,7 @@
                     <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
                         <div>
                             <span class="badge bg-secondary mb-1">{{ exam.year }}</span>
-                            <h5 class="card-title fw-bold mb-0 text-truncate" title="{{ exam.name }}">
+                            <h5 class="card-title fw-bold mb-0 text-truncate" title="{{ exam.name }}" style="max-width: 250px;">
                                 {{ exam.name }}
                             </h5>
                             <small class="text-muted">
@@ -41,13 +41,31 @@
                         
                         {# Dropdown Menü für Aktionen #}
                         <div class="dropdown">
-                            <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                            <button class="btn btn-light btn-sm rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ path('admin_exam_show', {'id': exam.id}) }}">Details öffnen</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li>
+                                    <a class="dropdown-item" href="{{ path('admin_exam_show', {'id': exam.id}) }}">
+                                        <i class="bi bi-eye me-2"></i> Details öffnen
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#">Löschen</a></li>
+                                <li>
+                                    {# Verstecktes Lösch-Formular #}
+                                    <form action="{{ path('admin_exam_delete', {'id': exam.id}) }}" method="POST" class="d-none">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
+                                    </form>
+                                    
+                                    {# Hübscher Lösch-Button mit Modal-Trigger #}
+                                    <a class="dropdown-item text-danger d-flex align-items-center" 
+                                       href="#" 
+                                       data-action="click->admin-participant#confirmAction"
+                                       data-confirm-message="Möchtest du die Prüfung '{{ exam.name }}' wirklich löschen? Alle Ergebnisse werden entfernt."
+                                       data-confirm-type="danger">
+                                        <i class="bi bi-trash3 me-2"></i> Prüfung löschen
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -57,7 +75,7 @@
                         {# PRÜFER SELECT #}
                         <div class="mb-3">
                             <label class="form-label text-uppercase text-muted x-small fw-bold">Verantwortlicher Prüfer</label>
-                            <select class="form-select form-select-sm js-change-examiner" data-exam-id="{{ exam.id }}">
+                            <select class="form-select form-select-sm js-change-examiner border-0 bg-light" data-exam-id="{{ exam.id }}">
                                 <option value="">-- Nicht zugewiesen --</option>
                                 {% for examiner in examiners %}
                                     <option value="{{ examiner.id }}" {{ exam.examiner and exam.examiner.id == examiner.id ? 'selected' : '' }}>
@@ -69,11 +87,11 @@
 
                         {# ALERT: NICHT ZUGEORDNETE TEILNEHMER #}
                         {% if stats.unassigned > 0 %}
-                            <div class="alert alert-warning py-2 px-3 d-flex align-items-center mb-3 small" role="alert">
+                            <div class="alert alert-warning py-2 px-3 d-flex align-items-center mb-3 small border-0" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                                 <div class="lh-1">
                                     <strong>{{ stats.unassigned }} Teilnehmer</strong><br>
-                                    ohne Klasse/Gruppe
+                                    <span class="opacity-75">ohne Klasse/Gruppe</span>
                                 </div>
                             </div>
                         {% endif %}
@@ -83,37 +101,62 @@
                         {# MEDAILLEN #}
                         <div class="row text-center mb-3">
                             <div class="col-4 border-end">
-                                <div class="medal-circle bg-gold mx-auto mb-1">{{ stats.gold }}</div>
-                                <span class="x-small text-muted text-uppercase">Gold</span>
+                                <div class="medal-circle bg-gold mx-auto mb-1 shadow-sm">{{ stats.gold }}</div>
+                                <span class="x-small text-muted text-uppercase fw-bold">Gold</span>
                             </div>
                             <div class="col-4 border-end">
-                                <div class="medal-circle bg-silver mx-auto mb-1">{{ stats.silver }}</div>
-                                <span class="x-small text-muted text-uppercase">Silber</span>
+                                <div class="medal-circle bg-silver mx-auto mb-1 shadow-sm">{{ stats.silver }}</div>
+                                <span class="x-small text-muted text-uppercase fw-bold">Silber</span>
                             </div>
                             <div class="col-4">
-                                <div class="medal-circle bg-bronze mx-auto mb-1">{{ stats.bronze }}</div>
-                                <span class="x-small text-muted text-uppercase">Bronze</span>
+                                <div class="medal-circle bg-bronze mx-auto mb-1 shadow-sm">{{ stats.bronze }}</div>
+                                <span class="x-small text-muted text-uppercase fw-bold">Bronze</span>
                             </div>
                         </div>
 
                     </div>
                     
                     {# FOOTER #}
-                    <div class="card-footer bg-white border-top py-3">
+                    <div class="card-footer bg-white border-top-0 py-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">
                                 <i class="bi bi-people-fill"></i> {{ exam.examParticipants|length }} Teilnehmer
                             </small>
-                            <a href="{{ path('admin_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-primary">
-                                Verwalten <i class="bi bi-arrow-right"></i>
+                            <a href="{{ path('admin_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-primary px-3 rounded-pill">
+                                Verwalten <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-journal-x display-1 text-light"></i>
+                <p class="text-muted mt-3">Noch keine Prüfungen angelegt.</p>
+            </div>
         {% endfor %}
     </div>
 </div>
+
+{# CSS für die Medaillen-Optik (kannst du auch in deine app.css verschieben) #}
+<style>
+    .medal-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 0.9rem;
+    }
+    .bg-gold { background: linear-gradient(45deg, #FFD700, #DAA520); }
+    .bg-silver { background: linear-gradient(45deg, #C0C0C0, #808080); }
+    .bg-bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); }
+    .x-small { font-size: 0.7rem; }
+</style>
+
 {% endblock %}
 
 {% block javascripts %}
