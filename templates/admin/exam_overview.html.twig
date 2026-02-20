@@ -4,7 +4,6 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {# Deine Dashboard CSS #}
     <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
     <style>
         .medal-circle {
@@ -59,7 +58,7 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    {# ACHTUNG: Prüfe ob die Route admin_exam_delete existiert #}
+                                    {# Route Name im Controller: admin_ + exam_delete #}
                                     <form action="{{ path('admin_exam_delete', {'id': exam.id}) }}" method="POST" class="d-none">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
                                     </form>
@@ -75,6 +74,7 @@
                     </div>
 
                     <div class="card-body">
+                        {# PRÜFER SELECT #}
                         <div class="mb-3">
                             <label class="form-label x-small fw-bold text-muted text-uppercase">Verantwortlicher Prüfer</label>
                             <select class="form-select form-select-sm js-change-examiner border-0 bg-light" data-exam-id="{{ exam.id }}">

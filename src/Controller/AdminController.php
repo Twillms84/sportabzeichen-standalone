@@ -124,4 +124,17 @@ final class AdminController extends AbstractController
             'activeTab' => 'exams',
         ]);
     }
+
+    #[Route('/exam/{id}/delete', name: 'exam_delete', methods: ['POST'])]
+    public function delete(Exam $exam, EntityManagerInterface $em, Request $request): Response
+    {
+        // CSRF Check für Sicherheit
+        if ($this->isCsrfTokenValid('delete' . $exam->getId(), $request->request->get('_token'))) {
+            $em->remove($exam);
+            $em->flush();
+            $this->addFlash('success', 'Prüfung wurde gelöscht.');
+        }
+
+        return $this->redirectToRoute('admin_exam_overview');
+    }
 }
