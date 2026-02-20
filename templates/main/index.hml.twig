@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}OSA - Sportabzeichen-Verwaltung der nächsten Generation{% endblock %}
+
+{% block body %}
+{# Navbar für Gäste #}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-success" href="#">
+            <i class="bi bi-trophy-fill me-2"></i>OSA Cockpit
+        </a>
+        <div class="ms-auto">
+            <a href="{{ path('app_login') }}" class="btn btn-outline-primary me-2">Login</a>
+            <a href="#kontakt" class="btn btn-primary">Jetzt starten</a>
+        </div>
+    </div>
+</nav>
+
+{# Hero Section #}
+<header class="py-5 border-bottom bg-light">
+    <div class="container px-5">
+        <div class="row gx-5 align-items-center justify-content-center">
+            <div class="col-lg-8 col-xl-7 col-xxl-6">
+                <div class="my-5 text-center text-xl-start">
+                    <h1 class="display-5 fw-bolder mb-2">Sportabzeichen-Verwaltung war noch nie so einfach.</h1>
+                    <p class="lead fw-normal text-muted mb-4">Verwalte Prüfungen, Teilnehmer und Medaillen in einem zentralen, modernen Cockpit. Schluss mit Excel-Chaos und Zettelwirtschaft.</p>
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xl-start">
+                        <a class="btn btn-primary btn-lg px-4 me-sm-3" href="#features">Mehr erfahren</a>
+                        <a class="btn btn-outline-dark btn-lg px-4" href="#demo">Live Demo</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5 col-xxl-6 d-none d-xl-block text-center">
+                {# Hier könnte ein Screenshot deines neuen Card-Dashboards hin #}
+                <div class="card shadow-lg rotate-3 exam-card p-2">
+                    <img class="img-fluid rounded-3 my-2" src="https://via.placeholder.com/600x400/198754/FFFFFF?text=Dashboard+Vorschau" alt="Dashboard Preview" />
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+{# Features Section #}
+<section class="py-5" id="features">
+    <div class="container px-5 my-5">
+        <div class="row gx-5">
+            <div class="col-lg-4 mb-5 mb-lg-0 text-center">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 p-3 d-inline-block">
+                    <i class="bi bi-speedometer2 fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bolder">Echtzeit-Statistiken</h2>
+                <p>Verfolge Gold-, Silber- und Bronzemedaillen sofort nach der Eingabe. Dein Cockpit ist immer aktuell.</p>
+            </div>
+            <div class="col-lg-4 mb-5 mb-lg-0 text-center">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 p-3 d-inline-block">
+                    <i class="bi bi-people fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bolder">Prüfer-Zuweisung</h2>
+                <p>Verwalte deine Prüfer per Drag-and-Drop oder schnellem Klick. Effiziente Organisation für große Vereine.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 p-3 d-inline-block">
+                    <i class="bi bi-shield-check fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bolder">Sicher & Mandantenfähig</h2>
+                <p>Jede Institution verwaltet nur ihre eigenen Daten. Höchste Datensicherheit für deine Teilnehmer.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# Footer #}
+<footer class="bg-dark py-4 mt-auto">
+    <div class="container px-5">
+        <div class="row align-items-center justify-content-between flex-column flex-sm-row">
+            <div class="col-auto"><div class="small m-0 text-white">Copyright &copy; OSA Cockpit 2024</div></div>
+            <div class="col-auto">
+                <a class="link-light small" href="#!">Impressum</a>
+                <span class="text-white mx-1">&middot;</span>
+                <a class="link-light small" href="#!">Datenschutz</a>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}
