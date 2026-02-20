@@ -1,0 +1,92 @@
+/* =========================================
+   1. LANDINGPAGE LAYOUT & THEME-MAPPING
+   ========================================= */
+
+/* Die speziellen Landingpage-Klassen greifen direkt auf deine app.css Variablen zu */
+.public-wrapper { 
+    background-color: var(--app-bg); 
+    color: var(--app-muted); 
+    transition: background-color 0.3s ease, color 0.3s ease; 
+}
+
+.public-navbar { 
+    background-color: var(--app-card-bg); 
+    border-bottom: 1px solid var(--app-border); 
+    transition: background-color 0.3s ease; 
+}
+
+.theme-card { 
+    background-color: var(--app-card-bg) !important; 
+    border-color: var(--app-border) !important; 
+}
+
+/* Nutzt die sekundären Hintergründe aus der app.css */
+.theme-bg-light { 
+    background-color: var(--input-bg) !important; 
+    border-color: var(--app-border) !important; 
+}
+
+.theme-heading { 
+    color: var(--app-text) !important; 
+}
+
+.theme-text, .theme-muted { 
+    color: var(--app-muted) !important; 
+}
+
+.theme-border { 
+    border-color: var(--app-border) !important; 
+}
+
+
+/* =========================================
+   2. PUBLIC DARK MODE FALLBACK
+   ========================================= */
+
+/* Falls ein Besucher noch nicht eingeloggt ist (und kein data-bs-theme="dark" im body hat), 
+   aber sein Betriebssystem auf Dark Mode steht, zwingen wir Bootstrap-Standardklassen 
+   auf der Landingpage in den dunklen Look.
+*/
+@media (prefers-color-scheme: dark) {
+    /* Wenn kein data-bs-theme explizit gesetzt ist, lade Dark-Variablen als Fallback */
+    :root:not([data-bs-theme="light"]) {
+        --app-bg: #121212;      
+        --app-card-bg: #1e1e1e; 
+        --app-text: #e9ecef;    
+        --app-border: #333333;  
+        --app-muted: #adb5bd;
+        --input-bg: #2b3035;
+    }
+
+    /* Bootstrap Hardcoded-Klassen auf der Landingpage überschreiben */
+    .public-wrapper .text-dark { color: #f8f9fa !important; }
+    .public-wrapper .bg-white { background-color: #1e1e1e !important; }
+    .public-wrapper .bg-light { background-color: #2d2d2d !important; }
+    
+    .public-wrapper .btn-outline-dark { 
+        color: #f8f9fa; 
+        border-color: #f8f9fa; 
+    }
+    .public-wrapper .btn-outline-dark:hover { 
+        background-color: #f8f9fa; 
+        color: #121212; 
+    }
+}
+
+
+/* =========================================
+   3. ANIMATIONEN & EXTRAS (Nur Landingpage)
+   ========================================= */
+
+.transform-mockup {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.transform-mockup:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.15) !important;
+}
+
+.tracking-wider {
+    letter-spacing: 0.1em;
+}
