@@ -2,12 +2,27 @@
 
 {% block title %}Prüfungsübersicht{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# Hier binden wir deine dashboard_css.css ein #}
+    <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
+    <style>
+        /* Falls die Medaillen-Styles noch nicht in deiner CSS sind: */
+        .medal-circle {
+            width: 35px; height: 35px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: white; font-size: 0.9rem;
+        }
+        .bg-gold { background: linear-gradient(45deg, #FFD700, #DAA520); }
+        .bg-silver { background: linear-gradient(45deg, #C0C0C0, #808080); }
+        .bg-bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); }
+    </style>
+{% endblock %}
+
 {% block body %}
-{# Der Controller admin-participant übernimmt das Lösch-Modal #}
 <div class="container-fluid" data-controller="admin-participant">
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'exams'} %}
 
-    {# Header Bereich #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
@@ -18,7 +33,6 @@
         </a>
     </div>
 
-    {# Cards Grid #}
     <div class="row g-4">
         {% for item in examsData %}
             {% set exam = item.exam %}
@@ -26,44 +40,37 @@
             
             <div class="col-12 col-md-6 col-xxl-4">
                 <div class="card h-100 shadow-sm border-0 exam-card">
-                    
-                    {# CARD HEADER #}
                     <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
                         <div>
                             <span class="badge bg-secondary mb-1">{{ exam.year }}</span>
-                            <h5 class="card-title fw-bold mb-0 text-truncate" title="{{ exam.name }}" style="max-width: 250px;">
-                                {{ exam.name }}
-                            </h5>
-                            <small class="text-muted">
-                                <i class="bi bi-calendar-event"></i> {{ exam.date|date('d.m.Y') }}
-                            </small>
+                            <h5 class="card-title fw-bold mb-0 text-truncate" style="max-width: 200px;">{{ exam.name }}</h5>
+                            <small class="text-muted"><i class="bi bi-calendar-event"></i> {{ exam.date|date('d.m.Y') }}</small>
                         </div>
                         
-                        {# Dropdown Menü für Aktionen #}
                         <div class="dropdown">
-                            <button class="btn btn-light btn-sm rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                                <li>
-                                    <a class="dropdown-item" href="{{ path('admin_exam_show', {'id': exam.id}) }}">
-                                        <i class="bi bi-eye me-2"></i> Details öffnen
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{{ path('admin_exam_show', {'id': exam.id}) }}">Details</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    {# Verstecktes Lösch-Formular #}
-                                    <form action="{{ path('admin_exam_delete', {'id': exam.id}) }}" method="POST" class="d-none">
+                                    {# Falls die Route admin_exam_delete nicht existiert, hier anpassen oder '#' nutzen #}
+                                    {% set delete_url = '#' %}
+                                    {% try %}
+                                        {% set delete_url = path('admin_exam_delete', {'id': exam.id}) %}
+                                    {% catch %}
+                                        {# Route existiert nicht -> Button deaktivieren oder Fallback #}
+                                    {% endtry %}
+
+                                    <form action="{{ delete_url }}" method="POST" class="d-none">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ exam.id) }}">
                                     </form>
-                                    
-                                    {# Hübscher Lösch-Button mit Modal-Trigger #}
-                                    <a class="dropdown-item text-danger d-flex align-items-center" 
-                                       href="#" 
+                                    <a class="dropdown-item text-danger" href="#" 
                                        data-action="click->admin-participant#confirmAction"
-                                       data-confirm-message="Möchtest du die Prüfung '{{ exam.name }}' wirklich löschen? Alle Ergebnisse werden entfernt."
+                                       data-confirm-message="Prüfung wirklich löschen?"
                                        data-confirm-type="danger">
-                                        <i class="bi bi-trash3 me-2"></i> Prüfung löschen
+                                        Löschen
                                     </a>
                                 </li>
                             </ul>
@@ -71,11 +78,9 @@
                     </div>
 
                     <div class="card-body">
-                        
-                        {# PRÜFER SELECT #}
                         <div class="mb-3">
-                            <label class="form-label text-uppercase text-muted x-small fw-bold">Verantwortlicher Prüfer</label>
-                            <select class="form-select form-select-sm js-change-examiner border-0 bg-light" data-exam-id="{{ exam.id }}">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Prüfer</label>
+                            <select class="form-select form-select-sm js-change-examiner" data-exam-id="{{ exam.id }}">
                                 <option value="">-- Nicht zugewiesen --</option>
                                 {% for examiner in examiners %}
                                     <option value="{{ examiner.id }}" {{ exam.examiner and exam.examiner.id == examiner.id ? 'selected' : '' }}>
@@ -85,78 +90,37 @@
                             </select>
                         </div>
 
-                        {# ALERT: NICHT ZUGEORDNETE TEILNEHMER #}
                         {% if stats.unassigned > 0 %}
-                            <div class="alert alert-warning py-2 px-3 d-flex align-items-center mb-3 small border-0" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                                <div class="lh-1">
-                                    <strong>{{ stats.unassigned }} Teilnehmer</strong><br>
-                                    <span class="opacity-75">ohne Klasse/Gruppe</span>
-                                </div>
+                            <div class="alert alert-warning py-2 small border-0">
+                                <strong>{{ stats.unassigned }}</strong> Teilnehmer ohne Gruppe
                             </div>
                         {% endif %}
 
-                        <hr class="opacity-10 my-3">
-
-                        {# MEDAILLEN #}
-                        <div class="row text-center mb-3">
+                        <div class="row text-center mt-3">
                             <div class="col-4 border-end">
-                                <div class="medal-circle bg-gold mx-auto mb-1 shadow-sm">{{ stats.gold }}</div>
-                                <span class="x-small text-muted text-uppercase fw-bold">Gold</span>
+                                <div class="medal-circle bg-gold mx-auto mb-1">{{ stats.gold }}</div>
+                                <span class="x-small text-muted text-uppercase">Gold</span>
                             </div>
                             <div class="col-4 border-end">
-                                <div class="medal-circle bg-silver mx-auto mb-1 shadow-sm">{{ stats.silver }}</div>
-                                <span class="x-small text-muted text-uppercase fw-bold">Silber</span>
+                                <div class="medal-circle bg-silver mx-auto mb-1">{{ stats.silver }}</div>
+                                <span class="x-small text-muted text-uppercase">Silber</span>
                             </div>
                             <div class="col-4">
-                                <div class="medal-circle bg-bronze mx-auto mb-1 shadow-sm">{{ stats.bronze }}</div>
-                                <span class="x-small text-muted text-uppercase fw-bold">Bronze</span>
+                                <div class="medal-circle bg-bronze mx-auto mb-1">{{ stats.bronze }}</div>
+                                <span class="x-small text-muted text-uppercase">Bronze</span>
                             </div>
                         </div>
-
                     </div>
                     
-                    {# FOOTER #}
-                    <div class="card-footer bg-white border-top-0 py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="bi bi-people-fill"></i> {{ exam.examParticipants|length }} Teilnehmer
-                            </small>
-                            <a href="{{ path('admin_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-primary px-3 rounded-pill">
-                                Verwalten <i class="bi bi-arrow-right ms-1"></i>
-                            </a>
-                        </div>
+                    <div class="card-footer bg-white border-top-0 py-3 d-flex justify-content-between">
+                        <small class="text-muted">{{ exam.examParticipants|length }} Teilnehmer</small>
+                        <a href="{{ path('admin_exam_show', {'id': exam.id}) }}" class="btn btn-sm btn-outline-primary px-3 rounded-pill">Verwalten</a>
                     </div>
                 </div>
-            </div>
-        {% else %}
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-journal-x display-1 text-light"></i>
-                <p class="text-muted mt-3">Noch keine Prüfungen angelegt.</p>
             </div>
         {% endfor %}
     </div>
 </div>
-
-{# CSS für die Medaillen-Optik (kannst du auch in deine app.css verschieben) #}
-<style>
-    .medal-circle {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: white;
-        font-size: 0.9rem;
-    }
-    .bg-gold { background: linear-gradient(45deg, #FFD700, #DAA520); }
-    .bg-silver { background: linear-gradient(45deg, #C0C0C0, #808080); }
-    .bg-bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); }
-    .x-small { font-size: 0.7rem; }
-</style>
-
 {% endblock %}
 
 {% block javascripts %}
