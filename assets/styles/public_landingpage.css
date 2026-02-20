@@ -28,38 +28,6 @@
 .theme-border { border-color: var(--app-border) !important; }
 
 
-/* =========================================
-   2. PUBLIC DARK MODE FALLBACK (Geixt!)
-   ========================================= */
-/* Wir binden es hart an das html-Tag, solange dort NICHT "light" erzwungen wird */
-@media (prefers-color-scheme: dark) {
-    html:not([data-bs-theme="light"]) {
-        /* !important überschreibt die Standard-Werte aus der app.css garantiert */
-        --app-bg: #121212 !important;      
-        --app-card-bg: #1e1e1e !important; 
-        --app-text: #e9ecef !important;    
-        --app-border: #333333 !important;  
-        --app-muted: #adb5bd !important;
-        --input-bg: #2b3035 !important;
-        --bs-body-bg: #121212 !important;
-        --bs-body-color: #e9ecef !important;
-    }
-
-    /* Bootstrap Hardcoded-Klassen auf der Landingpage überschreiben */
-    .public-wrapper .text-dark { color: #f8f9fa !important; }
-    .public-wrapper .bg-white { background-color: #1e1e1e !important; }
-    .public-wrapper .bg-light { background-color: #2d2d2d !important; }
-    
-    .public-wrapper .btn-outline-dark { 
-        color: #f8f9fa; 
-        border-color: #f8f9fa; 
-    }
-    .public-wrapper .btn-outline-dark:hover { 
-        background-color: #f8f9fa; 
-        color: #121212; 
-    }
-}
-
 
 /* =========================================
    3. ANIMATIONEN & SCROLL-REVEAL
