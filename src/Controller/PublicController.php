@@ -1,4 +1,3 @@
-// src/Controller/PublicController.php
 <?php
 
 namespace App\Controller;
