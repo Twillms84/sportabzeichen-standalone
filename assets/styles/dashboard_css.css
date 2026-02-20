@@ -95,3 +95,18 @@
     background-color: var(--app-border) !important; /* Passt sich an */
     color: var(--app-muted);
 }
+
+.medal-circle {
+    width: 35px; height: 35px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: white; font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.bg-gold { background: linear-gradient(45deg, #FFD700, #DAA520); }
+.bg-silver { background: linear-gradient(45deg, #C0C0C0, #808080); }
+.bg-bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); }
+.x-small { font-size: 0.75rem; }
+
+/* Korrektur für Card-Header Text, da app.css ihn auf osa-green setzt */
+.card-header .card-title { color: #ffffff; }
+.card-header .text-muted { color: rgba(255,255,255,0.7) !important; }
