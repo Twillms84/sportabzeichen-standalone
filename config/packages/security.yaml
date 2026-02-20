@@ -21,32 +21,35 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            
-            # --- HIER: User Switch aktivieren ---
             switch_user: true 
 
             form_login:
                 login_path: app_login
-                check_path: app_login
-                # Nach dem Login schicken wir Admins lieber direkt hierhin:
-                default_target_path: admin_exam_overview 
+                check_path: app_login # Dieser Pfad MUSS erreichbar sein!
+                enable_csrf: true
+                username_parameter: email
+                password_parameter: _password
+                default_target_path: admin_exam_overview # Hierhin nach Erfolg
             
             logout:
                 path: app_logout
-                # Nach dem Logout zur Landingpage statt zum Login-Formular
-                target: app_home
+                target: app_home # Nach Logout zur Landingpage
 
     access_control:
-        # 1. Öffentliche Bereiche (Müssen GANZ OBEN stehen)
-        - { path: ^/$, roles: PUBLIC_ACCESS }        # Die Landingpage
-        - { path: ^/login, roles: PUBLIC_ACCESS }    # Die Login-Seite
-        - { path: ^/register, roles: PUBLIC_ACCESS } # Die Registrierung
+        # 1. Profiler & Assets
+        - { path: ^/(_profiler|_wdt), roles: PUBLIC_ACCESS }
         
-        # 2. Interner Bereich
-        - { path: ^/admin, roles: ROLE_ADMIN }       # Admin-Bereich
+        # 2. Öffentliche Seiten (Landingpage, Login, Register)
+        # WICHTIG: Diese müssen VOR der ROLE_USER Regel kommen
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
         
-        # 3. Der "Auffang-Schutz"
-        # Alle anderen URLs (z.B. das Dashboard für Prüfer) brauchen ROLE_USER
+        # 3. Admin-Bereich
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        
+        # 4. Der "Catch-all" für eingeloggte User
+        # Alles andere erfordert ROLE_USER
         - { path: ^/, roles: ROLE_USER }
 
 when@test:
