@@ -154,6 +154,7 @@
                                                 data-name="{{ p.user ? p.user.firstname ~ ' ' ~ p.user.lastname : 'Teilnehmer' }}"
                                                 data-dob="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}"
                                                 data-gender="{{ p.gender }}">
+                                                data-group="{{ p.user and p.user.groups is not empty ? p.user.groups|first.id : '' }}">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         
@@ -200,6 +201,15 @@
                                 <option value="MALE">{{'Männlich'|trans}} (M)</option>
                                 <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
                                 <option value="DIVERSE">{{'Divers'|trans}} (D)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="modalGroup" class="form-label">{{ 'Klasse/Gruppe'|trans }}</label>
+                            <select name="group_id" id="modalGroup" class="form-select">
+                                <option value="">-- {{ 'Keine Gruppe'|trans }} --</option>
+                                {% for group in availableGroups %}
+                                    <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
