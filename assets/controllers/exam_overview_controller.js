@@ -1,68 +1,69 @@
-/**
- * Admin Exam Overview Scripts
- * Pfad: public/js/admin/exam-overview.js
- */
+import { Controller } from '@hotwired/stimulus';
 
-document.addEventListener('DOMContentLoaded', function() {
-    initExaminerSelects();
-});
+export default class extends Controller {
+    // Die connect-Funktion wird automatisch aufgerufen, wenn Stimulus das Element im DOM findet
+    connect() {
+        console.log('✅ Exam Overview Controller verbunden');
+        
+        // Initialisiere die Original-Werte für alle Selects
+        this.element.querySelectorAll('.js-change-examiner').forEach(select => {
+            select.dataset.original = select.value;
+        });
+    }
 
-function initExaminerSelects() {
-    const selects = document.querySelectorAll('.js-change-examiner');
+    /**
+     * Diese Methode wird durch data-action="change->exam-overview#changeExaminer" getriggert
+     */
+    async changeExaminer(event) {
+        const select = event.currentTarget;
+        const examId = select.dataset.examId;
+        const newExaminerId = select.value;
+        const originalValue = select.dataset.original;
 
-    selects.forEach(select => {
-        select.addEventListener('change', function() {
-            const examId = this.dataset.examId;
-            const newExaminerId = this.value;
-            const originalValue = this.dataset.original; // Falls wir zurücksetzen müssen
+        // UI Feedback: Loading Status
+        select.disabled = true;
+        select.classList.add('opacity-50');
 
-            // UI Feedback: Loading Status
-            this.disabled = true;
-            this.classList.add('opacity-50');
-
-            fetch(`/admin/api/exam/${examId}/set-examiner`, {
+        try {
+            const response = await fetch(`/admin/api/exam/${examId}/set-examiner`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    // Falls du CSRF Protection nutzt (empfohlen):
-                    // 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ examiner_id: newExaminerId })
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Netzwerk Fehler');
-            })
-            .then(data => {
-                // Erfolg: Grün aufleuchten
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-                
-                // Originalwert aktualisieren
-                this.dataset.original = newExaminerId;
-
-                // Nach 2 Sekunden Feedback entfernen
-                setTimeout(() => {
-                    this.classList.remove('is-valid');
-                }, 2000);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Fehler: Rot markieren und zurücksetzen
-                this.classList.add('is-invalid');
-                alert('Der Prüfer konnte nicht gespeichert werden.');
-                // Zurücksetzen (optional)
-                // this.value = originalValue; 
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.classList.remove('opacity-50');
             });
-        });
-        
-        // Speichere den Initialwert für Reset-Zwecke
-        select.dataset.original = select.value;
-    });
+
+            if (!response.ok) {
+                throw new Error('Netzwerk Fehler');
+            }
+
+            const data = await response.json();
+
+            // Erfolg: Grün aufleuchten
+            select.classList.remove('is-invalid');
+            select.classList.add('is-valid');
+            
+            // Originalwert aktualisieren
+            select.dataset.original = newExaminerId;
+
+            // Nach 2 Sekunden Feedback entfernen
+            setTimeout(() => {
+                select.classList.remove('is-valid');
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error:', error);
+            
+            // Fehler: Rot markieren und zurücksetzen
+            select.classList.add('is-invalid');
+            alert('Der Prüfer konnte nicht gespeichert werden.');
+            
+            // Optional: Auf alten Wert zurücksetzen
+            // select.value = originalValue;
+        } finally {
+            // UI Status wiederherstellen
+            select.disabled = false;
+            select.classList.remove('opacity-50');
+        }
+    }
 }
