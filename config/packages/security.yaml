@@ -28,14 +28,13 @@ security:
             form_login:
                 login_path: app_login
                 check_path: app_login
-                enable_csrf: true
-                username_parameter: email
-                password_parameter: _password
-                default_target_path: app_exams_dashboard
+                # Nach dem Login schicken wir Admins lieber direkt hierhin:
+                default_target_path: admin_exam_overview 
             
             logout:
                 path: app_logout
-                target: app_login
+                # Nach dem Logout zur Landingpage statt zum Login-Formular
+                target: app_home
 
     access_control:
         # 1. Öffentliche Bereiche (Müssen GANZ OBEN stehen)
