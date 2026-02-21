@@ -278,27 +278,38 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
 
-    // 2. SCROLL-ANIMATION (Wartet, bis das HTML fertig geladen ist)
-    document.addEventListener("DOMContentLoaded", function() {
+    // 2. SCROLL-ANIMATION (Turbo-sicher & sofort ausführbar)
+    function initScrollAnimations() {
+        const elements = document.querySelectorAll('.reveal-on-scroll');
+        
+        // Falls keine Elemente gefunden wurden, direkt abbrechen
+        if (elements.length === 0) return;
+
         const observerOptions = {
             root: null,
             rootMargin: '0px',
-            threshold: 0.15 // Startet, wenn 15% des Elements sichtbar sind
+            threshold: 0.15 
         };
 
         const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target); // Animation passiert nur 1x
+                    observer.unobserve(entry.target); 
                 }
             });
         }, observerOptions);
 
-        document.querySelectorAll('.reveal-on-scroll').forEach((elem) => {
+        elements.forEach((elem) => {
             observer.observe(elem);
         });
-    });
+    }
+
+    // Direkt ausführen (da das HTML darüber bereits geladen ist)
+    initScrollAnimations();
+
+    // WICHTIG FÜR SYMFONY: Falls Turbo genutzt wird, beim Seitenwechsel neu initialisieren
+    document.addEventListener('turbo:load', initScrollAnimations);
 </script>
 
 {% endblock %}
