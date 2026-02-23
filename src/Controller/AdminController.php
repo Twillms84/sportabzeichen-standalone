@@ -137,7 +137,7 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_exam_overview');
     }
-    
+
     #[Route('/exam/new', name: 'exam_new', methods: ['POST'])]
     public function new(Request $request, EntityManagerInterface $em): Response
     {
@@ -182,5 +182,28 @@ final class AdminController extends AbstractController
         $this->addFlash('success', sprintf('Prüfung "%s" wurde erfolgreich angelegt.', $name));
 
         return $this->redirectToRoute('admin_exam_overview');
+    }
+
+    #[Route('/admin/fix-roles', name: 'admin_fix_roles')]
+    public function fixRoles(EntityManagerInterface $em): Response
+    {
+        // Holt alle User, die auch Participant sind
+        $participants = $em->getRepository(Participant::class)->findAll();
+        $count = 0;
+
+        foreach ($participants as $participant) {
+            $user = $participant->getUser();
+            if ($user) {
+                $roles = $user->getRoles(); // Holt bestehende Rollen als Array
+                if (!in_array('ROLE_PARTICIPANT', $roles)) {
+                    $roles[] = 'ROLE_PARTICIPANT'; // Fügt die neue Rolle hinzu
+                    $user->setRoles(array_unique($roles));
+                    $count++;
+                }
+            }
+        }
+
+        $em->flush();
+        return new Response("Fertig! $count User wurden mit der ROLE_PARTICIPANT ausgestattet.");
     }
 }
