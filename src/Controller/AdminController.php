@@ -169,15 +169,23 @@ final class AdminController extends AbstractController
 
             // Berechnung (da oben geprüft, hier sicher)
             $birthYear = (int)$birthDate->format('Y');
-            $age = $examYear - $birthYear; // Hier nutzen wir das Integer-Jahr direkt
+            $age = $examYear - $birthYear; 
 
-            // Not-Null Felder absichern
+            $ep = new ExamParticipant();
+            $ep->setExam($exam);
+            $ep->setParticipant($participant);
+
+            // WICHTIG: Deine Entity nutzt $age für die Spalte age_year.
+            // Stelle sicher, dass setAge auch wirklich den Wert setzt.
+            $ep->setAge((int)$age); 
+
+            // Diese Felder hast du in der Entity mit Default-Werten, 
+            // aber wir setzen sie hier sicherheitshalber explizit:
             $ep->setTotalPoints(0);
             $ep->setFinalMedal('NONE');
 
             $em->persist($ep);
             $em->flush();
-
             $this->addFlash('success', sprintf('%s hinzugefügt. Alter für Prüfung: %d Jahre.', $user->getFirstname(), $age));
 
         } catch (\Exception $e) {
