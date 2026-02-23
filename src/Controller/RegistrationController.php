@@ -86,7 +86,7 @@ class RegistrationController extends AbstractController
 
             // E-Mail zusammenbauen
             $email = (new TemplatedEmail())
-                ->from(new Address('noreply@osa-cockpit.de', 'OSA Cockpit'))
+                ->from(new Address('info@heimserver24.de', 'OSA Cockpit'))
                 ->to($user->getEmail())
                 ->subject('Bitte bestätige deine E-Mail-Adresse')
                 ->htmlTemplate('registration/confirmation_email.html.twig')
