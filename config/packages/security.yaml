@@ -22,6 +22,8 @@ security:
             provider: app_user_provider
             switch_user: true 
 
+            user_checker: App\Security\UserChecker
+
             form_login:
                 login_path: app_login
                 check_path: app_login
