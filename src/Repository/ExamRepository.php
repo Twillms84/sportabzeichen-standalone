@@ -26,21 +26,25 @@ class ExamRepository extends ServiceEntityRepository
 
         $qb->select('u')
         ->from(User::class, 'u')
-        ->join('u.groups', 'g')
-        ->join(Exam::class, 'e', 'WITH', 'g MEMBER OF e.groups')
-        ->leftJoin('u.participant', 'p')
+        // 1. Wir brauchen zwingend ein Participant-Profil (wegen birthdate)
+        ->innerJoin(\App\Entity\Participant::class, 'p', 'WITH', 'p.user = u')
+        // 2. Wir prüfen, ob der User schon in DIESER Prüfung ist
         ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
-        
-        ->where('e.id = :examId')
-        ->andWhere('ep.id IS NULL'); // Wir lassen 'deleted' weg, da das Feld fehlt
+        // 3. Filter: Gleiche Institution wie die Prüfung
+        ->where('u.institution = :institution')
+        // 4. Nur User, die noch NICHT in der Prüfung sind (Ausschluss-Logik)
+        ->andWhere('ep.id IS NULL');
 
-        if ($search) {
-            $qb->andWhere('u.lastname LIKE :search OR u.firstname LIKE :search')
-            ->setParameter('search', '%' . $search . '%');
+        if ($search !== '') {
+            $qb->andWhere($qb->expr()->orX(
+                'LOWER(u.lastname) LIKE :search',
+                'LOWER(u.firstname) LIKE :search'
+            ))
+            ->setParameter('search', '%' . mb_strtolower($search) . '%');
         }
 
         return $qb->setParameter('exam', $exam)
-                ->setParameter('examId', $exam->getId())
+                ->setParameter('institution', $exam->getInstitution())
                 ->orderBy('u.lastname', 'ASC')
                 ->addOrderBy('u.firstname', 'ASC')
                 ->setMaxResults(300)
