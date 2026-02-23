@@ -12,7 +12,6 @@ class SecurityController extends AbstractController
     #[Route(path: '/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
-        $this->addFlash('info', 'HALLO VOM LOGIN CONTROLLER! Wenn du das siehst, funktioniert das Template!');
         // Wenn schon eingeloggt -> ab ins Admin-Cockpit
         if ($this->getUser()) {
             return $this->redirectToRoute('admin_exam_overview');
