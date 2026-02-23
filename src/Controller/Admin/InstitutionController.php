@@ -107,7 +107,7 @@ use App\Entity\Institution;
                 $this->addFlash('error', 'Ungültiges Lizenzmodell ausgewählt.');
             }
 
-            return $this->redirectToRoute('admin_institutions_index'); // <-- Passe diese Route an deinen echten Index-Routennamen an!
+            return $this->redirectToRoute('admin_institutions_index');
         }
 
     }   
