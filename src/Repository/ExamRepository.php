@@ -24,27 +24,33 @@ class ExamRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
-        return $qb->select('u')
+        $qb->select('u')
             ->from(\App\Entity\User::class, 'u')
-            // 1. Wir brauchen das Participant-Profil (wegen Geburtsdatum)
+            // 1. Wir brauchen das Participant-Profil (wegen birthdate)
             ->innerJoin('u.participant', 'p')
-            // 2. Wir joinen die Gruppen des Users
+            // 2. Join zu den Gruppen des Users
             ->innerJoin('u.groups', 'g')
-            // 3. WICHTIG: Wir filtern die Gruppen, die im Exam hinterlegt sind
-            // Da Exam -> Groups existiert, nutzen wir MEMBER OF
-            ->where(':exam MEMBER OF g.exams') // Falls Group -> Exam ManyToMany
-            // ODER (wahrscheinlicher basierend auf deinem vorherigen Code):
-            ->andWhere('g MEMBER OF :examGroups')
-            
-            // 4. Nur Teilnehmer, die noch nicht in dieser Prüfung sind
+            // 3. WICHTIG: Wir joinen die Prüfung über deren Gruppen-Relation
+            // Wir suchen also Gruppen, die in der "groups" Collection dieses Exams sind
+            ->innerJoin(\App\Entity\Exam::class, 'e', 'WITH', 'g MEMBER OF e.groups')
+            // 4. Ausschluss-Logik: Nur Teilnehmer, die noch nicht in dieser Prüfung sind
             ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
-            ->andWhere('ep.id IS NULL')
             
-            ->setParameter('exam', $exam)
-            ->setParameter('examGroups', $exam->getGroups()) // Wir übergeben die Collection der Prüfungsgruppen
-            
-            // Suche und Sortierung
+            ->where('e.id = :examId')
+            ->andWhere('ep.id IS NULL');
+
+        if ($search !== '') {
+            $qb->andWhere($qb->expr()->orX(
+                'LOWER(u.lastname) LIKE :search',
+                'LOWER(u.firstname) LIKE :search'
+            ))
+            ->setParameter('search', '%' . mb_strtolower($search) . '%');
+        }
+
+        return $qb->setParameter('exam', $exam)
+            ->setParameter('examId', $exam->getId())
             ->orderBy('u.lastname', 'ASC')
+            ->addOrderBy('u.firstname', 'ASC')
             ->getQuery()
             ->getResult();
     }
