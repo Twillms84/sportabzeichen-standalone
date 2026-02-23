@@ -114,6 +114,9 @@ class RegistrationController extends AbstractController
     #[Route('/verify/email', name: 'app_verify_email')]
     public function verifyUserEmail(Request $request, UserRepository $userRepository, VerifyEmailHelperInterface $verifyEmailHelper, EntityManagerInterface $entityManager): Response
     {
+        
+        dd('BINGO! Der Türsteher hat mich durchgelassen!', $request->query->all());
+        
         // Holt die User-ID aus dem Link in der E-Mail
         $id = $request->query->get('id');
 
