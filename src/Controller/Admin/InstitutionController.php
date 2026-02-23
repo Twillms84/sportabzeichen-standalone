@@ -73,4 +73,41 @@ use App\Entity\Institution;
 
             return $this->redirectToRoute('admin_institution_index', [], Response::HTTP_SEE_OTHER);
         }
-    }
+
+        #[Route('/institution/{id}/update-license', name: 'admin_institution_update_license', methods: ['POST'])]
+        public function updateLicense(Request $request, Institution $institution, EntityManagerInterface $em): Response
+        {
+            // CSRF-Schutz prüfen
+            if (!$this->isCsrfTokenValid('update_license' . $institution->getId(), $request->request->get('_token'))) {
+                $this->addFlash('error', 'Ungültiger Token.');
+                return $this->redirectToRoute('admin_institutions_index'); // <-- Passe diese Route an deinen echten Index-Routennamen an!
+            }
+
+            $tier = $request->request->get('license_tier');
+            $duration = (int) $request->request->get('license_duration'); // 3 oder 12
+
+            $validTiers = ['free', 'basic', 'pro', 'max'];
+
+            if (in_array($tier, $validTiers)) {
+                $institution->setLicense($tier);
+
+                if ($tier === 'free') {
+                    // Free-Lizenz läuft nie ab
+                    $institution->setLicenseValidUntil(null);
+                } else {
+                    // Ablaufdatum berechnen: Heute + X Monate
+                    $expirationDate = new \DateTime();
+                    $expirationDate->modify("+$duration months");
+                    $institution->setLicenseValidUntil($expirationDate);
+                }
+
+                $em->flush();
+                $this->addFlash('success', sprintf('Die Lizenz für "%s" wurde erfolgreich auf %s aktualisiert.', $institution->getName(), strtoupper($tier)));
+            } else {
+                $this->addFlash('error', 'Ungültiges Lizenzmodell ausgewählt.');
+            }
+
+            return $this->redirectToRoute('admin_institutions_index'); // <-- Passe diese Route an deinen echten Index-Routennamen an!
+        }
+
+    }   
