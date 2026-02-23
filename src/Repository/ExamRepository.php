@@ -26,14 +26,16 @@ class ExamRepository extends ServiceEntityRepository
 
         $qb->select('u')
         ->from(User::class, 'u')
-        // 1. Wir brauchen zwingend ein Participant-Profil (wegen birthdate)
-        ->innerJoin(\App\Entity\Participant::class, 'p', 'WITH', 'p.user = u')
-        // 2. Wir prüfen, ob der User schon in DIESER Prüfung ist
+        // 1. Join zu Participant (Stammdaten)
+        ->innerJoin('u.participant', 'p')
+        // 2. Join zu den Gruppen des Users
+        ->innerJoin('u.groups', 'g')
+        // 3. WICHTIG: Filtere Gruppen, die dieser Prüfung zugewiesen sind
+        ->innerJoin('g.exams', 'e', 'WITH', 'e.id = :examId')
+        // 4. Prüfe, ob der User bereits in der Teilnehmerliste dieser Prüfung steht
         ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
-        // 3. Filter: Gleiche Institution wie die Prüfung
-        ->where('u.institution = :institution')
-        // 4. Nur User, die noch NICHT in der Prüfung sind (Ausschluss-Logik)
-        ->andWhere('ep.id IS NULL');
+        
+        ->where('ep.id IS NULL'); // Nur die, die noch nicht registriert sind
 
         if ($search !== '') {
             $qb->andWhere($qb->expr()->orX(
@@ -44,10 +46,9 @@ class ExamRepository extends ServiceEntityRepository
         }
 
         return $qb->setParameter('exam', $exam)
-                ->setParameter('institution', $exam->getInstitution())
+                ->setParameter('examId', $exam->getId())
                 ->orderBy('u.lastname', 'ASC')
                 ->addOrderBy('u.firstname', 'ASC')
-                ->setMaxResults(300)
                 ->getQuery()
                 ->getResult();
     }
