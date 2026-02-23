@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\Participant;
+use App\Entity\ExamParticipant;
 
 #[Route('/admin', name: 'admin_')]
 #[IsGranted('ROLE_ADMIN')] // Sicherheitshalber
@@ -159,7 +160,7 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
     }
-    
+
     #[Route('/exam/{id}/delete', name: 'exam_delete', methods: ['POST'])]
     public function delete(Exam $exam, EntityManagerInterface $em, Request $request): Response
     {
@@ -218,37 +219,4 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_exam_overview');
     }
-
-    #[Route('/fix-roles', name: 'fix_roles')]
-public function fixRoles(EntityManagerInterface $em): Response
-{
-    // Wir holen alle Teilnehmer aus der sportabzeichen_participants Tabelle
-    $participants = $em->getRepository(Participant::class)->findAll();
-    $updatedCount = 0;
-
-    foreach ($participants as $participant) {
-        $user = $participant->getUser();
-        
-        if ($user) {
-            $roles = $user->getRoles();
-            
-            // Prüfen, ob die Rolle bereits vorhanden ist
-            if (!in_array('ROLE_PARTICIPANT', $roles)) {
-                $roles[] = 'ROLE_PARTICIPANT';
-                
-                // array_unique verhindert Dubletten, falls ROLE_USER manuell drin stand
-                $user->setRoles(array_unique($roles));
-                $updatedCount++;
-            }
-        }
-    }
-
-    // Alles in einem Rutsch in die Datenbank schreiben
-    $em->flush();
-
-    return new Response(sprintf(
-        'Erfolg: %d Teilnehmer wurden aktualisiert. Alle Teilnehmer besitzen nun die Rolle ROLE_PARTICIPANT.',
-        $updatedCount
-    ));
-}
 }
