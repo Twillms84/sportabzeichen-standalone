@@ -25,8 +25,8 @@ class RegistrationController extends AbstractController
         Request $request, 
         UserPasswordHasherInterface $userPasswordHasher, 
         EntityManagerInterface $entityManager,
-        VerifyEmailHelperInterface $verifyEmailHelper, // NEU: Helfer für den Token
-        MailerInterface $mailer // NEU: Für den E-Mail-Versand
+        VerifyEmailHelperInterface $verifyEmailHelper, 
+        MailerInterface $mailer 
     ): Response {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
@@ -72,15 +72,16 @@ class RegistrationController extends AbstractController
             // 3. User der Institution zuweisen
             $user->setInstitution($institution);
 
+            // ZUERST in die Datenbank schreiben, damit der User eine ID bekommt!
             $entityManager->persist($user);
             $entityManager->flush();
 
-            // --- NEU: 4. E-Mail mit Bestätigungslink senden ---
+            // --- 4. E-Mail mit Bestätigungslink senden ---
             
-            // Signatur generieren (gilt für die Route app_verify_email, die wir unten erstellen)
+            // Signatur generieren
             $signatureComponents = $verifyEmailHelper->generateSignature(
                 'app_verify_email',
-                $user->getId(),
+                (string) $user->getId(), // WICHTIG: Als String übergeben
                 $user->getEmail()
             );
 
@@ -99,10 +100,9 @@ class RegistrationController extends AbstractController
             // E-Mail abfeuern
             $mailer->send($email);
 
-            // ---------------------------------------------------
-
-            // Geänderte Erfolgsmeldung
+            // Erfolgsmeldung für die Registrierung
             $this->addFlash('success', 'Registrierung erfolgreich! Wir haben dir eine E-Mail gesendet. Bitte klicke auf den Link darin, um deinen Account zu aktivieren.');
+            
             return $this->redirectToRoute('app_login');
         }
 
@@ -111,34 +111,35 @@ class RegistrationController extends AbstractController
         ]);
     }
 
-    // --- NEU: Diese Route wird aufgerufen, wenn der User in der E-Mail auf den Link klickt ---
     #[Route('/verify/email', name: 'app_verify_email')]
     public function verifyUserEmail(Request $request, UserRepository $userRepository, VerifyEmailHelperInterface $verifyEmailHelper, EntityManagerInterface $entityManager): Response
     {
         // Holt die User-ID aus dem Link in der E-Mail
         $id = $request->query->get('id');
 
+        // NEU: Mit klarer Fehlermeldung statt heimlicher Weiterleitung
         if (null === $id) {
-            return $this->redirectToRoute('app_register');
+            $this->addFlash('danger', 'Fehler: Im Bestätigungslink fehlt die Benutzer-ID.');
+            return $this->redirectToRoute('app_login');
         }
 
         $user = $userRepository->find($id);
 
+        // NEU: Mit klarer Fehlermeldung
         if (null === $user) {
-            return $this->redirectToRoute('app_register');
+            $this->addFlash('danger', 'Fehler: Der Benutzer zu diesem Link existiert nicht mehr.');
+            return $this->redirectToRoute('app_login');
         }
 
-        // Validiere, ob der Link gültig ist, nicht abgelaufen ist und zum User passt
+        // Validiere, ob der Link gültig ist
         try {
-            $verifyEmailHelper->validateEmailConfirmation($request->getUri(), $user->getId(), $user->getEmail());
+            $verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $user->getEmail());
         } catch (VerifyEmailExceptionInterface $e) {
             $this->addFlash('danger', 'Der Link ist ungültig oder abgelaufen. Bitte versuche es erneut.');
-            return $this->redirectToRoute('app_login'); // oder eine extra Fehlerseite
+            return $this->redirectToRoute('app_login');
         }
 
-        // --- WICHTIG: Setze den Status auf verifiziert ---
-        // (Falls die Methode in deiner User-Entity setVerified(true) heißt, passe es hier an.
-        // Meistens generiert Symfony "setIsVerified", schau zur Not kurz in src/Entity/User.php)
+        // --- Alles korrekt! User verifizieren ---
         $user->setIsVerified(true); 
         
         $entityManager->flush();
