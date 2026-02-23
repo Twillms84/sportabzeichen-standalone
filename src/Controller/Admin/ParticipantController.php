@@ -63,8 +63,14 @@ final class ParticipantController extends AbstractController
             ->addOrderBy('u.firstname', 'ASC');
 
         // NEU: Filter für Teilnehmer ohne Gruppe
-        if ($filter === 'no_group') {
+       if ($filter === 'no_group') {
             $qb->andWhere('g.id IS NULL');
+        } elseif ($filter && str_starts_with($filter, 'group_')) {
+            // Extrahiere die ID (aus "group_4" wird 4)
+            $groupId = (int) str_replace('group_', '', $filter);
+            
+            $qb->andWhere('g.id = :groupId')
+            ->setParameter('groupId', $groupId);
         }
 
         if ($q !== '') {
@@ -313,7 +319,7 @@ final class ParticipantController extends AbstractController
             $user->setRoles(['ROLE_USER']);
             $user->setPassword('manual_entry');
             $user->setRoles(['ROLE_PARTICIPANT']);
-            
+
             $groupId = $request->request->get('group');
             if ($groupId) {
                 $group = $this->em->getRepository(Group::class)->find($groupId);
