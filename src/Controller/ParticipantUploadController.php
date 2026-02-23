@@ -46,7 +46,6 @@ final class ParticipantUploadController extends AbstractController
                 $content = file_get_contents($filePath);
                 
                 // --- 1. ENCODING FIX ---
-                // Prüfen, ob Datei UTF-8 ist, sonst konvertieren
                 if (!mb_check_encoding($content, 'UTF-8')) {
                     $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
                 }
@@ -66,92 +65,115 @@ final class ParticipantUploadController extends AbstractController
                 $groupCache = [];
                 foreach ($existingGroups as $g) { $groupCache[$g->getName()] = $g; }
 
-                // --- 3. PROCESSING ---
+                // --- 3. LIZENZ-CHECK (Pre-Flight) ---
+                $newUsersCount = 0;
                 foreach ($lines as $index => $line) {
-                    if ($index === 0 || empty(trim($line))) continue; // Header & Leerzeilen skip
-                    
+                    if ($index === 0 || empty(trim($line))) continue;
                     $row = str_getcsv($line, $separator);
                     if (count($row) < 5) continue;
 
                     $importIdRaw = trim($row[0]);
-                    $geschlechtRaw = trim($row[1]);
-                    $geburtsdatumRaw = trim($row[2]);
-                    $lastname = trim($row[3]);
-                    $firstname = trim($row[4]);
-                    $groupName = trim($row[5] ?? '');
-
-                    // Falls Datum im Namen klebt (Fix für "Gröneweg-23.03.2013")
-                    if (str_contains($lastname, '-') && empty($geburtsdatumRaw)) {
-                        $parts = explode('-', $lastname);
-                        $geburtsdatumRaw = array_pop($parts);
-                        $lastname = implode('-', $parts);
+                    if (!isset($userCache[$importIdRaw])) {
+                        $newUsersCount++;
                     }
+                }
 
-                    $geburtsdatum = self::parseDate($geburtsdatumRaw);
-                    $user = $userCache[$importIdRaw] ?? null;
-                    $isNew = ($user === null);
-                    $hasChanges = false;
+                $currentCount = $institution->getParticipantCount();
+                $limit = $institution->getLicenseLimit();
 
-                    if ($isNew) {
-                        $user = new User();
-                        $user->setInstitution($institution);
-                        $user->setImportId($importIdRaw);
-                        $user->setSource('csv');
-                        $user->setPassword($passwordHasher->hashPassword($user, 'start123'));
-                        $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
-                        $user->setUsername(preg_replace('/[^a-z0-9.]/', '', $genUsername));
-                        $em->persist($user);
-                        $hasChanges = true;
-                    }
+                if (($currentCount + $newUsersCount) > $limit) {
+                    $error = sprintf(
+                        'Lizenz-Limit überschritten! Die Datei enthält %d neue Teilnehmer. Sie haben aktuell %d Teilnehmer und Ihr Limit ist %d. Der Import wurde abgebrochen.', 
+                        $newUsersCount, $currentCount, $limit
+                    );
+                } else {
+                    // --- 4. PROCESSING (Wenn Lizenz ok ist) ---
+                    foreach ($lines as $index => $line) {
+                        if ($index === 0 || empty(trim($line))) continue;
+                        
+                        $row = str_getcsv($line, $separator);
+                        if (count($row) < 5) continue;
 
-                    // Vergleich für Statistik
-                    $participant = $user->getParticipant() ?? new Participant();
-                    
-                    if ($user->getFirstname() !== $firstname || 
-                        $user->getLastname() !== $lastname ||
-                        $participant->getGroupName() !== $groupName ||
-                        ($participant->getBirthdate() ? $participant->getBirthdate()->format('Y-m-d') : null) !== ($geburtsdatum ? $geburtsdatum->format('Y-m-d') : null)
-                    ) {
-                        $hasChanges = true;
-                    }
+                        $importIdRaw = trim($row[0]);
+                        $geschlechtRaw = trim($row[1]);
+                        $geburtsdatumRaw = trim($row[2]);
+                        $lastname = trim($row[3]);
+                        $firstname = trim($row[4]);
+                        $groupName = trim($row[5] ?? '');
 
-                    if ($hasChanges) {
-                        $user->setFirstname($firstname);
-                        $user->setLastname($lastname);
-
-                        // Gruppe verarbeiten
-                        if ($groupName !== '') {
-                            if (!isset($groupCache[$groupName])) {
-                                $group = new Group();
-                                $group->setName($groupName);
-                                $group->setInstitution($institution);
-                                $em->persist($group);
-                                $groupCache[$groupName] = $group;
-                            }
-                            $targetGroup = $groupCache[$groupName];
-                            foreach ($user->getGroups() as $oldG) {
-                                if ($oldG->getInstitution() === $institution) $user->removeGroup($oldG);
-                            }
-                            $user->addGroup($targetGroup);
+                        if (str_contains($lastname, '-') && empty($geburtsdatumRaw)) {
+                            $parts = explode('-', $lastname);
+                            $geburtsdatumRaw = array_pop($parts);
+                            $lastname = implode('-', $parts);
                         }
 
-                        $participant->setUser($user);
-                        $participant->setInstitution($institution);
-                        $participant->setBirthdate($geburtsdatum);
-                        $participant->setGender(match(strtolower($geschlechtRaw)){'m','male'=>'MALE','w','f','female'=>'FEMALE',default=>'DIVERSE'});
-                        $participant->setGroupName($groupName);
-                        $participant->setUpdatedAt(new \DateTime());
-                        $em->persist($participant);
+                        $geburtsdatum = self::parseDate($geburtsdatumRaw);
+                        $user = $userCache[$importIdRaw] ?? null;
+                        $isNew = ($user === null);
+                        $hasChanges = false;
 
-                        $isNew ? $imported++ : $updated++;
-                    } else {
-                        $identical++;
+                        if ($isNew) {
+                            $user = new User();
+                            $user->setInstitution($institution);
+                            $user->setImportId($importIdRaw);
+                            $user->setSource('csv');
+                            $user->setRoles(['ROLE_PARTICIPANT']); // <-- WICHTIG FÜRS ZÄHLEN!
+                            $user->setPassword($passwordHasher->hashPassword($user, 'start123'));
+                            $genUsername = strtolower($firstname . '.' . $lastname . '.' . substr(md5($importIdRaw), 0, 4));
+                            $user->setUsername(preg_replace('/[^a-z0-9.]/', '', $genUsername));
+                            $em->persist($user);
+                            $hasChanges = true;
+                        }
+
+                        // Vergleich für Statistik
+                        $participant = $user->getParticipant() ?? new Participant();
+                        
+                        if ($user->getFirstname() !== $firstname || 
+                            $user->getLastname() !== $lastname ||
+                            $participant->getGroupName() !== $groupName ||
+                            ($participant->getBirthdate() ? $participant->getBirthdate()->format('Y-m-d') : null) !== ($geburtsdatum ? $geburtsdatum->format('Y-m-d') : null)
+                        ) {
+                            $hasChanges = true;
+                        }
+
+                        if ($hasChanges) {
+                            $user->setFirstname($firstname);
+                            $user->setLastname($lastname);
+
+                            // Gruppe verarbeiten
+                            if ($groupName !== '') {
+                                if (!isset($groupCache[$groupName])) {
+                                    $group = new Group();
+                                    $group->setName($groupName);
+                                    $group->setInstitution($institution);
+                                    $em->persist($group);
+                                    $groupCache[$groupName] = $group;
+                                }
+                                $targetGroup = $groupCache[$groupName];
+                                foreach ($user->getGroups() as $oldG) {
+                                    if ($oldG->getInstitution() === $institution) $user->removeGroup($oldG);
+                                }
+                                $user->addGroup($targetGroup);
+                            }
+
+                            $participant->setUser($user);
+                            $participant->setInstitution($institution);
+                            $participant->setBirthdate($geburtsdatum);
+                            $participant->setGender(match(strtolower($geschlechtRaw)){'m','male'=>'MALE','w','f','female'=>'FEMALE',default=>'DIVERSE'});
+                            $participant->setGroupName($groupName);
+                            $participant->setUpdatedAt(new \DateTime());
+                            $em->persist($participant);
+
+                            $isNew ? $imported++ : $updated++;
+                        } else {
+                            $identical++;
+                        }
+
+                        if (($imported + $updated) % 100 === 0) $em->flush();
                     }
-
-                    if (($imported + $updated) % 100 === 0) $em->flush();
+                    $em->flush();
+                    $message = "Ergebnis: $imported neu, $updated aktualisiert, $identical identisch.";
                 }
-                $em->flush();
-                $message = "Ergebnis: $imported neu, $updated aktualisiert, $identical identisch.";
             }
         }
 

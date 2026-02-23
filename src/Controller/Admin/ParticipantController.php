@@ -157,6 +157,12 @@ final class ParticipantController extends AbstractController
     public function add(Request $request, int $id): Response
     {
         $institution = $this->getInstitutionOrDeny();
+        
+        if ($institution->getParticipantCount() >= $institution->getLicenseLimit()) {
+            $this->addFlash('danger', 'Das Lizenzlimit von ' . $institution->getLicenseLimit() . ' Teilnehmern ist erreicht.');
+            return $this->redirectToRoute('admin_participants_missing');
+        }
+        
         $user = $this->em->getRepository(User::class)->find($id);
 
         if (!$user || $user->getInstitution() !== $institution) {
@@ -181,6 +187,7 @@ final class ParticipantController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user->setRoles(array_unique(array_merge($user->getRoles(), ['ROLE_PARTICIPANT'])));
             $this->em->persist($participant);
             $this->em->flush();
             $this->addFlash('success', 'Teilnehmer angelegt: ' . $user->getFirstname());
@@ -291,6 +298,11 @@ final class ParticipantController extends AbstractController
     {
         $institution = $this->getInstitutionOrDeny();
 
+        if ($institution->getParticipantCount() >= $institution->getLicenseLimit()) {
+            $this->addFlash('danger', 'Das Lizenzlimit von ' . $institution->getLicenseLimit() . ' Teilnehmern ist erreicht. Anlage abgebrochen.');
+            return $this->redirectToRoute('admin_participants_index');
+        }
+
         try {
             $user = new User();
             $user->setFirstname($request->request->get('firstname'));
@@ -300,7 +312,8 @@ final class ParticipantController extends AbstractController
             $user->setInstitution($institution);
             $user->setRoles(['ROLE_USER']);
             $user->setPassword('manual_entry');
-
+            $user->setRoles(['ROLE_PARTICIPANT']);
+            
             $groupId = $request->request->get('group');
             if ($groupId) {
                 $group = $this->em->getRepository(Group::class)->find($groupId);
