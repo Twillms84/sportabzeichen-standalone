@@ -184,7 +184,7 @@ final class AdminController extends AbstractController
         return $this->redirectToRoute('admin_exam_overview');
     }
 
-    #[Route('/admin/fix-roles', name: 'admin_fix_roles')]
+    #[Route('/fix-roles', name: '_fix_roles')]
     public function fixRoles(EntityManagerInterface $em): Response
     {
         // Holt alle User, die auch Participant sind
