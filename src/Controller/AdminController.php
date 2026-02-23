@@ -184,26 +184,36 @@ final class AdminController extends AbstractController
         return $this->redirectToRoute('admin_exam_overview');
     }
 
-    #[Route('/fix-roles', name: '_fix_roles')]
-    public function fixRoles(EntityManagerInterface $em): Response
-    {
-        // Holt alle User, die auch Participant sind
-        $participants = $em->getRepository(Participant::class)->findAll();
-        $count = 0;
+    #[Route('/fix-roles', name: 'fix_roles')]
+public function fixRoles(EntityManagerInterface $em): Response
+{
+    // Wir holen alle Teilnehmer aus der sportabzeichen_participants Tabelle
+    $participants = $em->getRepository(Participant::class)->findAll();
+    $updatedCount = 0;
 
-        foreach ($participants as $participant) {
-            $user = $participant->getUser();
-            if ($user) {
-                $roles = $user->getRoles(); // Holt bestehende Rollen als Array
-                if (!in_array('ROLE_PARTICIPANT', $roles)) {
-                    $roles[] = 'ROLE_PARTICIPANT'; // Fügt die neue Rolle hinzu
-                    $user->setRoles(array_unique($roles));
-                    $count++;
-                }
+    foreach ($participants as $participant) {
+        $user = $participant->getUser();
+        
+        if ($user) {
+            $roles = $user->getRoles();
+            
+            // Prüfen, ob die Rolle bereits vorhanden ist
+            if (!in_array('ROLE_PARTICIPANT', $roles)) {
+                $roles[] = 'ROLE_PARTICIPANT';
+                
+                // array_unique verhindert Dubletten, falls ROLE_USER manuell drin stand
+                $user->setRoles(array_unique($roles));
+                $updatedCount++;
             }
         }
-
-        $em->flush();
-        return new Response("Fertig! $count User wurden mit der ROLE_PARTICIPANT ausgestattet.");
     }
+
+    // Alles in einem Rutsch in die Datenbank schreiben
+    $em->flush();
+
+    return new Response(sprintf(
+        'Erfolg: %d Teilnehmer wurden aktualisiert. Alle Teilnehmer besitzen nun die Rolle ROLE_PARTICIPANT.',
+        $updatedCount
+    ));
+}
 }
