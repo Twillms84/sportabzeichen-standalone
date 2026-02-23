@@ -50,6 +50,9 @@ class Institution
     #[ORM\Column(type: 'string', length: 20, options: ['default' => 'free'])]
     private string $license = 'free';
 
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $licenseValidUntil = null;
+
     // --- BEZIEHUNGEN ---
 
     #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, cascade: ['remove'], orphanRemoval: true)]
@@ -170,6 +173,17 @@ class Institution
         return $this;
     }
 
+    public function getLicenseValidUntil(): ?\DateTimeInterface
+    {
+        return $this->licenseValidUntil;
+    }
+
+    public function setLicenseValidUntil(?\DateTimeInterface $licenseValidUntil): self
+    {
+        $this->licenseValidUntil = $licenseValidUntil;
+        return $this;
+    }
+
     /**
      * @return Collection<int, Group>
      */
@@ -255,5 +269,18 @@ class Institution
     public function canAddParticipant(): bool
     {
         return $this->getParticipantCount() < $this->getLicenseLimit();
+    }
+
+    public function isLicenseValid(): bool
+    {
+        if ($this->license === 'free') {
+            return true; // Free-Lizenzen laufen (meistens) nie ab
+        }
+        
+        if ($this->licenseValidUntil === null) {
+            return false;
+        }
+
+        return $this->licenseValidUntil > new \DateTime();
     }
 }
