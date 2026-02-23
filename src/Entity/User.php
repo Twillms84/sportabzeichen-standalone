@@ -31,6 +31,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $createdAt = null;
+
     // --- ISERV / EDUPLACES FELDER ---
 
     // IServ Account ID (Login Name)
@@ -117,6 +120,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->groups = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     // --- LOGIK ---
@@ -217,5 +221,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->participant = $participant;
 
         return $this;
+    }
+    
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }

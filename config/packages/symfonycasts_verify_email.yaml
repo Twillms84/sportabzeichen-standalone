@@ -1,0 +1,2 @@
+symfonycasts_verify_email:
+    lifetime: 86400 # 86400 Sekunden = 24 Stunden
