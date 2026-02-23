@@ -40,6 +40,7 @@ security:
         # WICHTIGSTE REGELN ZUERST: Öffentlich zugänglich
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/verify/email, roles: PUBLIC_ACCESS } # <-- DAS IST DIE RETTUNG!
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/reset-password, roles: PUBLIC_ACCESS }
         
