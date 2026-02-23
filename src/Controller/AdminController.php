@@ -126,6 +126,40 @@ final class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/exam/{id}/add-user/{userId}', name: 'exam_add_user', methods: ['POST'])]
+    public function addUserToExam(Exam $exam, int $userId, EntityManagerInterface $em): Response
+    {
+        // 1. Den User und seinen zugehörigen Participant finden
+        $user = $em->getRepository(User::class)->find($userId);
+        $participant = $em->getRepository(Participant::class)->findOneBy(['user' => $user]);
+
+        if (!$participant) {
+            $this->addFlash('danger', 'Teilnehmer-Profil für diesen User nicht gefunden.');
+            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+        }
+
+        // 2. Prüfen, ob er schon drin ist (Sicherheitscheck)
+        $exists = $em->getRepository(ExamParticipant::class)->findOneBy([
+            'exam' => $exam,
+            'participant' => $participant
+        ]);
+
+        if (!$exists) {
+            // 3. Neue Verknüpfung erstellen
+            $ep = new ExamParticipant();
+            $ep->setExam($exam);
+            $ep->setParticipant($participant);
+            // Falls du Standardwerte hast:
+            // $ep->setStatus('OPEN'); 
+
+            $em->persist($ep);
+            $em->flush();
+            $this->addFlash('success', $user->getFirstname() . ' wurde hinzugefügt.');
+        }
+
+        return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+    }
+    
     #[Route('/exam/{id}/delete', name: 'exam_delete', methods: ['POST'])]
     public function delete(Exam $exam, EntityManagerInterface $em, Request $request): Response
     {

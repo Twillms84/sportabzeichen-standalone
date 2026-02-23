@@ -35,9 +35,13 @@
                     {% for user in potentialParticipants %}
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <span>{{ user.lastname }}, {{ user.firstname }}</span>
-                            <button class="btn btn-sm btn-outline-success">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
+                            
+                            {# Formular zum Hinzufügen #}
+                            <form action="{{ path('admin_exam_add_user', {'id': exam.id, 'userId': user.id}) }}" method="POST" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </form>
                         </div>
                     {% else %}
                         <div class="p-3 text-muted small">Alle Personen aus den Gruppen sind bereits in der Prüfung.</div>
