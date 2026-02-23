@@ -75,7 +75,8 @@
                                     {% endfor %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ path('admin_participants_add', {username: user.username}) }}" 
+                                    {# HIER WURDE DER PARAMETER AUF user.id GEÄNDERT #}
+                                    <a href="{{ path('admin_participants_add', {'id': user.id}) }}" 
                                        class="btn btn-success btn-sm">
                                         <i class="bi bi-plus-circle"></i> Hinzufügen
                                     </a>
