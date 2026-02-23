@@ -133,8 +133,18 @@ final class AdminController extends AbstractController
         $user = $em->getRepository(User::class)->find($userId);
         $participant = $em->getRepository(Participant::class)->findOneBy(['user' => $user]);
 
-        if (!$participant || !$participant->getBirthdate()) {
-            $this->addFlash('danger', 'Teilnehmer hat kein Geburtsdatum hinterlegt.');
+        // 1. Check: Existiert der Teilnehmer überhaupt?
+        if (!$participant) {
+            $this->addFlash('danger', 'Teilnehmer-Profil nicht gefunden.');
+            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+        }
+
+        // 2. Check: Haben wir alle nötigen Datums-Informationen?
+        if ($exam->getDate() === null || $participant->getBirthdate() === null) {
+            $this->addFlash('danger', sprintf(
+                'Daten unvollständig: %s hat kein Geburtsdatum oder die Prüfung hat kein Datum.',
+                $user->getFirstname()
+            ));
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
 
@@ -148,14 +158,12 @@ final class AdminController extends AbstractController
             $ep->setExam($exam);
             $ep->setParticipant($participant);
 
-            // --- ALTER BERECHNEN (Wichtig für Sportabzeichen) ---
-            // Das Alter wird meistens als (Prüfungsjahr - Geburtsjahr) berechnet
+            // Berechnung nur, wenn beide Daten vorhanden sind (oben geprüft)
             $examYear = (int)$exam->getDate()->format('Y');
             $birthYear = (int)$participant->getBirthdate()->format('Y');
             $ageYear = $examYear - $birthYear;
 
             $ep->setAgeYear($ageYear); 
-            // ----------------------------------------------------
 
             $em->persist($ep);
             $em->flush();
