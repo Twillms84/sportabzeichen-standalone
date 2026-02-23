@@ -1,16 +1,61 @@
 {% extends 'base.html.twig' %}
 
-{% block page_title %}{{ _('Teilnehmerdaten ergänzen') }}{% endblock %}
+{% block title %}Teilnehmer hinzufügen{% endblock %}
 
-{% block content %}
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Daten für {{ user.firstname }} {{ user.lastname }}</h3>
+{% block body %}
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_manage'} %}
+
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-person-check-fill me-2"></i>IServ-Benutzer als Teilnehmer aktivieren</h5>
+            <a href="{{ path('admin_participants_missing') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Zurück zur Suche
+            </a>
         </div>
-        <div class="panel-body">
+
+        <div class="card-body">
+            
+            {# Anzeige der ausgewählten Benutzerdaten #}
+            <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Ausgewählter Benutzer:</strong> {{ user.firstname }} {{ user.lastname }}<br>
+                    <span class="small">
+                        Benutzername: <code>{{ user.username }}</code> | 
+                        Gruppen: 
+                        {% for group in user.groups %}
+                            <span class="badge bg-secondary">{{ group.name }}</span>
+                        {% else %}
+                            <span class="text-muted fst-italic">Keine Gruppen</span>
+                        {% endfor %}
+                    </span>
+                </div>
+            </div>
+
+            {# Das Formular aus dem Controller rendern #}
             {{ form_start(form) }}
-                {{ form_widget(form) }}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form_row(form.birthdate) }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form_row(form.gender) }}
+                    </div>
+                </div>
+
+                <hr class="mt-4 mb-4">
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ path('admin_participants_missing') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Abbrechen
+                    </a>
+                    {# Der Speichern-Button kommt direkt aus dem Formular-Builder #}
+                    {{ form_row(form.save) }}
+                </div>
+
             {{ form_end(form) }}
+
         </div>
     </div>
 {% endblock %}
