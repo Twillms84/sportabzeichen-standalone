@@ -1,0 +1,15 @@
+<h1>Willkommen beim OSA Cockpit!</h1>
+
+<p>
+    Bitte bestätige deine E-Mail-Adresse, indem du auf den folgenden Link klickst:<br><br>
+    <a href="{{ signedUrl }}">Meine E-Mail-Adresse bestätigen</a>.
+</p>
+
+<p>
+    Dieser Link läuft ab in {{ expiresAtMessageKey|trans(expiresAtMessageData, 'VerifyEmailBundle') }}.
+</p>
+
+<p>
+    Viele Grüße,<br>
+    Dein OSA Cockpit Team
+</p>
