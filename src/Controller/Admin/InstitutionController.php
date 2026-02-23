@@ -80,7 +80,7 @@ use App\Entity\Institution;
             // CSRF-Schutz prüfen
             if (!$this->isCsrfTokenValid('update_license' . $institution->getId(), $request->request->get('_token'))) {
                 $this->addFlash('error', 'Ungültiger Token.');
-                return $this->redirectToRoute('admin_institutions_index'); // <-- Passe diese Route an deinen echten Index-Routennamen an!
+                return $this->redirectToRoute('admin_institution_index'); // <-- Passe diese Route an deinen echten Index-Routennamen an!
             }
 
             $tier = $request->request->get('license_tier');
@@ -107,7 +107,7 @@ use App\Entity\Institution;
                 $this->addFlash('error', 'Ungültiges Lizenzmodell ausgewählt.');
             }
 
-            return $this->redirectToRoute('admin_institutions_index');
+            return $this->redirectToRoute('admin_institution_index');
         }
 
     }   
