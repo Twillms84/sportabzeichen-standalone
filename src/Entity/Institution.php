@@ -47,6 +47,9 @@ class Institution
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $city = null;
 
+    #[ORM\Column(type: 'string', length: 20, options: ['default' => 'free'])]
+    private string $license = 'free';
+
     // --- BEZIEHUNGEN ---
 
     #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, cascade: ['remove'], orphanRemoval: true)]
@@ -156,6 +159,17 @@ class Institution
         return $this;
     }
 
+    public function getLicense(): string
+    {
+        return $this->license;
+    }
+
+    public function setLicense(string $license): self
+    {
+        $this->license = $license;
+        return $this;
+    }
+
     /**
      * @return Collection<int, Group>
      */
@@ -213,5 +227,33 @@ class Institution
     public function __toString(): string
     {
         return (string) $this->name;
+    }
+
+    public function getLicenseLimit(): int
+    {
+        return match($this->license) {
+            'free' => 5,
+            'basic' => 100,
+            'pro' => 500,
+            'max' => 1500,
+            default => 5,
+        };
+    }
+
+    public function getParticipantCount(): int
+    {
+        $count = 0;
+        foreach ($this->getUsers() as $user) {
+            // Wir zählen nur User, die die Rolle ROLE_PARTICIPANT haben
+            if (in_array('ROLE_PARTICIPANT', $user->getRoles())) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function canAddParticipant(): bool
+    {
+        return $this->getParticipantCount() < $this->getLicenseLimit();
     }
 }
