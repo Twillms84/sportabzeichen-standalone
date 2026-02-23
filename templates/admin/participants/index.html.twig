@@ -86,8 +86,9 @@
                                 {% for group in availableGroups %}
                                     <option value="group_{{ group.id }}" {{ app.request.query.get('filter') == 'group_' ~ group.id ? 'selected' }}>
                                         {{ group.name }}
-                                    {% endfor %}
-                                </option>
+                                    </option>        
+                                {% endfor %}
+                                
                             </select>
                         </div>
                     </div>
@@ -178,7 +179,31 @@
                     </table>
                 </div>
             </div>
-            {# ... Pagination bleibt gleich ... #}
+            {% if maxPages > 1 %}
+                <div class="card-footer bg-white border-top-0 pt-3">
+                    <nav aria-label="Teilnehmer Navigation">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item {{ thisPage <= 1 ? 'disabled' }}">
+                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: thisPage - 1})) }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            {% for i in 1..maxPages %}
+                                <li class="page-item {{ i == thisPage ? 'active' }}">
+                                    <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: i})) }}">{{ i }}</a>
+                                </li>
+                            {% endfor %}
+
+                            <li class="page-item {{ thisPage >= maxPages ? 'disabled' }}">
+                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: thisPage + 1})) }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
         </div>
     </div>
 
