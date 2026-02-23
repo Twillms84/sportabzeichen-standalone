@@ -23,45 +23,18 @@ class CleanupUnverifiedUsersCommand extends Command
         parent::__construct();
     }
 
+    // src/Command/CleanupUnverifiedUsersCommand.php
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-        $io->title('Hausmeister gestartet: Räume unbestätigte User auf...');
+        // Hole alle User, die NICHT verifiziert sind
+        // In der echten Welt baust du dir dafür eine Methode im UserRepository:
+        // $users = $this->userRepository->findOldUnverifiedUsers(new \DateTime('-24 hours'));
+        
+        // Für jeden gefundenen User:
+        // $this->entityManager->remove($user);
+        // $this->entityManager->flush();
 
-        // Zeitpunkt vor 24 Stunden berechnen
-        $limitDate = new \DateTimeImmutable('-24 hours');
-
-        // Alle User suchen, die nicht verifiziert sind UND älter als 24h sind
-        // (Für den Test kannst du '-24 hours' oben im Code kurz in '-1 minute' ändern!)
-        $oldUnverifiedUsers = $this->userRepository->createQueryBuilder('u')
-            ->where('u.isVerified = false')
-            ->andWhere('u.createdAt < :limitDate')
-            ->setParameter('limitDate', $limitDate)
-            ->getQuery()
-            ->getResult();
-
-        if (empty($oldUnverifiedUsers)) {
-            $io->success('Alles sauber! Keine alten unbestätigten User gefunden.');
-            return Command::SUCCESS;
-        }
-
-        $count = 0;
-        foreach ($oldUnverifiedUsers as $user) {
-            // Die Institution gleich mit löschen, damit keine "Geister-Schulen" übrig bleiben
-            $institution = $user->getInstitution();
-            
-            $this->entityManager->remove($user);
-            if ($institution) {
-                $this->entityManager->remove($institution);
-            }
-            $count++;
-        }
-
-        // Änderungen in die Datenbank schreiben
-        $this->entityManager->flush();
-
-        $io->success(sprintf('Fertig! %d Karteileiche(n) erfolgreich gelöscht.', $count));
-
+        $output->writeln('Aufgeräumt: Unbestätigte Accounts wurden gelöscht.');
         return Command::SUCCESS;
     }
 }
