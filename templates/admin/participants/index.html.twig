@@ -183,20 +183,23 @@
                 <div class="card-footer bg-white border-top-0 pt-3">
                     <nav aria-label="Teilnehmer Navigation">
                         <ul class="pagination pagination-sm justify-content-center mb-0">
-                            <li class="page-item {{ thisPage <= 1 ? 'disabled' }}">
-                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: thisPage - 1})) }}">
+                            {# Vorherige Seite #}
+                            <li class="page-item {{ currentPage <= 1 ? 'disabled' }}">
+                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: currentPage - 1})) }}">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
 
+                            {# Seitenzahlen #}
                             {% for i in 1..maxPages %}
-                                <li class="page-item {{ i == thisPage ? 'active' }}">
+                                <li class="page-item {{ i == currentPage ? 'active' }}">
                                     <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: i})) }}">{{ i }}</a>
                                 </li>
                             {% endfor %}
 
-                            <li class="page-item {{ thisPage >= maxPages ? 'disabled' }}">
-                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: thisPage + 1})) }}">
+                            {# Nächste Seite #}
+                            <li class="page-item {{ currentPage >= maxPages ? 'disabled' }}">
+                                <a class="page-link" href="{{ path('admin_participants_manage', app.request.query.all|merge({page: currentPage + 1})) }}">
                                     <i class="bi bi-chevron-right"></i>
                                 </a>
                             </li>
