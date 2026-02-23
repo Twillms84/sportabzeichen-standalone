@@ -24,32 +24,28 @@ class ExamRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
-        $qb->select('u')
-        ->from(User::class, 'u')
-        // 1. Join zu Participant (Stammdaten)
-        ->innerJoin('u.participant', 'p')
-        // 2. Join zu den Gruppen des Users
-        ->innerJoin('u.groups', 'g')
-        // 3. WICHTIG: Filtere Gruppen, die dieser Prüfung zugewiesen sind
-        ->innerJoin('g.exams', 'e', 'WITH', 'e.id = :examId')
-        // 4. Prüfe, ob der User bereits in der Teilnehmerliste dieser Prüfung steht
-        ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
-        
-        ->where('ep.id IS NULL'); // Nur die, die noch nicht registriert sind
-
-        if ($search !== '') {
-            $qb->andWhere($qb->expr()->orX(
-                'LOWER(u.lastname) LIKE :search',
-                'LOWER(u.firstname) LIKE :search'
-            ))
-            ->setParameter('search', '%' . mb_strtolower($search) . '%');
-        }
-
-        return $qb->setParameter('exam', $exam)
-                ->setParameter('examId', $exam->getId())
-                ->orderBy('u.lastname', 'ASC')
-                ->addOrderBy('u.firstname', 'ASC')
-                ->getQuery()
-                ->getResult();
+        return $qb->select('u')
+            ->from(\App\Entity\User::class, 'u')
+            // 1. Wir brauchen das Participant-Profil (wegen Geburtsdatum)
+            ->innerJoin('u.participant', 'p')
+            // 2. Wir joinen die Gruppen des Users
+            ->innerJoin('u.groups', 'g')
+            // 3. WICHTIG: Wir filtern die Gruppen, die im Exam hinterlegt sind
+            // Da Exam -> Groups existiert, nutzen wir MEMBER OF
+            ->where(':exam MEMBER OF g.exams') // Falls Group -> Exam ManyToMany
+            // ODER (wahrscheinlicher basierend auf deinem vorherigen Code):
+            ->andWhere('g MEMBER OF :examGroups')
+            
+            // 4. Nur Teilnehmer, die noch nicht in dieser Prüfung sind
+            ->leftJoin('p.examParticipants', 'ep', 'WITH', 'ep.exam = :exam')
+            ->andWhere('ep.id IS NULL')
+            
+            ->setParameter('exam', $exam)
+            ->setParameter('examGroups', $exam->getGroups()) // Wir übergeben die Collection der Prüfungsgruppen
+            
+            // Suche und Sortierung
+            ->orderBy('u.lastname', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 }
