@@ -1,10 +1,10 @@
 {% extends 'base.html.twig' %}
 
-{% block page_title %}{{ _('Benutzer nacherfassen') }}{% endblock %}
+{% block page_title %}{{'Benutzer nacherfassen'}}{% endblock %}
 
 {% block content %}
     {% include 'admin/_tabs.html.twig' with {'activeTab': 'participants_manage'} %}
-    
+
     <div class="panel panel-default">
         <div class="panel-heading d-flex justify-content-between">
             <h3 class="panel-title">{{ _('IServ-Benutzer manuell hinzufügen') }}</h3>
