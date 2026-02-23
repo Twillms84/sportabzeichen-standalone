@@ -74,7 +74,7 @@ use App\Entity\Institution;
             return $this->redirectToRoute('admin_institution_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        #[Route('/institution/{id}/update-license', name: 'admin_institution_update_license', methods: ['POST'])]
+        #[Route('/institution/{id}/update-license', name: 'update_license', methods: ['POST'])]
         public function updateLicense(Request $request, Institution $institution, EntityManagerInterface $em): Response
         {
             // CSRF-Schutz prüfen
