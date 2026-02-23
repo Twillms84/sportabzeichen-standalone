@@ -130,45 +130,58 @@ final class AdminController extends AbstractController
     #[Route('/exam/{id}/add-user/{userId}', name: 'exam_add_user', methods: ['POST'])]
     public function addUserToExam(Exam $exam, int $userId, EntityManagerInterface $em): Response
     {
+        // 1. User suchen
         $user = $em->getRepository(User::class)->find($userId);
+        if (!$user) {
+            $this->addFlash('danger', 'Diagnose: User ID ' . $userId . ' nicht gefunden.');
+            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+        }
+
+        // 2. Participant suchen
         $participant = $em->getRepository(Participant::class)->findOneBy(['user' => $user]);
-
-        // 1. Check: Existiert der Teilnehmer überhaupt?
         if (!$participant) {
-            $this->addFlash('danger', 'Teilnehmer-Profil nicht gefunden.');
+            $this->addFlash('danger', 'Diagnose: Kein Participant-Profil für ' . $user->getLastname() . ' gefunden.');
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
 
-        // 2. Check: Haben wir alle nötigen Datums-Informationen?
-        if ($exam->getDate() === null || $participant->getBirthdate() === null) {
-            $this->addFlash('danger', sprintf(
-                'Daten unvollständig: %s hat kein Geburtsdatum oder die Prüfung hat kein Datum.',
-                $user->getFirstname()
-            ));
-            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
-        }
-
+        // 3. Prüfen, ob bereits vorhanden
         $exists = $em->getRepository(ExamParticipant::class)->findOneBy([
             'exam' => $exam,
             'participant' => $participant
         ]);
 
-        if (!$exists) {
+        if ($exists) {
+            $this->addFlash('info', 'Diagnose: ' . $user->getFirstname() . ' ist bereits in dieser Prüfung.');
+            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+        }
+
+        // 4. Erstellen und Berechnen
+        try {
             $ep = new ExamParticipant();
             $ep->setExam($exam);
             $ep->setParticipant($participant);
 
-            // Berechnung nur, wenn beide Daten vorhanden sind (oben geprüft)
-            $examYear = (int)$exam->getDate()->format('Y');
-            $birthYear = (int)$participant->getBirthdate()->format('Y');
-            $ageYear = $examYear - $birthYear;
+            // Alter berechnen
+            if ($exam->getDate() && $participant->getBirthdate()) {
+                $age = (int)$exam->getDate()->format('Y') - (int)$participant->getBirthdate()->format('Y');
+                $ep->setAgeYear($age);
+            } else {
+                // Falls hier etwas null ist, werfen wir manuell einen Fehler für die Catch-Abteilung
+                throw new \Exception('Geburtsdatum oder Prüfungsdatum fehlt.');
+            }
 
-            $ep->setAgeYear($ageYear); 
+            // Standardwerte (falls Not-Null Felder existieren)
+            if (method_exists($ep, 'setPoints')) $ep->setPoints(0);
+            if (method_exists($ep, 'setFinalMedal')) $ep->setFinalMedal('NONE');
 
             $em->persist($ep);
             $em->flush();
+
+            $this->addFlash('success', 'Erfolg: ' . $user->getFirstname() . ' wurde hinzugefügt (Alter: ' . $age . ').');
             
-            $this->addFlash('success', $user->getFirstname() . ' wurde hinzugefügt.');
+        } catch (\Exception $e) {
+            // Hier fangen wir SQL-Fehler oder Berechnungsfehler ab
+            $this->addFlash('danger', 'Diagnose-Fehler beim Speichern: ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
