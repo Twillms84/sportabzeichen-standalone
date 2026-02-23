@@ -130,58 +130,59 @@ final class AdminController extends AbstractController
     #[Route('/exam/{id}/add-user/{userId}', name: 'exam_add_user', methods: ['POST'])]
     public function addUserToExam(Exam $exam, int $userId, EntityManagerInterface $em): Response
     {
-        // 1. User suchen
         $user = $em->getRepository(User::class)->find($userId);
-        if (!$user) {
-            $this->addFlash('danger', 'Diagnose: User ID ' . $userId . ' nicht gefunden.');
-            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
-        }
-
-        // 2. Participant suchen
         $participant = $em->getRepository(Participant::class)->findOneBy(['user' => $user]);
-        if (!$participant) {
-            $this->addFlash('danger', 'Diagnose: Kein Participant-Profil für ' . $user->getLastname() . ' gefunden.');
+
+        if (!$user || !$participant) {
+            $this->addFlash('danger', 'Nutzer oder Teilnehmer-Profil nicht gefunden.');
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
 
-        // 3. Prüfen, ob bereits vorhanden
-        $exists = $em->getRepository(ExamParticipant::class)->findOneBy([
-            'exam' => $exam,
-            'participant' => $participant
-        ]);
+        // --- PRÄZISE DATUMS-DIAGNOSE ---
+        $examDate = $exam->getDate();
+        $birthDate = $participant->getBirthdate();
 
-        if ($exists) {
-            $this->addFlash('info', 'Diagnose: ' . $user->getFirstname() . ' ist bereits in dieser Prüfung.');
+        if (!$examDate) {
+            $this->addFlash('danger', 'FEHLER: Die Prüfung "' . $exam->getName() . '" (ID: ' . $exam->getId() . ') hat kein Datum hinterlegt!');
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
 
-        // 4. Erstellen und Berechnen
+        if (!$birthDate) {
+            $this->addFlash('danger', 'FEHLER: Der Teilnehmer ' . $user->getFirstname() . ' ' . $user->getLastname() . ' (ID: ' . $userId . ') hat kein Geburtsdatum im Profil!');
+            return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+        }
+        // -------------------------------
+
         try {
+            $exists = $em->getRepository(ExamParticipant::class)->findOneBy([
+                'exam' => $exam,
+                'participant' => $participant
+            ]);
+
+            if ($exists) {
+                $this->addFlash('info', $user->getFirstname() . ' ist bereits registriert.');
+                return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
+            }
+
             $ep = new ExamParticipant();
             $ep->setExam($exam);
             $ep->setParticipant($participant);
 
-            // Alter berechnen
-            if ($exam->getDate() && $participant->getBirthdate()) {
-                $age = (int)$exam->getDate()->format('Y') - (int)$participant->getBirthdate()->format('Y');
-                $ep->setAgeYear($age);
-            } else {
-                // Falls hier etwas null ist, werfen wir manuell einen Fehler für die Catch-Abteilung
-                throw new \Exception('Geburtsdatum oder Prüfungsdatum fehlt.');
-            }
+            // Berechnung (da oben geprüft, hier sicher)
+            $age = (int)$examDate->format('Y') - (int)$birthDate->format('Y');
+            $ep->setAgeYear($age);
 
-            // Standardwerte (falls Not-Null Felder existieren)
-            if (method_exists($ep, 'setPoints')) $ep->setPoints(0);
-            if (method_exists($ep, 'setFinalMedal')) $ep->setFinalMedal('NONE');
+            // Not-Null Felder absichern
+            $ep->setPoints(0);
+            $ep->setFinalMedal('NONE');
 
             $em->persist($ep);
             $em->flush();
 
-            $this->addFlash('success', 'Erfolg: ' . $user->getFirstname() . ' wurde hinzugefügt (Alter: ' . $age . ').');
-            
+            $this->addFlash('success', sprintf('%s hinzugefügt. Alter für Prüfung: %d Jahre.', $user->getFirstname(), $age));
+
         } catch (\Exception $e) {
-            // Hier fangen wir SQL-Fehler oder Berechnungsfehler ab
-            $this->addFlash('danger', 'Diagnose-Fehler beim Speichern: ' . $e->getMessage());
+            $this->addFlash('danger', 'Datenbank-Fehler: ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
