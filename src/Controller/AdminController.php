@@ -172,7 +172,7 @@ final class AdminController extends AbstractController
             $age = $examYear - $birthYear; // Hier nutzen wir das Integer-Jahr direkt
 
             // Not-Null Felder absichern
-            $ep->setPoints(0);
+            $ep->setTotalPoints(0);
             $ep->setFinalMedal('NONE');
 
             $em->persist($ep);
