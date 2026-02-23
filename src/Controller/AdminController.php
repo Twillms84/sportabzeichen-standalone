@@ -168,7 +168,7 @@ final class AdminController extends AbstractController
             $ep->setParticipant($participant);
 
             // Berechnung (da oben geprüft, hier sicher)
-            $age = (int)$examDate->format('Y') - (int)$birthDate->format('Y');
+            $age = (int)$examYear->format('Y') - (int)$birthDate->format('Y');
             $ep->setAgeYear($age);
 
             // Not-Null Felder absichern
