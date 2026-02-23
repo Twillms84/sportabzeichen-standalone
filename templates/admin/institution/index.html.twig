@@ -7,7 +7,7 @@
 
     <div class="container-fluid">
 
-    <table class="table table-striped mt-4">
+    <table class="table table-striped mt-4 align-middle">
         <thead>
             <tr>
                 <th>Name der Schule</th>
@@ -15,14 +15,14 @@
                 <th>Registrar (Admin)</th>
                 <th>E-Mail</th>
                 <th>User-Anzahl</th>
+                <th>Lizenz & Status</th> {# NEU #}
+                <th class="text-end pe-4">Aktionen</th>
             </tr>
         </thead>
         <tbody>
             {% for institution in institutions %}
-                {# 1. WICHTIG: Variable am Anfang zurücksetzen #}
                 {% set admin = null %}
 
-                {# 2. Wir suchen den Admin im Hintergrund, ohne etwas anzuzeigen #}
                 {% for user in institution.users %}
                     {% if 'ROLE_ADMIN' in user.roles or 'ROLE_INSTITUTION_ADMIN' in user.roles %}
                         {% set admin = user %}
@@ -39,7 +39,6 @@
                     {# Registrar / Admin #}
                     <td>
                         {% if admin %}
-                            {# Admin gefunden #}
                             <div class="d-flex flex-column">
                                 <span class="fw-bold">
                                     {{ admin.firstname }} {{ admin.lastname }}
@@ -49,12 +48,11 @@
                                 </span>
                             </div>
                         {% else %}
-                            {# Kein Admin gefunden #}
                             <span class="text-muted small fst-italic">Kein Admin zugewiesen</span>
                         {% endif %}
                     </td>
 
-                    {# E-Mail (Hier war dein Fehler in Zeile 43) #}
+                    {# E-Mail #}
                     <td>
                         {% if admin %}
                             <a href="mailto:{{ admin.email }}">{{ admin.email }}</a>
@@ -70,9 +68,37 @@
                         </span>
                     </td>
 
+                    {# NEU: Lizenz & Limit #}
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span class="fw-bold text-uppercase" style="font-size: 0.85rem;">
+                                {{ institution.license }}
+                            </span>
+                            
+                            {% if institution.license == 'free' %}
+                                <span class="text-muted small">Dauerhaft kostenlos</span>
+                            {% else %}
+                                {% if institution.isLicenseValid %}
+                                    <span class="text-success small"><i class="fas fa-check-circle"></i> Bis {{ institution.licenseValidUntil|date('d.m.Y') }}</span>
+                                {% else %}
+                                    <span class="text-danger fw-bold small"><i class="fas fa-exclamation-triangle"></i> Abgelaufen</span>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <span class="text-muted small" style="font-size: 0.75rem;">
+                                {{ institution.getParticipantCount() }} / {{ institution.getLicenseLimit() }} Teilnehmer
+                            </span>
+                        </div>
+                    </td>
+
                     {# Buttons #}
                     <td class="text-end pe-4">
                         <div class="btn-group">
+                            {# NEU: Modal Trigger Button für die Lizenz #}
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#licenseModal{{ institution.id }}" title="Lizenz verwalten">
+                                <i class="fas fa-key"></i>
+                            </button>
+
                             <a href="{{ path('admin_institution_settings', {'id': institution.id}) }}" 
                             class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-pencil-alt"></i>
@@ -89,9 +115,51 @@
                         </div>
                     </td>
                 </tr>
+
+                {# NEU: Das Modal für diese Institution #}
+                <div class="modal fade" id="licenseModal{{ institution.id }}" tabindex="-1" aria-labelledby="licenseModalLabel{{ institution.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post" action="{{ path('admin_institution_update_license', {'id': institution.id}) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="licenseModalLabel{{ institution.id }}">Lizenz anpassen: {{ institution.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('update_license' ~ institution.id) }}">
+                                    
+                                    <div class="mb-3">
+                                        <label for="license_tier{{ institution.id }}" class="form-label">Lizenz-Modell</label>
+                                        <select name="license_tier" id="license_tier{{ institution.id }}" class="form-select">
+                                            <option value="free" {% if institution.license == 'free' %}selected{% endif %}>Free (bis 5 Teilnehmer)</option>
+                                            <option value="basic" {% if institution.license == 'basic' %}selected{% endif %}>Basic (bis 100 Teilnehmer)</option>
+                                            <option value="pro" {% if institution.license == 'pro' %}selected{% endif %}>Pro (bis 500 Teilnehmer)</option>
+                                            <option value="max" {% if institution.license == 'max' %}selected{% endif %}>Max (bis 1500 Teilnehmer)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="license_duration{{ institution.id }}" class="form-label">Dauer der Verlängerung (ab heute)</label>
+                                        <select name="license_duration" id="license_duration{{ institution.id }}" class="form-select">
+                                            <option value="3">3 Monate</option>
+                                            <option value="12" selected>12 Monate</option>
+                                        </select>
+                                        <div class="form-text">Wird bei "Free" ignoriert.</div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                    <button type="submit" class="btn btn-success">Lizenz speichern</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {# ENDE Modal #}
+
             {% else %}
                 <tr>
-                    <td colspan="6" class="text-center">Noch keine Schulen registriert.</td>
+                    <td colspan="7" class="text-center">Noch keine Schulen registriert.</td>
                 </tr>
             {% endfor %}
         </tbody>
