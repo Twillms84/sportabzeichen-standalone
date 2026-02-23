@@ -139,19 +139,18 @@ final class AdminController extends AbstractController
         }
 
         // --- PRÄZISE DATUMS-DIAGNOSE ---
-        $examDate = $exam->getDate();
-        $birthDate = $participant->getBirthdate();
+        $examYear = $exam->getYear(); 
+        $birthDate = $participant->getGeburtsdatum();
 
-        if (!$examDate) {
-            $this->addFlash('danger', 'FEHLER: Die Prüfung "' . $exam->getName() . '" (ID: ' . $exam->getId() . ') hat kein Datum hinterlegt!');
+        if (!$examYear) {
+            $this->addFlash('danger', 'FEHLER: Die Prüfung hat kein Jahr (exam_year) hinterlegt!');
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
 
         if (!$birthDate) {
-            $this->addFlash('danger', 'FEHLER: Der Teilnehmer ' . $user->getFirstname() . ' ' . $user->getLastname() . ' (ID: ' . $userId . ') hat kein Geburtsdatum im Profil!');
+            $this->addFlash('danger', 'FEHLER: Der Teilnehmer hat kein Geburtsdatum!');
             return $this->redirectToRoute('admin_exam_show', ['id' => $exam->getId()]);
         }
-        // -------------------------------
 
         try {
             $exists = $em->getRepository(ExamParticipant::class)->findOneBy([
