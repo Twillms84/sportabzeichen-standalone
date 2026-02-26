@@ -272,6 +272,6 @@ final class AdminController extends AbstractController
 
             $em->flush();
             $this->addFlash('success', "$count Namen wurden erfolgreich getauscht.");
-            return $this->redirectToRoute('admin_dashboard');
+            return $this->redirectToRoute('admin_exam_overview');
         }
 }
