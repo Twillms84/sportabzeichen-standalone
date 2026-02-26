@@ -3,7 +3,10 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Druckansicht: {{ group.name }}</title>
+    {# FIX: Falls 'group' nicht existiert, versuchen wir sie aus dem ersten Teilnehmer zu lesen #}
+    {% set display_group = group is defined ? group : (participants is defined and participants|length > 0 ? participants|first.group : (participant is defined ? participant.group : null)) %}
+    <title>Druckansicht: {{ display_group ? display_group.name : 'Teilnehmer' }}</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @media print {
@@ -22,12 +25,7 @@
             border-radius: 12px;
             break-inside: avoid;
         }
-        .qr-code img { 
-            width: 180px; 
-            height: 180px; 
-            border: 1px solid #eee;
-            padding: 5px;
-        }
+        .qr-code img { width: 180px; height: 180px; border: 1px solid #eee; padding: 5px; }
         .student-name { font-weight: bold; font-size: 1.2rem; margin-bottom: 2px; }
         .group-label { color: #6c757d; font-size: 0.9rem; margin-bottom: 10px; }
     </style>
@@ -37,32 +35,31 @@
     <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-5 no-print">
             <div>
-                <h1 class="h3 mb-0">Login-Karten: {{ group.name }}</h1>
-                <p class="text-muted">Anzahl: {{ participants|length }}</p>
+                <h1 class="h3 mb-0">QR-Login Karten</h1>
+                <p class="text-muted">{{ display_group ? 'Gruppe: ' ~ display_group.name : 'Einzelansicht' }}</p>
             </div>
             <div class="btn-group">
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">Abbrechen</a>
-                <button onclick="window.print()" class="btn btn-primary px-4">
-                    Jetzt drucken
-                </button>
+                <button onclick="window.print()" class="btn btn-primary px-4">Drucken</button>
             </div>
         </div>
 
         <div class="row">
-            {% for p in participants %}
+            {# Liste erstellen: Entweder aus 'participants' oder dem einzelnen 'participant' #}
+            {% set list = participants is defined ? participants : (participant is defined ? [participant] : []) %}
+
+            {% for p in list %}
                 {% if p.user and p.user.loginToken %}
                     <div class="col-6">
                         <div class="qr-card shadow-sm">
                             <div class="student-name">{{ p.user.firstname }} {{ p.user.lastname }}</div>
-                            <div class="group-label">{{ group.name }}</div>
+                            <div class="group-label">{{ p.group ? p.group.name : (display_group ? display_group.name : '') }}</div>
                             
                             <div class="qr-code mb-3">
-                                {# Login URL mit Ziel-Pfad zu deinen Ergebnissen #}
                                 {% set login_url = url('app_login', {
                                     'token': p.user.loginToken, 
                                     '_target_path': path('my_results')
                                 }) %}
-                                
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ login_url|url_encode }}" alt="QR Login">
                             </div>
 
@@ -72,19 +69,12 @@
                             </div>
                         </div>
                     </div>
-                    
-                    {# Seitenumbruch nach jeweils 6 Karten (3 Zeilen à 2 Karten) #}
-                    {% if loop.index % 6 == 0 and not loop.last %}
-                        <div class="page-break"></div>
-                    {% endif %}
+                    {% if loop.index % 6 == 0 and not loop.last %}<div class="page-break"></div>{% endif %}
                 {% endif %}
             {% else %}
-                <div class="alert alert-info no-print">
-                    Keine Teilnehmer in dieser Gruppe gefunden.
-                </div>
+                <div class="alert alert-warning no-print">Keine Teilnehmer mit gültigem Token gefunden.</div>
             {% endfor %}
         </div>
     </div>
-
 </body>
 </html>
