@@ -72,30 +72,32 @@ export default class extends Controller {
 
             const form = modalEl.querySelector('#genericEditForm');
             
-            // 1. Daten aus den Attributen des Buttons ziehen
+            // 1. Daten ziehen (E-Mail ergänzt)
             const id = button.getAttribute('data-id');
             const name = button.getAttribute('data-name');
+            const email = button.getAttribute('data-email'); // NEU
             const dob = button.getAttribute('data-dob');
             const gender = button.getAttribute('data-gender');
-            const groupId = button.getAttribute('data-group'); // Die Gruppen-ID
+            const groupId = button.getAttribute('data-group');
 
-            // 2. Felder im Modal finden
+            // 2. Felder im Modal finden (E-Mail ergänzt)
             const nameEl = modalEl.querySelector('#modalUserName');
+            const emailInput = modalEl.querySelector('#modalEmail'); // NEU
             const dobInput = modalEl.querySelector('#modalDob');
             const genderSelect = modalEl.querySelector('#modalGender');
-            const groupSelect = modalEl.querySelector('#modalGroup'); // Das neue Gruppen-Select
+            const groupSelect = modalEl.querySelector('#modalGroup');
 
-            // 3. Werte im Modal setzen
+            // 3. Werte setzen
             if (nameEl) nameEl.textContent = name;
+            if (emailInput) emailInput.value = email || ""; // NEU
             if (dobInput) dobInput.value = dob;
             if (genderSelect) genderSelect.value = gender;
             
-            // Hier wird die Gruppe ausgewählt
             if (groupSelect) {
                 groupSelect.value = groupId || ""; 
             }
 
-            // 4. Form-Action aktualisieren
+            // 4. Form-Action
             const urlTemplate = form.getAttribute('data-url-template');
             if (urlTemplate && id) {
                 form.action = urlTemplate.replace('PLACEHOLDER_ID', id);

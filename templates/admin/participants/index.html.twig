@@ -153,9 +153,9 @@
                                                 data-bs-target="#genericEditModal"
                                                 data-id="{{ p.id }}"
                                                 data-name="{{ p.user ? p.user.lastname ~ ', ' ~ p.user.firstname : 'Teilnehmer' }}"
+                                                data-email="{{ p.user ? p.user.email : '' }}" {# DIESE ZEILE HINZUFÜGEN #}
                                                 data-dob="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}"
                                                 data-gender="{{ p.gender }}"
-                                                {# Wir holen die ID der ersten Gruppe des Users #}
                                                 data-group="{{ (p.user and p.user.groups|length > 0) ? p.user.groups|first.id : '' }}">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
@@ -230,6 +230,11 @@
                                 <option value="MALE">{{'Männlich'|trans}} (M)</option>
                                 <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="modalEmail" class="form-label">{{ 'E-Mail Adresse'|trans }}</label>
+                            <input type="email" name="email" id="modalEmail" class="form-control" placeholder="optional@beispiel.de">
+                            <div class="form-text small">{{ 'Wichtig für den QR-Code Login.'|trans }}</div>
                         </div>
                         <div class="mb-3">
                             <label for="modalGroup" class="form-label">{{ 'Klasse/Gruppe'|trans }}</label>

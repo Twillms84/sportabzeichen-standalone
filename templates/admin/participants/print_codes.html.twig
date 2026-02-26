@@ -1,0 +1,22 @@
+<div class="print-grid">
+    {% for user in users %}
+        {% if user.loginToken %}
+            <div class="access-card">
+                <h3>Sportabzeichen-Zugang</h3>
+                <p><strong>{{ user.firstname }} {{ user.lastname }}</strong></p>
+                
+                {# QR-Code via Google Charts API oder lokaler Library #}
+                <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl={{ url('app_qlogin', {token: user.loginToken})|url_encode }}&choe=UTF-8" alt="QR Code">
+                
+                <p><small>Scannen zum Einloggen</small></p>
+                <p class="url">{{ url('app_qlogin', {token: user.loginToken}) }}</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<style>
+    @media print {
+        .access-card { page-break-inside: avoid; border: 1px solid #ccc; padding: 10px; margin: 10px; width: 45%; float: left; text-align: center; }
+    }
+</style>

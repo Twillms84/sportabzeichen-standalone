@@ -397,4 +397,19 @@ final class ParticipantController extends AbstractController
 
         return $this->json(['success' => true]);
     }
+
+    #[Route('/group/{id}/generate-logins', name: 'group_generate_logins')]
+    public function generateGroupLogins(Group $group): Response
+    {
+        $users = $group->getUsers();
+        foreach ($users as $user) {
+            // Nur für User mit E-Mail einen Token generieren
+            if ($user->getEmail() && !$user->getLoginToken()) {
+                $user->setLoginToken(bin2hex(random_bytes(16)));
+            }
+        }
+        $this->em->flush();
+        
+        return $this->redirectToRoute('admin_participants_index');
+    }
 }
