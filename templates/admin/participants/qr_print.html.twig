@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <title>{{ 'QR-Codes Druckansicht'|trans }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         @media print {
             .no-print { display: none !important; }
             .page-break { page-break-after: always; }
+            body { background-color: white !important; }
         }
         .qr-card {
             border: 2px dashed #ccc;
@@ -16,6 +18,7 @@
             margin-bottom: 20px;
             text-align: center;
             break-inside: avoid;
+            background: white;
         }
         .qr-code img {
             max-width: 200px;
@@ -28,39 +31,52 @@
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4 no-print">
             <h1>{{ 'Login QR-Codes'|trans }}</h1>
-            <button onclick="window.print()" class="btn btn-primary btn-lg">
-                <i class="bi bi-printer"></i> {{ 'Jetzt drucken'|trans }}
-            </button>
+            <div class="btn-group">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> {{ 'Zurück'|trans }}
+                </a>
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="bi bi-printer"></i> {{ 'Jetzt drucken'|trans }}
+                </button>
+            </div>
         </div>
 
         <div class="row">
-            {% for participant in participants %}
-                <div class="col-md-6">
-                    <div class="qr-card bg-white shadow-sm">
-                        <h2 class="h4 mb-1">{{ participant.user.firstname }} {{ participant.user.lastname }}</h2>
-                        <p class="text-muted mb-3">{{ participant.user.groups|first ? participant.user.groups|first.name : '' }}</p>
-                        
-                        <div class="qr-code mb-3">
-                            {# Hier wird der QR-Code gerendert. 
-                               Stelle sicher, dass 'qr_code_data_uri' (Endroid QR Bundle) installiert ist 
-                               oder dein Controller eine URL zum Code liefert #}
-                            <img src="{{ qr_codes[participant.id] }}" alt="QR Login">
-                        </div>
+            {# --- FLEXIBLER LOGIK-CHECK --- #}
+            {# Falls nur ein einzelner Participant übergeben wurde, packen wir ihn in ein Array #}
+            {% set list = participants is defined ? participants : [participant] %}
 
-                        <div class="small text-secondary">
-                            {{ 'Scannen zum Einloggen'|trans }}<br>
-                            <strong>{{ app.request.getSchemeAndHttpHost() }}</strong>
+            {% for p in list %}
+                {% if p and p.user and p.user.loginToken %}
+                    <div class="col-md-6">
+                        <div class="qr-card shadow-sm">
+                            <h2 class="h4 mb-1">{{ p.user.firstname }} {{ p.user.lastname }}</h2>
+                            <p class="text-muted mb-3">
+                                {% if p.user.groups is not empty %}
+                                    {{ p.user.groups|first.name }}
+                                {% endif %}
+                            </p>
+                            
+                            <div class="qr-code mb-3">
+                                {# Wir nutzen hier die loginUrl, die dein Controller bereits mitschickt #}
+                                {# Falls es eine Liste ist, müsste der Controller qr_codes liefern #}
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ (loginUrl is defined ? loginUrl : url('app_login_token', {token: p.user.loginToken}))|url_encode }}" alt="QR Login">
+                            </div>
+
+                            <div class="small text-secondary">
+                                {{ 'Scannen zum Einloggen'|trans }}<br>
+                                <strong>{{ app.request.host }}</strong>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                {# Alle 6 Karten ein Seitenumbruch beim Drucken #}
-                {% if loop.index % 6 == 0 %}
-                    <div class="page-break"></div>
+                    
+                    {% if loop.index % 6 == 0 %}
+                        <div class="page-break"></div>
+                    {% endif %}
                 {% endif %}
             {% else %}
-                <div class="alert alert-info no-print">
-                    {{ 'Keine Teilnehmer mit verfügbarem Login-Token gefunden.'|trans }}
+                <div class="alert alert-warning no-print">
+                    {{ 'Kein gültiger Teilnehmer oder Login-Token gefunden.'|trans }}
                 </div>
             {% endfor %}
         </div>
