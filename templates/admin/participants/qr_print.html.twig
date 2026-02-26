@@ -60,7 +60,7 @@
                                 {# Stelle sicher, dass 'app_login' oder dein Login-Pfad existiert #}
                                 {% set login_url = url('app_token_login', {
                                     'token': p.user.loginToken, 
-                                    '_target_path': path('app_my_results') 
+                                    '_target_path': path('my_results') 
                                 }) %}
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ login_url|url_encode }}" alt="QR Login">
                             </div>
