@@ -254,24 +254,101 @@ final class AdminController extends AbstractController
         return $this->redirectToRoute('admin_exam_overview');
     }
 
-    #[Route('/fix-names', name: 'fix_names')]
-        public function fixNames(EntityManagerInterface $em, UserRepository $userRepo): Response
-        {
-            $users = $userRepo->findAll();
-            $count = 0;
+    #[Route('/overall-stats', name: 'overall_stats', methods: ['GET'])]
+public function overallStats(EntityManagerInterface $em): Response
+{
+    /** @var User $user */
+    $user = $this->getUser();
+    $institution = $user->getInstitution();
 
-            foreach ($users as $user) {
-                $oldFirst = $user->getFirstname();
-                $oldLast = $user->getLastname();
+    // Alle Teilnehmer aller Prüfungen dieser Institution holen
+    $query = $em->createQuery(
+        'SELECT ep FROM App\Entity\ExamParticipant ep 
+         JOIN ep.exam e 
+         WHERE e.institution = :inst'
+    )->setParameter('inst', $institution);
+    
+    $allParticipants = $query->getResult();
 
-                $user->setFirstname($oldLast);
-                $user->setLastname($oldFirst);
-                
-                $count++;
+    $stats = ['Gold' => 0, 'Silber' => 0, 'Bronze' => 0, 'Ohne' => 0];
+    $topList = [];
+
+    foreach ($allParticipants as $ep) {
+        // 1. Medaillen-Statistik
+        $pts = $ep->getTotalPoints();
+        if ($pts >= 11) $stats['Gold']++;
+        elseif ($pts >= 8) $stats['Silber']++;
+        elseif ($pts >= 4) $stats['Bronze']++;
+        else $stats['Ohne']++;
+
+        // 2. Bestenliste (Top-Ergebnisse)
+        foreach ($ep->getResults() as $res) {
+            $discipline = $res->getDiscipline();
+            $discName = $discipline->getName();
+            $participant = $ep->getParticipant();
+            
+            $genderKey = match($participant->getGeschlecht()) { 
+                'MALE' => 'Männlich', 
+                'FEMALE' => 'Weiblich', 
+                default => 'Divers' 
+            };
+            
+            // Altersklasse berechnen
+            $akKey = $this->getAgeGroupLabel($ep->getAge());
+
+            if (!isset($topList[$discName][$genderKey][$akKey])) {
+                $topList[$discName][$genderKey][$akKey] = [];
             }
 
-            $em->flush();
-            $this->addFlash('success', "$count Namen wurden erfolgreich getauscht.");
-            return $this->redirectToRoute('admin_exam_overview');
+            $topList[$discName][$genderKey][$akKey][] = [
+                'firstname' => $participant->getUser()->getFirstname(),
+                'lastname'  => $participant->getUser()->getLastname(),
+                'points'    => $res->getPoints(),
+                'value'     => method_exists($res, 'getLeistung') ? $res->getLeistung() : $res->getValue(), 
+                'unit'      => $discipline->getEinheit(),
+                'type'      => $discipline->getBerechnungsart(),
+            ];
         }
+    }
+
+    // Sortierung und Limitierung (Top 10 pro AK)
+    foreach ($topList as $disc => &$genders) {
+        foreach ($genders as $gender => &$aks) {
+            foreach ($aks as $ak => &$rows) {
+                usort($rows, function($a, $b) {
+                    if ($a['points'] !== $b['points']) return $b['points'] <=> $a['points'];
+                    return ($a['type'] === 'BIGGER') ? ($b['value'] <=> $a['value']) : ($a['value'] <=> $b['value']);
+                });
+                $rows = array_slice($rows, 0, 10);
+            }
+            ksort($aks); // AKs aufsteigend sortieren (z.B. 6-7 vor 8-9)
+        }
+    }
+
+    return $this->render('admin/overall_stats.html.twig', [
+        'stats' => $stats,
+        'topList' => $topList,
+        'totalParticipants' => count($allParticipants),
+        'activeTab' => 'dashboard'
+    ]);
+}
+
+/**
+ * Hilfsmethode für Sportabzeichen-Altersklassen
+ */
+private function getAgeGroupLabel(?int $age): string
+{
+    if ($age === null) return 'Unbekannt';
+    if ($age <= 5) return 'AK bis 5';
+    if ($age <= 7) return 'AK 6-7';
+    if ($age <= 9) return 'AK 8-9';
+    if ($age <= 11) return 'AK 10-11';
+    if ($age <= 13) return 'AK 12-13';
+    if ($age <= 15) return 'AK 14-15';
+    if ($age <= 17) return 'AK 16-17';
+    if ($age <= 19) return 'AK 18-19'; // Ab hier oft 5er oder 10er Schritte
+    if ($age <= 24) return 'AK 20-24';
+    if ($age <= 29) return 'AK 25-29';
+    return 'AK ' . (floor($age / 5) * 5) . '-' . (floor($age / 5) * 5 + 4);
+}
 }

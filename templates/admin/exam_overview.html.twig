@@ -16,10 +16,16 @@
             <h2 class="fw-bold mb-0">Prüfungs-Cockpit</h2>
             <p class="text-muted">Zentrale Verwaltung der Institution</p>
         </div>
-        {# Button triggert das Modal weiter unten #}
-        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newExamModal">
-            <i class="bi bi-plus-lg"></i> Neue Prüfung
-        </button>
+        <div class="d-flex gap-2">
+            {# NEUER BUTTON FÜR GESAMTSTATISTIK #}
+            <a href="{{ path('admin_overall_stats') }}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-graph-up-arrow"></i> Gesamtstatistik
+            </a>
+            
+            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newExamModal">
+                <i class="bi bi-plus-lg"></i> Neue Prüfung
+            </button>
+        </div>
     </div>
 
     <div class="row g-4">
