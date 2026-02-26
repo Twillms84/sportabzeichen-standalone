@@ -58,7 +58,10 @@
                             <div class="qr-code mb-3">
                                 {# Wir generieren hier die URL für den Autologin #}
                                 {# Stelle sicher, dass 'app_login' oder dein Login-Pfad existiert #}
-                                {% set login_url = url('app_login', {token: p.user.loginToken}) %}
+                                {% set login_url = url('app_token_login', {
+                                    'token': p.user.loginToken, 
+                                    '_target_path': path('app_my_results') 
+                                }) %}
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ login_url|url_encode }}" alt="QR Login">
                             </div>
 
