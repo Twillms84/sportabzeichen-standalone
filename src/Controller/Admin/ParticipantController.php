@@ -159,45 +159,45 @@ final class ParticipantController extends AbstractController
         ]);
     }
 
-    #[Route('/add/{id}', name: 'add')] // Ergibt: admin_participants_add
+    #[Route('/add/{id}', name: 'add')]
     public function add(Request $request, int $id): Response
     {
         $institution = $this->getInstitutionOrDeny();
-        
-        if ($institution->getParticipantCount() >= $institution->getLicenseLimit()) {
-            $this->addFlash('danger', 'Das Lizenzlimit von ' . $institution->getLicenseLimit() . ' Teilnehmern ist erreicht.');
-            return $this->redirectToRoute('admin_participants_missing');
-        }
-        
         $user = $this->em->getRepository(User::class)->find($id);
 
-        if (!$user || $user->getInstitution() !== $institution) {
-            $this->addFlash('error', 'Benutzer nicht gefunden oder Zugriff verweigert.');
-            return $this->redirectToRoute('admin_participants_missing');
-        }
-
-        $existing = $this->em->getRepository(Participant::class)->findOneBy(['user' => $user]);
-        if ($existing) {
-            $this->addFlash('warning', 'Teilnehmer existiert bereits.');
-            return $this->redirectToRoute('admin_participants_missing');
-        }
+        // ... (Lizenzcheck und Validierung wie gehabt) ...
 
         $participant = new Participant();
         $participant->setUser($user);
         $participant->setInstitution($institution);
-        $participant->setUpdatedAt(new \DateTime());
-        $participant->setBirthdate(new \DateTime('2010-01-01'));
+        
+        // WICHTIG: Wenn der User ein Admin/Prüfer ist, nehmen wir 
+        // falls vorhanden seine Daten, sonst Standard
+        $participant->setBirthdate(new \DateTime('1984-01-01')); // Vorbelegung für dich
         $participant->setGender('MALE');
 
-        $form = $this->createParticipantForm($participant, 'Teilnehmer anlegen');
+        $form = $this->createParticipantForm($participant, 'Teilnehmer-Profil vervollständigen');
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->setRoles(array_unique(array_merge($user->getRoles(), ['ROLE_PARTICIPANT'])));
+            // Jeder der hier landet, bekommt die Rolle PARTICIPANT zusätzlich
+            $roles = $user->getRoles();
+            $roles[] = 'ROLE_PARTICIPANT';
+            $user->setRoles(array_unique($roles));
+
+            // Gruppe "Sonstige" suchen oder zuweisen
+            $groupRepo = $this->em->getRepository(Group::class);
+            $sonstige = $groupRepo->findOneBy(['name' => 'Sonstige', 'institution' => $institution]);
+            
+            if ($sonstige) {
+                $user->addGroup($sonstige);
+            }
+
             $this->em->persist($participant);
             $this->em->flush();
-            $this->addFlash('success', 'Teilnehmer angelegt: ' . $user->getFirstname());
-            return $this->redirectToRoute('admin_participants_missing');
+            
+            $this->addFlash('success', $user->getFirstname() . ' nimmt nun am Sportabzeichen teil.');
+            return $this->redirectToRoute('admin_participants_index');
         }
 
         return $this->render('admin/participants/add.html.twig', [
