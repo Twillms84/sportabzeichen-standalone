@@ -241,48 +241,71 @@ final class ParticipantController extends AbstractController
             throw new AccessDeniedException();
         }
 
+        $user = $participant->getUser();
+        $email = trim((string)$request->request->get('email'));
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
-        $groupId = $request->request->get('group_id'); // NEU: ID aus dem Modal-Select
+        $groupId = $request->request->get('group_id');
 
-        // 1. Geburtsdatum aktualisieren
-        if ($dob) {
-            try { 
-                $participant->setBirthdate(new \DateTime($dob)); 
-            } catch (\Exception $e) {
-                $this->addFlash('error', 'Ungültiges Datumsformat.');
-            }
-        }
-
-        // 2. Geschlecht aktualisieren (DIVERSE hier entfernt)
-        if ($gender && in_array($gender, ['MALE', 'FEMALE'])) {
-            $participant->setGender($gender);
-        }
-        
-        // 3. Gruppe aktualisieren
-        $user = $participant->getUser();
+        // 1. E-Mail & Token-Logik
         if ($user) {
-            // Erst alle alten Gruppen entfernen (falls ein User nur in einer Gruppe sein soll)
-            foreach ($user->getGroups() as $oldGroup) {
-                $user->removeGroup($oldGroup);
+            if (!empty($email)) {
+                // E-Mail Dubletten-Check
+                $existing = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
+                if ($existing && $existing->getId() !== $user->getId()) {
+                    $this->addFlash('danger', 'E-Mail wird bereits verwendet.');
+                    return $this->redirectToRoute('admin_participants_index');
+                }
+                $user->setEmail($email);
+                
+                // Automatisch Token generieren, wenn E-Mail vorhanden aber kein Token da ist
+                if (!$user->getLoginToken()) {
+                    $user->setLoginToken(bin2hex(random_bytes(16)));
+                }
+            } else {
+                $user->setEmail(null);
+                // Optional: Token löschen, wenn E-Mail entfernt wird? 
+                // $user->setLoginToken(null); 
             }
 
-            // Neue Gruppe zuweisen, falls eine ausgewählt wurde
-            if (!empty($groupId)) {
+            // Gruppe aktualisieren
+            foreach ($user->getGroups() as $oldGroup) { $user->removeGroup($oldGroup); }
+            if ($groupId) {
                 $group = $this->em->getRepository(Group::class)->find($groupId);
-                // Sicherheitscheck: Gruppe muss existieren und zur selben Institution gehören
-                if ($group && $group->getInstitution() === $institution) {
-                    $user->addGroup($group);
-                }
+                if ($group && $group->getInstitution() === $institution) { $user->addGroup($group); }
             }
         }
-        
+
+        // 2. Participant Daten
+        if ($dob) { $participant->setBirthdate(new \DateTime($dob)); }
+        if (in_array($gender, ['MALE', 'FEMALE'])) { $participant->setGender($gender); }
+
         $participant->setUpdatedAt(new \DateTime());
         $this->em->flush();
-        
-        $this->addFlash('success', 'Teilnehmer erfolgreich aktualisiert.');
-        
+
+        $this->addFlash('success', 'Daten für ' . ($user ? $user->getFirstname() : 'Teilnehmer') . ' gespeichert.');
         return $this->redirectToRoute('admin_participants_index');
+    }
+
+    /**
+     * Erzeugt eine Druckansicht für den QR-Code (vereinfacht)
+     */
+    #[Route('/{id}/qr-code', name: 'show_qr')]
+    public function showQr(Participant $participant): Response
+    {
+        $user = $participant->getUser();
+        if (!$user || !$user->getLoginToken()) {
+            $this->addFlash('warning', 'Kein Login-Token vorhanden. Bitte E-Mail hinterlegen.');
+            return $this->redirectToRoute('admin_participants_index');
+        }
+
+        // Die URL, die der QR-Code enthalten soll (dein Login-Endpunkt)
+        $loginUrl = $this->generateUrl('app_login_by_token', ['token' => $user->getLoginToken()], 0);
+
+        return $this->render('admin/participants/qr_print.html.twig', [
+            'participant' => $participant,
+            'loginUrl' => $loginUrl
+        ]);
     }
 
     #[Route('/new', name: 'new')]
