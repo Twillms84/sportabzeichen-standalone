@@ -261,10 +261,17 @@ final class AdminController extends AbstractController
         $user = $this->getUser();
         $institution = $user->getInstitution();
 
-        // Alle Teilnehmer aller Prüfungen dieser Institution holen
+        // 1. Optimierte Abfrage: Alles in einem Rutsch laden (Eager Loading)
+        // Wir joinen Participant, User, Groups und Results sofort mit.
         $query = $em->createQuery(
-            'SELECT ep FROM App\Entity\ExamParticipant ep 
+            'SELECT ep, p, u, g, r, d 
+            FROM App\Entity\ExamParticipant ep 
             JOIN ep.exam e 
+            JOIN ep.participant p 
+            JOIN p.user u 
+            LEFT JOIN u.groups g 
+            LEFT JOIN ep.results r 
+            LEFT JOIN r.discipline d 
             WHERE e.institution = :inst'
         )->setParameter('inst', $institution);
         
@@ -274,24 +281,33 @@ final class AdminController extends AbstractController
         $topList = [];
 
         foreach ($allParticipants as $ep) {
-            // 1. Medaillen-Statistik
+            // 1. Medaillen-Statistik (bleibt gleich)
             $pts = $ep->getTotalPoints();
             if ($pts >= 11) $stats['Gold']++;
             elseif ($pts >= 8) $stats['Silber']++;
             elseif ($pts >= 4) $stats['Bronze']++;
             else $stats['Ohne']++;
 
-            // 2. Bestenliste (Top-Ergebnisse)
+            $participant = $ep->getParticipant();
+            $userObj = $participant->getUser();
+
+            // Gruppe ermitteln (Symfony Groups oder Freitext-Feld)
+            $groupName = '–';
+            if (!$userObj->getGroups()->isEmpty()) {
+                $groupName = $userObj->getGroups()->first()->getName();
+            } elseif ($participant->getGroupName()) {
+                $groupName = $participant->getGroupName();
+            }
+
+            // 2. Ergebnisse verarbeiten
             foreach ($ep->getResults() as $res) {
                 $discipline = $res->getDiscipline();
                 $discName = $discipline->getName();
-                $participant = $ep->getParticipant();
                 
-                // 1. Rohwert holen
                 $rawValue = method_exists($res, 'getLeistung') ? $res->getLeistung() : $res->getValue();
                 $unit = $discipline->getEinheit();
 
-                // 2. Formatierung & Übersetzung der Einheit
+                // Formatierung & Übersetzung
                 $displayUnit = match($unit) {
                     'UNIT_SECONDS' => ' sek',
                     'UNIT_MINUTES' => ' min',
@@ -308,7 +324,6 @@ final class AdminController extends AbstractController
                     $formattedValue = str_replace('.', ',', (string)$rawValue);
                 }
 
-                // 3. Gender & AK (wie gehabt)
                 $genderKey = match($participant->getGeschlecht()) { 
                     'MALE' => 'Männlich', 
                     'FEMALE' => 'Weiblich', 
@@ -320,29 +335,36 @@ final class AdminController extends AbstractController
                     $topList[$discName][$genderKey][$akKey] = [];
                 }
 
-                // WICHTIG: Hier jetzt 'value' => $formattedValue nutzen!
                 $topList[$discName][$genderKey][$akKey][] = [
-                    'firstname' => $participant->getUser()->getFirstname(),
-                    'lastname'  => $participant->getUser()->getLastname(),
-                    'points'    => $res->getPoints(),
-                    'value'     => $formattedValue . $displayUnit, // Hier wird alles zusammengefügt
-                    'type'      => $discipline->getBerechnungsart(),
-                    'rawValue'  => $rawValue, // Wir behalten den Rohwert für die Sortierung unten!
+                    'firstname'  => $userObj->getFirstname(),
+                    'lastname'   => $userObj->getLastname(),
+                    'group_name' => $groupName, // Hier die neue Gruppe
+                    'points'     => $res->getPoints(),
+                    'value'      => $formattedValue . $displayUnit,
+                    'type'       => $discipline->getBerechnungsart(),
+                    'rawValue'   => $rawValue, // Wichtig für die korrekte Sortierung!
                 ];
             }
         }
 
-        // Sortierung und Limitierung (Top 10 pro AK)
+        // 3. Sortierung und Limitierung
         foreach ($topList as $disc => &$genders) {
             foreach ($genders as $gender => &$aks) {
                 foreach ($aks as $ak => &$rows) {
                     usort($rows, function($a, $b) {
-                        if ($a['points'] !== $b['points']) return $b['points'] <=> $a['points'];
-                        return ($a['type'] === 'BIGGER') ? ($b['value'] <=> $a['value']) : ($a['value'] <=> $b['value']);
+                        // Prio 1: Wer mehr Punkte hat, ist vorne
+                        if ($a['points'] !== $b['points']) {
+                            return $b['points'] <=> $a['points'];
+                        }
+                        // Prio 2: Bei Punktgleichheit entscheidet der Rohwert (Weite vs Zeit)
+                        if ($a['type'] === 'BIGGER') {
+                            return $b['rawValue'] <=> $a['rawValue'];
+                        }
+                        return $a['rawValue'] <=> $b['rawValue'];
                     });
                     $rows = array_slice($rows, 0, 10);
                 }
-                ksort($aks); // AKs aufsteigend sortieren (z.B. 6-7 vor 8-9)
+                ksort($aks); 
             }
         }
 
