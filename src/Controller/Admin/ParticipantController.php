@@ -421,36 +421,24 @@ final class ParticipantController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-    #[Route('/group/{id}/generate-logins', name: 'group_generate_logins')]
-    public function generateGroupLogins(Group $group): Response
-    {
-        // Wir holen alle User, die in dieser Gruppe sind
-        $users = $group->getUsers();
-        $count = 0;
-
-        foreach ($users as $user) {
-            // Generiere Token, falls noch keiner existiert (unabhängig von E-Mail)
-            if (!$user->getLoginToken()) {
-                $user->setLoginToken(bin2hex(random_bytes(16)));
-                $count++;
-            }
-        }
-
-        $this->em->flush();
-        
-        $this->addFlash('success', sprintf('%d neue Login-Tokens wurden generiert.', $count));
-        return $this->redirectToRoute('admin_participants_index');
-    }
-
     #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
     public function printGroupQrCodes(Group $group, ParticipantRepository $repo): Response
     {
-        // WICHTIG: Wir suchen die Teilnehmer (Participants), die dieser Gruppe zugeordnet sind
+        // Wir holen die Teilnehmer der Gruppe
         $participants = $repo->findBy(['group' => $group]);
 
         return $this->render('admin/participants/qr_print.html.twig', [
             'participants' => $participants,
             'group' => $group,
+        ]);
+    }
+
+    #[Route('/{id}/print-qr', name: 'admin_participants_show_qr')]
+    public function showQr(Participant $participant): Response
+    {
+        // Für den Einzeldruck übergeben wir nur den einen Teilnehmer
+        return $this->render('admin/participants/qr_print.html.twig', [
+            'participant' => $participant,
         ]);
     }
 }
