@@ -1,83 +1,90 @@
 {# templates/admin/participants/qr_print.html.twig #}
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>{{ 'QR-Codes Druckansicht'|trans }}</title>
+    <title>Druckansicht: {{ group.name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         @media print {
             .no-print { display: none !important; }
-            .page-break { page-break-after: always; }
-            body { background-color: white !important; }
+            .page-break { page-break-after: always; height: 0; border: none; }
+            body { background: white !important; margin: 0; padding: 0; }
+            .qr-card { box-shadow: none !important; border: 1px solid #ddd !important; }
         }
+        body { background-color: #f8f9fa; }
         .qr-card {
-            border: 2px dashed #ccc;
+            border: 2px dashed #666;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: center;
-            break-inside: avoid;
             background: white;
+            border-radius: 12px;
+            break-inside: avoid;
         }
-        .qr-code img {
-            max-width: 180px;
-            height: auto;
+        .qr-code img { 
+            width: 180px; 
+            height: 180px; 
+            border: 1px solid #eee;
+            padding: 5px;
         }
+        .student-name { font-weight: bold; font-size: 1.2rem; margin-bottom: 2px; }
+        .group-label { color: #6c757d; font-size: 0.9rem; margin-bottom: 10px; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-    <div class="container my-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-            <h1><i class="bi bi-qr-code"></i> {{ 'Login-Karten'|trans }}</h1>
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-5 no-print">
+            <div>
+                <h1 class="h3 mb-0">Login-Karten: {{ group.name }}</h1>
+                <p class="text-muted">Anzahl: {{ participants|length }}</p>
+            </div>
             <div class="btn-group">
-                <a href="javascript:history.back()" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> {{ 'Zurück'|trans }}
-                </a>
-                <button onclick="window.print()" class="btn btn-primary">
-                    <i class="bi bi-printer"></i> {{ 'Drucken'|trans }}
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">Abbrechen</a>
+                <button onclick="window.print()" class="btn btn-primary px-4">
+                    Jetzt drucken
                 </button>
             </div>
         </div>
 
         <div class="row">
-            {% set list = participants is defined ? participants : [participant] %}
-
-            {% for p in list %}
-                {% if p and p.user and p.user.loginToken %}
-                    <div class="col-md-6 col-lg-4">
+            {% for p in participants %}
+                {% if p.user and p.user.loginToken %}
+                    <div class="col-6">
                         <div class="qr-card shadow-sm">
-                            <h2 class="h5 mb-1">{{ p.user.firstname }} {{ p.user.lastname }}</h2>
-                            <p class="text-muted small mb-2">
-                                {% if p.user.groups is not empty %}
-                                    <span class="badge bg-light text-dark border">{{ p.user.groups|first.name }}</span>
-                                {% endif %}
-                            </p>
+                            <div class="student-name">{{ p.user.firstname }} {{ p.user.lastname }}</div>
+                            <div class="group-label">{{ group.name }}</div>
                             
                             <div class="qr-code mb-3">
-                                {# Wir generieren hier die URL für den Autologin #}
-                                {# Stelle sicher, dass 'app_login' oder dein Login-Pfad existiert #}
-                                {% set login_url = url('app_token_login', {
+                                {# Login URL mit Ziel-Pfad zu deinen Ergebnissen #}
+                                {% set login_url = url('app_login', {
                                     'token': p.user.loginToken, 
-                                    '_target_path': path('my_results') 
+                                    '_target_path': path('my_results')
                                 }) %}
+                                
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ login_url|url_encode }}" alt="QR Login">
                             </div>
 
-                            <div class="small text-secondary mt-2" style="font-size: 0.75rem;">
-                                {{ 'Einfach scannen & loslegen'|trans }}<br>
-                                <span class="text-primary">{{ app.request.host }}</span>
+                            <div class="text-secondary small fw-bold">
+                                SCANNEN ZUM EINLOGGEN<br>
+                                <span class="text-dark">{{ app.request.host }}</span>
                             </div>
                         </div>
                     </div>
+                    
+                    {# Seitenumbruch nach jeweils 6 Karten (3 Zeilen à 2 Karten) #}
+                    {% if loop.index % 6 == 0 and not loop.last %}
+                        <div class="page-break"></div>
+                    {% endif %}
                 {% endif %}
             {% else %}
-                <div class="alert alert-warning no-print">
-                    {{ 'Keine gültigen Daten gefunden.'|trans }}
+                <div class="alert alert-info no-print">
+                    Keine Teilnehmer in dieser Gruppe gefunden.
                 </div>
             {% endfor %}
         </div>
     </div>
+
 </body>
 </html>

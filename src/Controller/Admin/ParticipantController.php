@@ -424,27 +424,33 @@ final class ParticipantController extends AbstractController
     #[Route('/group/{id}/generate-logins', name: 'group_generate_logins')]
     public function generateGroupLogins(Group $group): Response
     {
+        // Wir holen alle User, die in dieser Gruppe sind
         $users = $group->getUsers();
+        $count = 0;
+
         foreach ($users as $user) {
-            // Nur für User mit E-Mail einen Token generieren
-            if ($user->getEmail() && !$user->getLoginToken()) {
+            // Generiere Token, falls noch keiner existiert (unabhängig von E-Mail)
+            if (!$user->getLoginToken()) {
                 $user->setLoginToken(bin2hex(random_bytes(16)));
+                $count++;
             }
         }
+
         $this->em->flush();
         
+        $this->addFlash('success', sprintf('%d neue Login-Tokens wurden generiert.', $count));
         return $this->redirectToRoute('admin_participants_index');
     }
 
     #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
     public function printGroupQrCodes(Group $group, ParticipantRepository $repo): Response
     {
-        // Wir holen nur die Teilnehmer, die zu dieser speziellen Gruppe gehören
+        // WICHTIG: Wir suchen die Teilnehmer (Participants), die dieser Gruppe zugeordnet sind
         $participants = $repo->findBy(['group' => $group]);
 
-        return $this->render('admin/participants/print_codes.html.twig', [
+        return $this->render('admin/participants/qr_print.html.twig', [
             'participants' => $participants,
-            'group' => $group, // Damit wir den Gruppennamen auf die Seite schreiben können
+            'group' => $group,
         ]);
     }
 }
