@@ -37,16 +37,16 @@ security:
                 target: app_home
 
     access_control:
-        # WICHTIGSTE REGELN ZUERST: Öffentlich zugänglich
-        - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/verify/email, roles: PUBLIC_ACCESS }
-        - { path: ^/$, roles: PUBLIC_ACCESS }
-        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
-        
-        # Geschützte Bereiche
-        - { path: ^/admin, roles: [ROLE_ADMIN, ROLE_EXAMINER] }
-        - { path: ^/, roles: ROLE_USER }
+    # 1. Nur für echte Admins (User-Verwaltung, System-Einstellungen)
+    - { path: ^/admin/user, roles: ROLE_ADMIN }
+    - { path: ^/admin/settings, roles: ROLE_ADMIN }
+
+    # 2. Für Admins UND Examiner (Prüfungsergebnisse, Listen, Teilnehmer)
+    - { path: ^/admin/exam, roles: [ROLE_ADMIN, ROLE_EXAMINER] }
+    - { path: ^/admin/participants, roles: [ROLE_ADMIN, ROLE_EXAMINER] }
+    
+    # 3. Das persönliche Trainings-Portal (für alle)
+    - { path: ^/sportabzeichen, roles: ROLE_USER }
 
 when@test:
     security:
