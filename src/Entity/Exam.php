@@ -22,7 +22,7 @@ class Exam
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true)] // True lassen, damit alte Daten nicht crashen
+    #[ORM\JoinColumn(name: 'examiner_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     private ?User $examiner = null;
 
     #[ORM\ManyToOne]
