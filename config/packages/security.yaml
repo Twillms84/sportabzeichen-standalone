@@ -30,7 +30,7 @@ security:
                 enable_csrf: true
                 username_parameter: email
                 password_parameter: _password
-                default_target_path: / # <-- Hier geht's hin nach Login
+                default_target_path: exams # <-- Hier geht's hin nach Login
             
             logout:
                 path: app_logout
