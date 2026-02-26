@@ -120,7 +120,7 @@
 
                                 {# Training Button #}
                                 <td class="ps-4" data-label="Training">
-                                    <a href="{{ path('training_detail', { id: row.discipline_id }) }}" 
+                                    <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}"
                                        class="btn btn-outline-primary btn-sm w-100 d-flex justify-content-between align-items-center">
                                         <span>
                                             {% if row.training_value %}
