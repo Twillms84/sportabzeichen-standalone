@@ -24,14 +24,15 @@ security:
             user_checker: App\Security\UserChecker
 
             form_login:
-                login_path: app_login
-                check_path: app_login
-                enable_csrf: true
-                username_parameter: email
-                password_parameter: _password
-                default_target_path: app_exams_dashboard
-                use_target_path: true
-                always_use_default_target_path: false
+                    login_path: app_login
+                    check_path: app_login
+                    enable_csrf: true
+                    username_parameter: email
+                    password_parameter: _password
+                    default_target_path: app_exams_dashboard
+                    # ÄNDERUNG HIER: 
+                    # Wir entfernen "use_target_path" und setzen nur "always_...: false"
+                    always_use_default_target_path: false
             
             logout:
                 path: app_logout
