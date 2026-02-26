@@ -15,7 +15,6 @@
             </h3>
             
             <div class="btn-group shadow-sm">
-                {# NEU: Massen-Generierung & Druck für die aktuell gefilterte Gruppe #}
                 {% if app.request.query.get('filter') starts with 'group_' %}
                     {% set activeGroupId = app.request.query.get('filter')|replace({'group_': ''}) %}
                     <a href="{{ path('group_generate_logins', {id: activeGroupId}) }}" class="btn btn-warning btn-sm">
@@ -83,22 +82,15 @@
                         <div class="col-md-4">
                             <select name="filter" class="form-select" onchange="this.form.submit()">
                                 <option value="">{{ '-- Alle Teilnehmer --'|trans }}</option>
-                                
-                                {# Option für Teilnehmer ohne Gruppe #}
                                 <option value="no_group" {{ app.request.query.get('filter') == 'no_group' ? 'selected' }}>
                                     ⚠️ {{ 'Ohne Gruppe'|trans }}
                                 </option>
-
-                                {# Trenner zur besseren Optik #}
                                 <option disabled>──────────</option>
-
-                                {# Dynamische Liste aller Gruppen #}
                                 {% for group in availableGroups %}
                                     <option value="group_{{ group.id }}" {{ app.request.query.get('filter') == 'group_' ~ group.id ? 'selected' }}>
                                         {{ group.name }}
                                     </option>        
                                 {% endfor %}
-                                
                             </select>
                         </div>
                     </div>
@@ -114,6 +106,7 @@
                                 </th>
                                 <th>{{ 'Name'|trans }}</th>
                                 <th>{{ 'Klasse/Gruppe'|trans }}</th>
+                                <th>{{ 'QR-Status'|trans }}</th>
                                 <th>{{ 'Geburtstag'|trans }}</th>
                                 <th>{{ 'Geschlecht'|trans }}</th>
                                 <th class="text-end">{{ 'Aktion'|trans }}</th>
@@ -148,7 +141,7 @@
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td> {# NEU: QR-Status Anzeige #}
+                                <td>
                                     {% if p.user and p.user.loginToken %}
                                         <span class="badge bg-success">
                                             <i class="bi bi-qr-code"></i> {{ 'Bereit'|trans }}
@@ -168,46 +161,38 @@
                                         {{ genders[p.gender] ?? p.gender }}
                                     </span>
                                 </td>
-                                <td>
-                                {% if p.user and p.user.email %}
-                                    <span class="badge bg-success" title="{{ p.user.email }}">
-                                        <i class="bi bi-qr-code"></i> {{ 'Bereit'|trans }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted small italic">{{ 'Keine E-Mail'|trans }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <div class="btn-group">
-                                    {# QR-Code Button (nur wenn E-Mail/Token da ist) #}
-                                    {% if p.user and p.user.loginToken %}
-                                        <a href="{{ path('admin_participants_show_qr', {id: p.id}) }}" 
-                                        class="btn btn-outline-secondary btn-sm" 
-                                        title="QR-Code drucken">
-                                            <i class="bi bi-printer"></i>
-                                        </a>
-                                    {% endif %}
                                 <td class="text-end">
                                     <div class="btn-group">
+                                        {# QR-Code Button #}
+                                        {% if p.user and p.user.loginToken %}
+                                            <a href="{{ path('admin_participants_show_qr', {id: p.id}) }}" 
+                                               class="btn btn-outline-secondary btn-sm" 
+                                               title="{{ 'QR-Code drucken'|trans }}">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                        {% endif %}
+
+                                        {# Edit Button #}
                                         <button type="button" 
                                                 class="btn btn-outline-primary btn-sm" 
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#genericEditModal"
                                                 data-id="{{ p.id }}"
                                                 data-name="{{ p.user ? p.user.lastname ~ ', ' ~ p.user.firstname : 'Teilnehmer' }}"
-                                                data-email="{{ p.user ? p.user.email : '' }}" {# DIESE ZEILE HINZUFÜGEN #}
+                                                data-email="{{ p.user ? p.user.email : '' }}"
                                                 data-dob="{{ p.birthdate ? p.birthdate|date('Y-m-d') : '' }}"
                                                 data-gender="{{ p.gender }}"
                                                 data-group="{{ (p.user and p.user.groups|length > 0) ? p.user.groups|first.id : '' }}">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         
+                                        {# Delete Form #}
                                         <form method="post" 
-                                            action="{{ path('admin_participants_delete', {id: p.id}) }}" 
-                                            class="d-inline" 
-                                            data-action="submit->admin-participant#confirmAction"
-                                            data-confirm-message="{{ 'Möchtest du diesen Teilnehmer wirklich unwiderruflich löschen?'|trans }}"
-                                            data-confirm-type="danger">
+                                              action="{{ path('admin_participants_delete', {id: p.id}) }}" 
+                                              class="d-inline" 
+                                              data-action="submit->admin-participant#confirmAction"
+                                              data-confirm-message="{{ 'Möchtest du diesen Teilnehmer wirklich unwiderruflich löschen?'|trans }}"
+                                              data-confirm-type="danger">
                                             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ p.id) }}">
                                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                                 <i class="bi bi-trash"></i>
@@ -221,25 +206,22 @@
                     </table>
                 </div>
             </div>
+
+            {# --- PAGINATION --- #}
             {% if maxPages > 1 %}
                 <div class="card-footer bg-white border-top-0 pt-3">
                     <nav aria-label="Teilnehmer Navigation">
                         <ul class="pagination pagination-sm justify-content-center mb-0">
-                            {# Vorherige Seite #}
                             <li class="page-item {{ currentPage <= 1 ? 'disabled' }}">
                                 <a class="page-link" href="{{ path('admin_participants_index', app.request.query.all|merge({page: currentPage - 1})) }}">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
-
-                            {# Seitenzahlen #}
                             {% for i in 1..maxPages %}
                                 <li class="page-item {{ i == currentPage ? 'active' }}">
                                     <a class="page-link" href="{{ path('admin_participants_index', app.request.query.all|merge({page: i})) }}">{{ i }}</a>
                                 </li>
                             {% endfor %}
-
-                            {# Nächste Seite #}
                             <li class="page-item {{ currentPage >= maxPages ? 'disabled' }}">
                                 <a class="page-link" href="{{ path('admin_participants_index', app.request.query.all|merge({page: currentPage + 1})) }}">
                                     <i class="bi bi-chevron-right"></i>
@@ -271,6 +253,7 @@
                             <select name="gender" id="modalGender" class="form-select">
                                 <option value="MALE">{{'Männlich'|trans}} (M)</option>
                                 <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
+                                <option value="DIVERSE">{{'Divers'|trans}} (D)</option>
                             </select>
                         </div>
                         <div class="mb-3">
