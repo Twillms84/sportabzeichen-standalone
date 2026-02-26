@@ -422,9 +422,9 @@ final class ParticipantController extends AbstractController
     }
 
     #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
-    public function printGroupQrCodes(Group $group, ParticipantRepository $repo): Response
+    public function printGroupQrCodes(\App\Entity\Group $group, \App\Repository\ParticipantRepository $repo): \Symfony\Component\HttpFoundation\Response
     {
-        // Wir holen die Teilnehmer der Gruppe
+        // Holt alle Teilnehmer der Gruppe
         $participants = $repo->findBy(['group' => $group]);
 
         return $this->render('admin/participants/qr_print.html.twig', [
@@ -434,9 +434,9 @@ final class ParticipantController extends AbstractController
     }
 
     #[Route('/{id}/print-qr', name: 'admin_participants_show_qr')]
-    public function showQr(Participant $participant): Response
+    public function showQr(\App\Entity\Participant $participant): \Symfony\Component\HttpFoundation\Response
     {
-        // Für den Einzeldruck übergeben wir nur den einen Teilnehmer
+        // Einzeldruck für nur einen Teilnehmer
         return $this->render('admin/participants/qr_print.html.twig', [
             'participant' => $participant,
         ]);
