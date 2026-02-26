@@ -410,4 +410,22 @@ final class AdminController extends AbstractController
         // Ergibt z.B. 9,30
         return number_format((float)$seconds, 2, ',', '.');
     }
+
+    #[Route('/admin/fix-verification', name: 'fix_verification')]
+public function fixVerification(UserRepository $userRepo, EntityManagerInterface $em): Response
+{
+    $users = $userRepo->findAll();
+    $count = 0;
+    
+    foreach ($users as $user) {
+        if (!$user->isVerified()) {
+            $user->setIsVerified(true);
+            $count++;
+        }
+    }
+    
+    $em->flush();
+    return new Response($count . ' User wurden erfolgreich verifiziert.');
+}
+
 }
