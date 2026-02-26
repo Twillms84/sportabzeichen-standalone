@@ -44,16 +44,29 @@ class MyResultsController extends AbstractController
 
         // Auto-Create falls Profil fehlt (z.B. beim allerersten Klick auf "Meine Ergebnisse")
         if (!$participant) {
+            
+            // NEU: Institution des Users abfragen (mit Nullsafe-Operator ?->)
+            $institutionId = $user->getInstitution()?->getId();
+            
+            // Wenn der User gar keine Institution hat, dürfen wir keinen Participant anlegen, 
+            // da die DB das verbietet. Wir werfen eine saubere Exception.
+            if (!$institutionId) {
+                throw $this->createAccessDeniedException('Dein Account ist noch keiner Schule/Institution zugeordnet. Das Profil konnte nicht erstellt werden.');
+            }
+
+            // NEU: institution_id im INSERT-Statement hinzugefügt
             $this->conn->executeStatement("
-                INSERT INTO sportabzeichen_participants (user_id, username, geburtsdatum, geschlecht)
-                VALUES (:uid, :act, :dob, :sex)
+                INSERT INTO sportabzeichen_participants (user_id, username, geburtsdatum, geschlecht, institution_id)
+                VALUES (:uid, :act, :dob, :sex, :inst_id)
             ", [
-                'uid' => $userId,
-                'act' => $username,
-                'dob' => '2000-01-01', // Standardwert (sollte der User im Profil anpassen)
-                'sex' => 'MALE'        // Standardwert
+                'uid'     => $userId,
+                'act'     => $username,
+                'dob'     => '2000-01-01', 
+                'sex'     => 'MALE',       
+                'inst_id' => $institutionId 
             ]);
             
+            // Den frisch erstellten Participant direkt neu laden
             $participant = $this->conn->fetchAssociative("
                 SELECT id, geburtsdatum, geschlecht 
                 FROM sportabzeichen_participants 
