@@ -27,6 +27,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true, nullable: true)]
     private ?string $username = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $loginToken = null;
+
     // --- NEU: E-Mail Bestätigungs-Status ---
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
@@ -165,6 +168,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getInstitution(): ?Institution { return $this->institution; }
     public function setInstitution(?Institution $institution): self { $this->institution = $institution; return $this; }
 
+    public function getLoginToken(): ?string
+    {
+        return $this->loginToken;
+    }
+
+    public function setLoginToken(?string $loginToken): self
+    {
+        $this->loginToken = $loginToken;
+        return $this;
+    }
     /**
      * @return Collection<int, Group>
      */
@@ -222,7 +235,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-    
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
