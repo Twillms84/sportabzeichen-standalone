@@ -60,7 +60,7 @@ class UserController extends AbstractController
     ): Response {
         $user = new User();
         
-        // WICHTIG: Institution setzen (aus deinem Kommentar "Schul-Logik wie gehabt")
+        // Institution setzen (Schul-Logik)
         /** @var User $currentUser */
         $currentUser = $this->getUser();
         if ($currentUser && $currentUser->getInstitution()) {
@@ -72,37 +72,33 @@ class UserController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             
-            // Manueller Check auf E-Mail Dubletten
-            // (Hinweis: Besser wäre UniqueEntity Constraint in der Entity, aber so geht es auch)
+            // 1. E-Mail Dubletten prüfen
             $existingUser = $userRepository->findOneBy(['email' => $user->getEmail()]);
-            
             if ($existingUser) {
                 $this->addFlash('danger', 'Ein Konto mit dieser E-Mail existiert bereits im System.');
-                // Hier muss auch ein Return stehen!
-                return $this->render('admin/user/form.html.twig', [
-                    'user' => $user,
-                    'form' => $form,
-                    'title' => 'PrüferIn / Admin anlegen'
-                ]);
+                // Zurück zum Formular
+            } else {
+                // 2. PASSWORT HASHEN
+                $plainPassword = $form->get('plainPassword')->getData();
+                if ($plainPassword) {
+                    $user->setPassword(
+                        $userPasswordHasher->hashPassword($user, $plainPassword)
+                    );
+                }
+
+                // --- 3. WICHTIG: DIREKT VERIFIZIEREN ---
+                // Damit "E-Mail bestätigt: NEIN" im Admin sofort verschwindet
+                $user->setIsVerified(true);
+                // ---------------------------------------
+
+                $entityManager->persist($user);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'Personal erfolgreich angelegt und E-Mail wurde direkt bestätigt.');
+                return $this->redirectToRoute('admin_user_index');
             }
-
-            // Passwort hashen
-            $plainPassword = $form->get('plainPassword')->getData();
-            if ($plainPassword) {
-                $user->setPassword(
-                    $userPasswordHasher->hashPassword($user, $plainPassword)
-                );
-            }
-
-            $entityManager->persist($user);
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Personal erfolgreich angelegt.');
-            return $this->redirectToRoute('admin_user_index');
         }
         
-        // --- HIER FEHLTE DER RETURN BEFEHL ---
-        // Wenn das Formular nicht abgeschickt wurde oder Fehler hat, muss das Template angezeigt werden.
         return $this->render('admin/user/form.html.twig', [
             'user' => $user,
             'form' => $form,
