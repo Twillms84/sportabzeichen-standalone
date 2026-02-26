@@ -253,4 +253,25 @@ final class AdminController extends AbstractController
 
         return $this->redirectToRoute('admin_exam_overview');
     }
+
+    #[Route('/admin/fix-names', name: 'admin_fix_names')]
+        public function fixNames(EntityManagerInterface $em, UserRepository $userRepo): Response
+        {
+            $users = $userRepo->findAll();
+            $count = 0;
+
+            foreach ($users as $user) {
+                $oldFirst = $user->getFirstname();
+                $oldLast = $user->getLastname();
+
+                $user->setFirstname($oldLast);
+                $user->setLastname($oldFirst);
+                
+                $count++;
+            }
+
+            $em->flush();
+            $this->addFlash('success', "$count Namen wurden erfolgreich getauscht.");
+            return $this->redirectToRoute('admin_dashboard');
+        }
 }
