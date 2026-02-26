@@ -22,7 +22,6 @@ use Symfony\Component\Routing\Attribute\Route;
 // use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/exams/results')]
-// #[IsGranted('PRIV_SPORTABZEICHEN_RESULTS')]
 final class ExamResultController extends AbstractController
 {
     public function __construct(
@@ -31,10 +30,7 @@ final class ExamResultController extends AbstractController
     ) {
     }
 
-    /**
-     * Jahresauswahl (Startseite)
-     */
-    #[Route('/', name: 'exams', methods: ['GET'])]
+    #[Route('/', name: 'app_exams_results', methods: ['GET'])]
     public function examSelection(): Response
     {
         $exams = $this->em->getRepository(Exam::class)->findBy([], ['year' => 'DESC']);
