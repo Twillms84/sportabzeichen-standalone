@@ -55,6 +55,9 @@ class Institution
 
     // --- BEZIEHUNGEN ---
 
+    #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Exam::class, cascade: ['remove'])]
+    private Collection $exams;
+
     #[ORM\OneToMany(mappedBy: 'institution', targetEntity: Group::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $groups;
 
