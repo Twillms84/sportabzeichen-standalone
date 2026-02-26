@@ -1,0 +1,130 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gesamtstatistik - Institution{% endblock %}
+
+{% block body %}
+<div class="container-fluid mb-5">
+    {% include 'admin/_tabs.html.twig' with {'activeTab': 'dashboard'} %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <div>
+            <h2 class="fw-bold mb-0">Institutions-Statistik</h2>
+            <p class="text-muted">Aggregierte Daten über alle {{ totalParticipants }} Teilnahmen</p>
+        </div>
+        <a href="{{ path('admin_exam_overview') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Zurück zum Cockpit
+        </a>
+    </div>
+
+    <div class="row mb-5">
+        {# Medaillen-Übersicht links #}
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold mb-4">Medaillenverteilung</h5>
+                    <canvas id="medalChart" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {# Schnell-Statistik rechts #}
+        <div class="col-md-8">
+            <div class="row g-3">
+                {% for label, count in stats %}
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <div class="h3 fw-bold mb-0">{{ count }}</div>
+                            <div class="text-muted small text-uppercase fw-bold">{{ label }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <h3 class="fw-bold mb-4"><i class="bi bi-trophy text-warning"></i> Bestenlisten nach Altersklassen</h3>
+
+    {% for discName, genders in topList %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-dark text-white fw-bold py-3">
+                <i class="bi bi-stopwatch me-2"></i> {{ discName }}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for gender, aks in genders %}
+                        <div class="col-lg-6 mb-4">
+                            <h5 class="fw-bold border-bottom pb-2 mb-3">
+                                <i class="bi bi-gender-{{ gender == 'Männlich' ? 'male' : 'female' }}"></i> {{ gender }}
+                            </h5>
+                            
+                            {% for ak, players in aks %}
+                                <div class="mb-4">
+                                    <h6 class="text-primary fw-bold small">{{ ak }}</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr class="x-small">
+                                                    <th>Platz</th>
+                                                    <th>Name</th>
+                                                    <th class="text-end">Leistung</th>
+                                                    <th class="text-end">Punkte</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for p in players %}
+                                                    <tr>
+                                                        <td class="fw-bold text-muted" style="width: 40px;">#{{ loop.index }}</td>
+                                                        <td>{{ p.firstname }} {{ p.lastname|slice(0,1) }}.</td>
+                                                        <td class="text-end fw-bold">{{ p.value }} {{ p.unit }}</td>
+                                                        <td class="text-end">
+                                                            <span class="badge {{ p.points >= 3 ? 'bg-gold' : (p.points >= 2 ? 'bg-silver' : 'bg-bronze') }}">
+                                                                {{ p.points }} Pkt.
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{# Chart.js Einbindung #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('medalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Gold', 'Silber', 'Bronze', 'Ohne'],
+            datasets: [{
+                data: [{{ stats.Gold }}, {{ stats.Silber }}, {{ stats.Bronze }}, {{ stats.Ohne }}],
+                backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#E9ECEF'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+
+<style>
+    .bg-gold { background-color: #FFD700; color: #000; }
+    .bg-silver { background-color: #C0C0C0; color: #000; }
+    .bg-bronze { background-color: #CD7F32; color: #fff; }
+    .x-small { font-size: 0.75rem; }
+</style>
+{% endblock %}
