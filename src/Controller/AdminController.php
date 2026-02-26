@@ -254,7 +254,7 @@ final class AdminController extends AbstractController
         return $this->redirectToRoute('admin_exam_overview');
     }
 
-    #[Route('/admin/fix-names', name: 'fix_names')]
+    #[Route('/fix-names', name: 'fix_names')]
         public function fixNames(EntityManagerInterface $em, UserRepository $userRepo): Response
         {
             $users = $userRepo->findAll();
