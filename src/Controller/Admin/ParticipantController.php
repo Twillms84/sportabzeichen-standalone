@@ -435,4 +435,16 @@ final class ParticipantController extends AbstractController
         
         return $this->redirectToRoute('admin_participants_index');
     }
+
+    #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
+    public function printGroupQrCodes(Group $group, ParticipantRepository $repo): Response
+    {
+        // Wir holen nur die Teilnehmer, die zu dieser speziellen Gruppe gehören
+        $participants = $repo->findBy(['group' => $group]);
+
+        return $this->render('admin/participants/print_codes.html.twig', [
+            'participants' => $participants,
+            'group' => $group, // Damit wir den Gruppennamen auf die Seite schreiben können
+        ]);
+    }
 }

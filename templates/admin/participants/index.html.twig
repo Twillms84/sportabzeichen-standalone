@@ -15,6 +15,16 @@
             </h3>
             
             <div class="btn-group shadow-sm">
+                {# NEU: Massen-Generierung & Druck für die aktuell gefilterte Gruppe #}
+                {% if app.request.query.get('filter') starts with 'group_' %}
+                    {% set activeGroupId = app.request.query.get('filter')|replace({'group_': ''}) %}
+                    <a href="{{ path('group_generate_logins', {id: activeGroupId}) }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-magic"></i> {{ 'Tokens generieren'|trans }}
+                    </a>
+                    <a href="{{ path('group_print_logins', {id: activeGroupId}) }}" class="btn btn-dark btn-sm">
+                        <i class="bi bi-printer-fill"></i> {{ 'Alle QR drucken'|trans }}
+                    </a>
+                {% endif %}
                 <a href="{{ path('admin_participants_new') }}" class="btn btn-success btn-sm">
                     <i class="bi bi-plus-lg"></i> {{ 'Neu anlegen'|trans }}
                 </a>
@@ -136,6 +146,19 @@
                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">
                                             <i class="bi bi-exclamation-triangle"></i> {{ 'Keine Gruppe'|trans }}
                                         </span>
+                                    {% endif %}
+                                </td>
+                                <td> {# NEU: QR-Status Anzeige #}
+                                    {% if p.user and p.user.loginToken %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-qr-code"></i> {{ 'Bereit'|trans }}
+                                        </span>
+                                    {% elseif p.user and p.user.email %}
+                                        <span class="badge bg-light text-muted border" title="Token muss noch generiert werden">
+                                            <i class="bi bi-hourglass-split"></i> {{ 'Kein Token'|trans }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small italic">{{ 'Nicht konfiguriert'|trans }}</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ p.birthdate ? p.birthdate|date('d.m.Y') : '-' }}</td>
