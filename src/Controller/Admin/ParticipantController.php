@@ -287,26 +287,6 @@ final class ParticipantController extends AbstractController
         return $this->redirectToRoute('admin_participants_index');
     }
 
-    /**
-     * Erzeugt eine Druckansicht für den QR-Code (vereinfacht)
-     */
-    #[Route('/{id}/qr-code', name: 'show_qr')]
-    public function showQr(Participant $participant): Response
-    {
-        $user = $participant->getUser();
-        if (!$user || !$user->getLoginToken()) {
-            $this->addFlash('warning', 'Kein Login-Token vorhanden. Bitte E-Mail hinterlegen.');
-            return $this->redirectToRoute('admin_participants_index');
-        }
-
-        // Die URL, die der QR-Code enthalten soll (dein Login-Endpunkt)
-        $loginUrl = $this->generateUrl('app_login_by_token', ['token' => $user->getLoginToken()], 0);
-
-        return $this->render('admin/participants/qr_print.html.twig', [
-            'participant' => $participant,
-            'loginUrl' => $loginUrl
-        ]);
-    }
 
     #[Route('/new', name: 'new')]
     public function new(): Response
