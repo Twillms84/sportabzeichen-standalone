@@ -11,18 +11,20 @@
             <h2 class="fw-bold mb-0">Institutions-Statistik</h2>
             <p class="text-muted">Aggregierte Daten über alle {{ totalParticipants }} Teilnahmen</p>
         </div>
-        <a href="{{ path('admin_exam_overview') }}" class="btn btn-secondary">
+        <a href="{{ path('admin_exam_overview') }}" class="btn btn-secondary shadow-sm">
             <i class="bi bi-arrow-left"></i> Zurück zum Cockpit
         </a>
     </div>
 
-    <div class="row mb-5">
+    <div class="row mb-5 g-4">
         {# Medaillen-Übersicht links #}
         <div class="col-md-4">
             <div class="card shadow-sm h-100 border-0">
-                <div class="card-body text-center">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
                     <h5 class="card-title fw-bold mb-4">Medaillenverteilung</h5>
-                    <canvas id="medalChart" style="max-height: 250px;"></canvas>
+                    <div style="position: relative; height:200px;">
+                        <canvas id="medalChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -32,8 +34,8 @@
             <div class="row g-3">
                 {% for label, count in stats %}
                     <div class="col-sm-6 col-lg-3">
-                        <div class="card border-0 shadow-sm text-center py-3">
-                            <div class="h3 fw-bold mb-0">{{ count }}</div>
+                        <div class="card border-0 shadow-sm text-center py-4 h-100">
+                            <div class="h2 fw-bold mb-0" style="color: var(--osa-green);">{{ count }}</div>
                             <div class="text-muted small text-uppercase fw-bold">{{ label }}</div>
                         </div>
                     </div>
@@ -42,32 +44,41 @@
         </div>
     </div>
 
-    <hr class="my-5">
+    <hr class="my-5 opacity-10">
 
-    <h3 class="fw-bold mb-4"><i class="bi bi-trophy text-warning"></i> Bestenlisten nach Altersklassen</h3>
+    <h3 class="fw-bold mb-4 d-flex align-items-center">
+        <span class="p-2 bg-warning rounded me-3 text-white">
+            <i class="bi bi-trophy-fill"></i>
+        </span>
+        Bestenlisten nach Altersklassen
+    </h3>
 
     {% for discName, genders in topList %}
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-5 overflow-hidden">
             <div class="card-header bg-dark text-white fw-bold py-3">
-                <i class="bi bi-stopwatch me-2"></i> {{ discName }}
+                <i class="bi bi-activity me-2"></i> {{ discName }}
             </div>
-            <div class="card-body">
-                <div class="row">
+            <div class="card-body p-0">
+                <div class="row g-0">
                     {% for gender, aks in genders %}
-                        <div class="col-lg-6 mb-4">
-                            <h5 class="fw-bold border-bottom pb-2 mb-3">
-                                <i class="bi bi-gender-{{ gender == 'Männlich' ? 'male' : 'female' }}"></i> {{ gender }}
+                        <div class="col-lg-6 p-4 {{ loop.first ? 'border-end' : '' }}">
+                            <h5 class="fw-bold mb-4 d-flex align-items-center">
+                                <i class="bi bi-gender-{{ gender == 'Männlich' ? 'male' : 'female' }} me-2 text-muted"></i> 
+                                {{ gender }}
                             </h5>
                             
                             {% for ak, players in aks %}
                                 <div class="mb-4">
-                                    <h6 class="text-primary fw-bold small">{{ ak }}</h6>
+                                    <h6 class="text-primary fw-bold small text-uppercase mb-2" style="letter-spacing: 1px;">
+                                        {{ ak }}
+                                    </h6>
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-hover align-middle">
+                                        <table class="table table-sm table-hover align-middle mb-0">
                                             <thead class="table-light">
-                                                <tr class="x-small">
-                                                    <th>Platz</th>
+                                                <tr class="x-small text-muted">
+                                                    <th style="width: 50px;">Platz</th>
                                                     <th>Name</th>
+                                                    <th>Gruppe</th>
                                                     <th class="text-end">Leistung</th>
                                                     <th class="text-end">Punkte</th>
                                                 </tr>
@@ -75,9 +86,20 @@
                                             <tbody>
                                                 {% for p in players %}
                                                     <tr>
-                                                        <td class="fw-bold text-muted" style="width: 40px;">#{{ loop.index }}</td>
-                                                        <td>{{ p.firstname }} {{ p.lastname|slice(0,1) }}.</td>
-                                                        <td class="text-end fw-bold">{{ p.value }} {{ p.unit }}</td>
+                                                        <td class="fw-bold">
+                                                            {% if loop.index == 1 %}
+                                                                <span class="badge rounded-circle bg-gold-icon">1</span>
+                                                            {% elseif loop.index == 2 %}
+                                                                <span class="badge rounded-circle bg-silver-icon">2</span>
+                                                            {% elseif loop.index == 3 %}
+                                                                <span class="badge rounded-circle bg-bronze-icon">3</span>
+                                                            {% else %}
+                                                                <span class="ps-2 text-muted">#{{ loop.index }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="fw-semibold">{{ p.firstname }} {{ p.lastname|slice(0,1) }}.</td>
+                                                        <td><span class="badge bg-light text-dark border">{{ p.group_name|default('–') }}</span></td>
+                                                        <td class="text-end fw-bold font-monospace">{{ p.value }}</td>
                                                         <td class="text-end">
                                                             <span class="badge {{ p.points >= 3 ? 'bg-gold' : (p.points >= 2 ? 'bg-silver' : 'bg-bronze') }}">
                                                                 {{ p.points }} Pkt.
@@ -98,7 +120,6 @@
     {% endfor %}
 </div>
 
-{# Chart.js Einbindung #}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('medalChart').getContext('2d');
@@ -108,23 +129,38 @@
             labels: ['Gold', 'Silber', 'Bronze', 'Ohne'],
             datasets: [{
                 data: [{{ stats.Gold }}, {{ stats.Silber }}, {{ stats.Bronze }}, {{ stats.Ohne }}],
-                backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#E9ECEF'],
+                backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#f0f2f5'],
+                hoverOffset: 4,
                 borderWidth: 0
             }]
         },
         options: {
-            cutout: '70%',
+            maintainAspectRatio: false,
+            cutout: '75%',
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { size: 11 } } }
             }
         }
     });
 </script>
 
 <style>
+    :root {
+        --osa-green: #28a745; /* Hier ggf. deine echte Farbe einsetzen */
+    }
     .bg-gold { background-color: #FFD700; color: #000; }
     .bg-silver { background-color: #C0C0C0; color: #000; }
     .bg-bronze { background-color: #CD7F32; color: #fff; }
-    .x-small { font-size: 0.75rem; }
+    
+    .bg-gold-icon { background-color: #FFD700; color: #000; width: 24px; height: 24px; padding: 5px; }
+    .bg-silver-icon { background-color: #C0C0C0; color: #000; width: 24px; height: 24px; padding: 5px; }
+    .bg-bronze-icon { background-color: #CD7F32; color: #fff; width: 24px; height: 24px; padding: 5px; }
+
+    .font-monospace { font-family: 'Courier New', Courier, monospace; }
+    .x-small { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
 </style>
 {% endblock %}
