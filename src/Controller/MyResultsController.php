@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Entity\User; // Wichtig für Autovervollständigung
 
 class MyResultsController extends AbstractController
 {
@@ -20,30 +21,28 @@ class MyResultsController extends AbstractController
     #[Route('/sportabzeichen/my_results', name: 'my_results')]
     public function __invoke(Request $request): Response
     {
+        /** @var User $user */
         $user = $this->getUser();
+        
         if (!$user) {
-            throw $this->createAccessDeniedException();
+            throw $this->createAccessDeniedException('Bitte loggen Sie sich ein.');
         }
 
         $currentYear = (int)date('Y');
         
-        // --- 1. ID ERMITTELN ---
-        // Sicherstellen, dass wir die interne DB-ID des Users haben
-        $username = method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : $user->getUsername();
-        $userId = $this->conn->fetchOne("SELECT id FROM users WHERE act = ?", [$username]);
+        // --- 1. ID ERMITTELN (Jetzt 100% sicher über das Entity) ---
+        $userId = $user->getId();
+        // Wir nehmen getUsername als Fallback für das Participant-Profil, falls kein act gesetzt ist
+        $username = $user->getAct() ?? $user->getUsername() ?? $user->getEmail() ?? 'user_' . $userId;
 
-        if (!$userId) {
-            throw $this->createNotFoundException('User-Daten konnten nicht geladen werden.');
-        }
-
-        // --- 2. TEILNEHMER-PROFIL ---
+        // --- 2. TEILNEHMER-PROFIL PRÜFEN ---
         $participant = $this->conn->fetchAssociative("
             SELECT id, geburtsdatum, geschlecht 
             FROM sportabzeichen_participants 
             WHERE user_id = :uid
         ", ['uid' => $userId]);
 
-        // Auto-Create falls Profil fehlt (z.B. erster Login)
+        // Auto-Create falls Profil fehlt (z.B. beim allerersten Klick auf "Meine Ergebnisse")
         if (!$participant) {
             $this->conn->executeStatement("
                 INSERT INTO sportabzeichen_participants (user_id, username, geburtsdatum, geschlecht)
@@ -51,15 +50,21 @@ class MyResultsController extends AbstractController
             ", [
                 'uid' => $userId,
                 'act' => $username,
-                'dob' => '2000-01-01', // Standardwert, sollte User später ändern
-                'sex' => 'MALE'
+                'dob' => '2000-01-01', // Standardwert (sollte der User im Profil anpassen)
+                'sex' => 'MALE'        // Standardwert
             ]);
             
-            $participant = $this->conn->fetchAssociative("SELECT id, geburtsdatum, geschlecht FROM sportabzeichen_participants WHERE user_id = :uid", ['uid' => $userId]);
-            $this->addFlash('info', 'Dein Sportprofil wurde erstellt.');
+            $participant = $this->conn->fetchAssociative("
+                SELECT id, geburtsdatum, geschlecht 
+                FROM sportabzeichen_participants 
+                WHERE user_id = :uid
+            ", ['uid' => $userId]);
+            
+            $this->addFlash('info', 'Dein Sportprofil wurde automatisch erstellt. Bitte überprüfe dein Geburtsdatum in den Einstellungen.');
         }
 
-        // --- 3. ALTER BERECHNEN (Sportabzeichen-Logik: Jahr - Geburtsjahr) ---
+        // --- 3. ALTER BERECHNEN ---
+        // Sportabzeichen-Logik: (Aktuelles Jahr) - (Geburtsjahr) = Alter in dem Jahr
         $birthYear = (int)(new \DateTime($participant['geburtsdatum']))->format('Y');
         $age = $currentYear - $birthYear;
 
@@ -72,7 +77,7 @@ class MyResultsController extends AbstractController
             WHERE ep.participant_id = :pid AND e.exam_year = :year
         ";
         $rawResults = $this->conn->fetchAllAssociative($sqlResults, [
-            'pid' => (int)$participant['id'],
+            'pid'  => (int)$participant['id'],
             'year' => $currentYear
         ]);
         
@@ -81,8 +86,8 @@ class MyResultsController extends AbstractController
             $officialResults[$r['discipline_id']] = $r;
         }
 
-        // --- 5. TRAININGSDATEN LADEN (Neuester Wert pro Disziplin) ---
-        // WICHTIG: Die Subquery braucht die User_ID um konsistent zu sein
+        // --- 5. TRAININGSDATEN LADEN ---
+        // Holt nur den jeweils neusten Eintrag (MAX(id)) pro Disziplin
         $trainingData = $this->conn->fetchAllAssociative("
             SELECT t.discipline_id, t.value
             FROM sportabzeichen_training t
@@ -93,7 +98,7 @@ class MyResultsController extends AbstractController
                 GROUP BY discipline_id
             )
         ", [
-            'uid'  => (int)$userId,
+            'uid'  => $userId,
             'year' => $currentYear
         ]);
         
@@ -121,30 +126,33 @@ class MyResultsController extends AbstractController
             'year' => $currentYear
         ]);
 
-        // --- 7. STRUKTURIEREN FÜR DAS TEMPLATE ---
+        // --- 7. ZUSAMMENBAU FÜRS TEMPLATE ---
         $categories = [
-            'Ausdauer' => [], 
-            'Kraft' => [], 
+            'Ausdauer'      => [], 
+            'Kraft'         => [], 
             'Schnelligkeit' => [], 
-            'Koordination' => []
+            'Koordination'  => []
         ];
 
         foreach ($rows as $row) {
             $dId = $row['discipline_id'];
             
-            // Verknüpfe offizielle Daten und Training
+            // Verknüpfe offizielle Daten und eigenes Training
             $row['official_result'] = $officialResults[$dId] ?? null;
-            $row['training_value'] = $myTraining[$dId] ?? null;
+            $row['training_value']  = $myTraining[$dId] ?? null;
 
             $cat = $row['kategorie'];
             if (isset($categories[$cat])) {
                 $categories[$cat][] = $row;
+            } else {
+                 // Fallback, falls mal eine Kategorie in der DB anders heißt
+                 $categories[$cat] = [$row];
             }
         }
 
         return $this->render('my_results/index.html.twig', [
-            'year' => $currentYear,
-            'age' => $age,
+            'year'       => $currentYear,
+            'age'        => $age,
             'categories' => $categories,
         ]);
     }
