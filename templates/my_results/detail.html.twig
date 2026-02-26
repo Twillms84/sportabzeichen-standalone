@@ -67,7 +67,7 @@
             <div class="card h-100 shadow-sm border-0 bg-body-tertiary">
                 <div class="card-body p-4">
                     <h5 class="card-title mb-3 fw-bold">Neuen Wert erfassen</h5>
-                    <form method="post" action="{{ path('training_detail', {id: discipline.discipline_id|default(discipline.id)}) }}">
+                    <form method="post" action="{{ path('training_detail', {disciplineId: discipline.discipline_id|default(discipline.id)}) }}">
                         <label class="form-label small text-muted text-uppercase fw-bold">Deine Leistung</label>
                         <div class="input-group input-group-lg mb-3 shadow-sm">
                             <input type="text" name="value" class="form-control" 
