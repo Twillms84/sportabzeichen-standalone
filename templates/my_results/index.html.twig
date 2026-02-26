@@ -4,11 +4,23 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('css/sportabzeichen_my_results.css') }}">
+    <style>
+        /* Minimales Custom-CSS für Mobile-Tabellen (falls nicht schon global vorhanden) */
+        @media (max-width: 768px) {
+            .sa-table-fixed thead { display: none; }
+            .sa-table-fixed tr { display: block; border-bottom: 2px solid #dee2e6; margin-bottom: 1rem; padding-bottom: 1rem; }
+            .sa-table-fixed td { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border: none; }
+            .sa-table-fixed td::before { content: attr(data-label); font-weight: bold; color: #6c757d; }
+            .sa-mobile-header { flex-direction: column; align-items: flex-start !important; background: #f8f9fa; padding: 1rem !important; border-radius: 0.5rem; margin-bottom: 0.5rem; }
+            .sa-mobile-header::before { display: none; }
+        }
+        .sa-text-gold { color: #d4af37; }
+        .sa-text-silver { color: #c0c0c0; }
+        .sa-text-bronze { color: #cd7f32; }
+    </style>
 {% endblock %}
 
-{% block content %}
-
+{% block body %}
 {% set unitMap = {
     'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 'Sek.', 
     'UNIT_MINUTES': 'Min.', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'Anz.', 
@@ -16,50 +28,42 @@
 } %}
 {% set time_units = ['UNIT_SECONDS', 'UNIT_MINUTES', 'UNIT_HOURS'] %}
 
-{# Icon Änderung: time statt heart (sicherer in Bootstrap 3) #}
 {% set cat_icons = {
-    'Ausdauer': 'glyphicon-time',
-    'Kraft': 'glyphicon-fire',
-    'Schnelligkeit': 'glyphicon-flash',
-    'Koordination': 'glyphicon-random'
+    'Ausdauer': 'fa-stopwatch',
+    'Kraft': 'fa-dumbbell',
+    'Schnelligkeit': 'fa-bolt',
+    'Koordination': 'fa-arrows-alt'
 } %}
 
-<div class="container py-4">
+<div class="container-fluid py-2">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h1 class="h3 mb-1">Mein Sportabzeichen {{ year }}</h1>
-            <p class="text-muted mb-0">Übersicht deiner Leistungen und Ziele</p>
+            <p class="text-muted mb-0">Übersicht deiner Leistungen und Ziele (Alter: {{ age }} Jahre)</p>
         </div>
     </div>
-
-    {% for label, messages in app.flashes %}
-        {% for message in messages %}
-            <div class="alert alert-{{ label == 'error' ? 'danger' : label }} shadow-sm">{{ message }}</div>
-        {% endfor %}
-    {% endfor %}
 
     {% for catName, disciplines in categories %}
         {% if disciplines is not empty %}
         
         {% set colorClass = cycle(['primary', 'success', 'warning', 'info'], loop.index0) %}
         
-        <div class="card shadow-sm mb-4 sa-border-{{ colorClass }}">
-            <div class="card-header bg-white py-3 d-flex align-items-center">
-                <span class="glyphicon {{ cat_icons[catName]|default('glyphicon-list') }} text-{{ colorClass }} me-2" aria-hidden="true"></span>
-                <h5 class="m-0 font-weight-bold text-dark" style="display:inline-block; margin-left: 10px;">{{ catName }}</h5>
+        <div class="card shadow-sm mb-4 border-{{ colorClass }} border-top border-3">
+            <div class="card-header bg-body py-3 d-flex align-items-center">
+                <i class="fas {{ cat_icons[catName]|default('fa-list') }} text-{{ colorClass }} fs-4 me-3"></i>
+                <h5 class="m-0 fw-bold">{{ catName }}</h5>
             </div>
             
             <div class="table-responsive">
-                {# CSS Klasse sa-table-fixed sorgt für Desktop Layout & Mobile Switch #}
                 <table class="table table-hover mb-0 align-middle sa-table-fixed">
-                    <thead class="bg-light text-muted small text-uppercase">
+                    <thead class="table-light text-muted small text-uppercase">
                         <tr>
-                            <th class="ps-4 sa-col-discipline">Disziplin</th>
-                            <th class="text-center sa-col-medal sa-text-bronze">Bronze</th>
-                            <th class="text-center sa-col-medal sa-text-silver">Silber</th>
-                            <th class="text-center sa-col-medal sa-text-gold">Gold</th>
-                            <th class="text-center sa-col-official text-dark">Ergebnis</th>
-                            <th class="ps-4 sa-col-training">Mein Training</th>
+                            <th class="ps-4">Disziplin</th>
+                            <th class="text-center sa-text-bronze">Bronze</th>
+                            <th class="text-center sa-text-silver">Silber</th>
+                            <th class="text-center sa-text-gold">Gold</th>
+                            <th class="text-center text-dark">Ergebnis</th>
+                            <th class="ps-4">Mein Training</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,10 +75,10 @@
                                 {# Mobile Header: Disziplin Name #}
                                 <td class="ps-4 sa-mobile-header" data-label="Disziplin">
                                     <div class="fw-bold">{{ row.name }}</div>
-                                    <span class="badge bg-light text-muted border">{{ einheit_label }}</span>
+                                    <span class="badge bg-light text-dark border">{{ einheit_label }}</span>
                                 </td>
                                 
-                                {# Formatierung Variablen vorbereiten #}
+                                {# Formatierung #}
                                 {% if is_time %}
                                     {% set val_bronze = row.bronze|number_format(2, '.', '')|replace({'.': ':'}) %}
                                     {% set val_silver = row.silber|number_format(2, '.', '')|replace({'.': ':'}) %}
@@ -85,21 +89,14 @@
                                     {% set val_gold   = row.gold|number_format(2, ',', '.')|trim('0', 'right')|trim(',') %}
                                 {% endif %}
 
-                                {# Werte mit data-label für Mobile #}
-                                <td class="text-center small font-monospace" data-label="Bronze">
-                                    <span class="visible-xs-inline sa-text-bronze me-1"></span> {{ val_bronze }}
-                                </td>
-                                <td class="text-center small font-monospace" data-label="Silber">
-                                    <span class="visible-xs-inline sa-text-silver me-1"></span> {{ val_silver }}
-                                </td>
-                                <td class="text-center small font-monospace" data-label="Gold">
-                                    <span class="visible-xs-inline sa-text-gold me-1"></span> {{ val_gold }}
-                                </td>
+                                <td class="text-center small font-monospace" data-label="Bronze">{{ val_bronze }}</td>
+                                <td class="text-center small font-monospace" data-label="Silber">{{ val_silver }}</td>
+                                <td class="text-center small font-monospace" data-label="Gold">{{ val_gold }}</td>
 
                                 {# Offizielles Ergebnis #}
                                 <td class="text-center" data-label="Ergebnis">
                                     {% if row.official_result %}
-                                        <div class="fw-bold font-monospace" style="display:inline-block;">
+                                        <div class="fw-bold font-monospace mb-1">
                                             {% if is_time %}
                                                 {{ row.official_result.leistung|number_format(2, '.', '')|replace({'.': ':'}) }}
                                             {% else %}
@@ -108,13 +105,13 @@
                                         </div>
                                         
                                         {% if row.official_result.points == 3 %}
-                                            <span class="label label-gold" title="Gold">Gold</span>
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-medal"></i> Gold</span>
                                         {% elseif row.official_result.points == 2 %}
-                                            <span class="label label-silver" title="Silber">Silber</span>
+                                            <span class="badge bg-secondary"><i class="fas fa-medal"></i> Silber</span>
                                         {% elseif row.official_result.points == 1 %}
-                                            <span class="label label-bronze" title="Bronze">Bronze</span>
+                                            <span class="badge" style="background-color: #cd7f32;"><i class="fas fa-medal"></i> Bronze</span>
                                         {% else %}
-                                            <span class="label label-danger">0 Pkt</span>
+                                            <span class="badge bg-danger">0 Pkt</span>
                                         {% endif %}
                                     {% else %}
                                         <span class="text-muted small">-</span>
@@ -122,11 +119,11 @@
                                 </td>
 
                                 {# Training Button #}
-                                <td class="ps-4 sa-mobile-action">
-                                    <a href="{{ path('raining_detail', { disciplineId: row.discipline_id }) }}" 
-                                       class="btn btn-outline-primary btn-sm w-100 d-flex justify-content-between align-items-center sa-btn-hover">
+                                <td class="ps-4" data-label="Training">
+                                    <a href="{{ path('training_detail', { id: row.discipline_id }) }}" 
+                                       class="btn btn-outline-primary btn-sm w-100 d-flex justify-content-between align-items-center">
                                         <span>
-                                            {% if row.training_value is not empty %}
+                                            {% if row.training_value %}
                                                 {% if row.training_value matches '/^\\d+(\\.\\d+)?$/' %}
                                                     {% if is_time %}
                                                         <span class="fw-bold">{{ row.training_value|replace({'.': ':'}) }}</span>
@@ -136,12 +133,12 @@
                                                 {% else %}
                                                      <span class="fw-bold">{{ row.training_value }}</span>
                                                 {% endif %}
-                                                <small>{{ einheit_label }}</small>
+                                                <small class="ms-1">{{ einheit_label }}</small>
                                             {% else %}
-                                                <span class="small text-muted fst-italic">Training...</span>
+                                                <span class="small text-muted fst-italic">Erfassen...</span>
                                             {% endif %}
                                         </span>
-                                        <span class="glyphicon glyphicon-chevron-right small text-muted" aria-hidden="true"></span>
+                                        <i class="fas fa-chevron-right ms-2 small"></i>
                                     </a>
                                 </td>
                             </tr>
