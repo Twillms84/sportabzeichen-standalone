@@ -30,6 +30,6 @@ class TokenLoginController extends AbstractController
         $security->login($user, 'form_login', 'main');
 
         // 3. Weiterleitung zum persönlichen Bereich
-        return $this->redirectToRoute('app_my_results'); 
+        return $this->redirectToRoute('my_results'); 
     }
 }
