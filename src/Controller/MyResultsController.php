@@ -18,7 +18,7 @@ class MyResultsController extends AbstractController
     ) {
     }
 
-    #[Route('/sportabzeichen/my_results', name: 'my_results')]
+    #[Route('/sportabzeichen/my_results', name: 'app_my_results')]
     public function __invoke(Request $request): Response
     {
         /** @var User $user */
