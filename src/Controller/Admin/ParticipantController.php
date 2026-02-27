@@ -413,7 +413,7 @@ final class ParticipantController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/print-qr', name: 'admin_participants_show_qr')]
+    #[Route('/{id}/print-qr', name: 'show_qr')]
     public function showQr(\App\Entity\Participant $participant): \Symfony\Component\HttpFoundation\Response
     {
         // Einzeldruck für nur einen Teilnehmer
