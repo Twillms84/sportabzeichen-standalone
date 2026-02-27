@@ -89,9 +89,11 @@
                 <ul class="nav flex-column mb-auto mt-3 px-2" style="overflow-y: auto;">
                     <li class="nav-item mb-1">
                         {% set is_exam = app.request.attributes.get('_route') starts with 'app_exams_' %}
-                        <a href="{{ path('app_exams_dashboard') }}" class="nav-link text-white {% if is_exam %}active bg-success{% endif %} rounded">
-                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                        </a>
+                        {% if is_granted('ROLE_EXAMINER') %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_exams_dashboard') }}">Dashboard</a>
+                            </li>
+                        {% endif %}
                     </li>
                     {# --- NEU: Link für Meine Ergebnisse --- #}
                     {% if app.user %}
