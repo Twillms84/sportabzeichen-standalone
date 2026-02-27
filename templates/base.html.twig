@@ -80,9 +80,11 @@
             </div>
 
             <div class="sidebar d-flex flex-column flex-grow-1 overflow-hidden" style="border-right: 1px solid var(--osa-border);">
-                <a href="{{ path('app_exams_dashboard') }}" class="sidebar-brand text-decoration-none text-white p-3 d-block">
-                     <i class="fas fa-medal me-2 text-warning"></i> <strong>Sportabzeichen</strong>
-                </a>
+                {% if is_granted('ROLE_EXAMINER') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_exams_dashboard') }}">Dashboard</a>
+                    </li>
+                {% endif %}
                 <hr class="my-0 border-secondary">
                 <ul class="nav flex-column mb-auto mt-3 px-2" style="overflow-y: auto;">
                     <li class="nav-item mb-1">
