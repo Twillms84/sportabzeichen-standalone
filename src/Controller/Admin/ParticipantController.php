@@ -368,13 +368,15 @@ final class ParticipantController extends AbstractController
             $this->em->persist($participant);
 
             // 4. Automatischer Prüfungs-Abgleich über die Gruppe
-            // Nur ausführen, wenn wir eine Gruppe haben
-            // 4. Automatischer Prüfungs-Abgleich über die Gruppe
-            // Nur ausführen, wenn wir eine Gruppe haben UND diese bereits eine ID hat (also keine ganz neue ist)
             if (isset($group) && $group->getId() !== null) {
                 
                 $activeExams = $this->em->getRepository(\App\Entity\Exam::class)
                     ->createQueryBuilder('e')
+                    ->join('e.groups', 'g')
+                    ->where('g = :group')
+                    ->setParameter('group', $group)
+                    ->getQuery()
+                    ->getResult();
 
                 // Für jede gefundene Prüfung wird der Teilnehmer automatisch hinzugefügt
                 foreach ($activeExams as $exam) {
