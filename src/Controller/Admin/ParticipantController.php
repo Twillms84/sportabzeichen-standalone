@@ -402,8 +402,13 @@ final class ParticipantController extends AbstractController
             $this->em->flush();
             $this->addFlash('success', 'Teilnehmer erfolgreich angelegt.');
 
-        return $this->redirectToRoute('admin_participants_index');
-    }
+            return $this->redirectToRoute('admin_participants_index');
+
+        } catch (\Exception $e) {
+            // Fängt alle Datenbank- oder Code-Fehler ab
+            $this->addFlash('danger', 'Fehler beim Speichern: ' . $e->getMessage());
+            return $this->redirectToRoute('admin_participants_new');
+        }
     }
 
     private function createParticipantForm(Participant $participant, string $label): \Symfony\Component\Form\FormInterface
