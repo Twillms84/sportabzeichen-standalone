@@ -302,7 +302,7 @@ final class ParticipantController extends AbstractController
 
         // Prüfungen laden (Passe \App\Entity\Exam an deine echte Entity an)
         $exams = $this->em->getRepository(\App\Entity\Exam::class)->findBy(
-            ['institution' => $institution], ['examYear' => 'DESC']
+            ['institution' => $institution], ['year' => 'DESC']
         );
 
         return $this->render('admin/participants/new.html.twig', [

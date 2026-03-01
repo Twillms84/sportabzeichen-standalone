@@ -8,7 +8,6 @@ export default class extends Controller {
     static values = { saveUrl: String };
 
     connect() {
-        console.log("🚀 BINGO! Der Groups-Controller ist geladen!"); // <--- DAS HIER EINFÜGEN
         this.modalInstance = new Modal(this.modalTarget);
     }
 
@@ -93,37 +92,5 @@ export default class extends Controller {
         })
         .catch(error => console.error('Error:', error));
     }
-
-    confirmAction(event) {
-        event.preventDefault();
-        
-        const target = event.currentTarget;
-        const form = target.closest('form');
-        const message = target.dataset.confirmMessage || "Möchtest du das wirklich tun?";
-        const type = target.dataset.confirmType || 'warning'; // default, danger, info...
-
-        const modalEl = document.getElementById('confirmActionModal');
-        const modal = new bootstrap.Modal(modalEl);
-        
-        // UI Anpassungen
-        const header = modalEl.querySelector('.modal-header');
-        const btn = modalEl.querySelector('#confirmModalBtn');
-        modalEl.querySelector('#confirmModalBody').textContent = message;
-
-        // Klassen zurücksetzen & neu setzen für das Design
-        header.className = 'modal-header border-0 text-white ' + (type === 'danger' ? 'bg-danger' : 'bg-primary');
-        btn.className = 'btn px-4 shadow-sm ' + (type === 'danger' ? 'btn-danger' : 'btn-primary');
-        
-        // Button Logik
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        newBtn.addEventListener('click', () => {
-            modal.hide();
-            if (form) form.submit();
-            else this.assignGroup(event); // Falls es kein Form-Submit ist
-        });
-        
-        modal.show();
-    }
+    
 }
