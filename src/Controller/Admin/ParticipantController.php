@@ -405,8 +405,11 @@ final class ParticipantController extends AbstractController
 
             $this->addFlash('success', 'Teilnehmer erfolgreich angelegt.');
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Fehler: ' . $e->getMessage());
-            return $this->redirectToRoute('admin_participants_new');
+            // "dd" steht für Dump and Die - das stoppt das Skript und zeigt den Fehler an
+            dd($e->getMessage()); 
+            
+            // $this->addFlash('error', 'Fehler: ' . $e->getMessage());
+            // return $this->redirectToRoute('admin_participants_new');
         }
 
         return $this->redirectToRoute('admin_participants_index');
