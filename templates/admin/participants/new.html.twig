@@ -85,7 +85,7 @@
                                         <option value="">-- Keine Prüfung zuordnen --</option>
                                         {% for exam in availableExams %}
                                             {# Passe exam.name/exam.year an deine Entity an #}
-                                            <option value="{{ exam.id }}">{{ exam.examYear }} ({{ exam.id }})</option>
+                                            <option value="{{ exam.id }}">{{ exam.year }} ({{ exam.id }})</option>
                                         {% endfor %}
                                         <option value="new" class="text-success font-weight-bold">+++ Neue Prüfung anlegen +++</option>
                                     </select>
