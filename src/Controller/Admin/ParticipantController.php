@@ -295,20 +295,19 @@ final class ParticipantController extends AbstractController
     {
         $institution = $this->getInstitutionOrDeny();
         
-        // Gruppen laden
         $groups = $this->em->getRepository(Group::class)->findBy(
             ['institution' => $institution], ['name' => 'ASC']
         );
 
-        // Prüfungen laden (Passe \App\Entity\Exam an deine echte Entity an)
+        // HIER GEÄNDERT: 'year' statt 'examYear'
         $exams = $this->em->getRepository(\App\Entity\Exam::class)->findBy(
-            ['institution' => $institution], ['year' => 'DESC']
+            ['institution' => $institution], ['year' => 'DESC'] 
         );
 
         return $this->render('admin/participants/new.html.twig', [
             'activeTab' => 'participants_manage',
             'availableGroups' => $groups,
-            'availableExams' => $exams, // Neu hinzugefügt für das Dropdown
+            'availableExams' => $exams,
         ]);
     }
 
@@ -383,8 +382,11 @@ final class ParticipantController extends AbstractController
                 if ($newExamYear > 1900) {
                     $exam = new \App\Entity\Exam();
                     $exam->setInstitution($institution);
-                    $exam->setExamYear($newExamYear);
-                    // Falls deine Exam-Entity noch weitere Pflichtfelder hat, setze sie hier
+                    
+                    // HIER GEÄNDERT: Die korrekten Setter aus deiner Entity
+                    $exam->setYear($newExamYear); 
+                    $exam->setName('Sportabzeichen ' . $newExamYear); // Pflichtfeld bedienen!
+                    
                     $this->em->persist($exam);
                 }
             } elseif (!empty($examId)) {
