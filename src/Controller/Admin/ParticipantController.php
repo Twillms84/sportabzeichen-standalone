@@ -405,7 +405,9 @@ final class ParticipantController extends AbstractController
             return $this->redirectToRoute('admin_participants_index');
 
         } catch (\Exception $e) {
-            // Fängt alle Datenbank- oder Code-Fehler ab
+            // DAS HIER KURZ EINFÜGEN:
+            dd($e->getMessage()); 
+            
             $this->addFlash('danger', 'Fehler beim Speichern: ' . $e->getMessage());
             return $this->redirectToRoute('admin_participants_new');
         }

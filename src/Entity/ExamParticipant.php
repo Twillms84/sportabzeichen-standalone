@@ -67,6 +67,12 @@ class ExamParticipant
     // Alias, falls alter Code getAgeYear aufruft
     public function getAgeYear(): ?int { return $this->age; }
 
+    public function setAgeYear(int $age): self 
+    { 
+        $this->age = $age; 
+        return $this; 
+    }
+    
     public function getTotalPoints(): int { return $this->totalPoints; }
     public function setTotalPoints(int $totalPoints): self { $this->totalPoints = $totalPoints; return $this; }
 
