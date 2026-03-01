@@ -13,66 +13,90 @@
                 <div class="panel-body">
                     <form method="post" action="{{ path('admin_participants_create') }}">
                         
-                        <h4 class="text-primary">{{ 'Account-Daten (IServ)'|trans }}</h4>
+                        <h4 class="text-primary">{{ icon('user') }} {{ 'Account-Daten'|trans }}</h4>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>{{ 'Vorname'|trans }}</label>
+                                    <label>{{ 'Vorname'|trans }} *</label>
                                     <input type="text" name="firstname" class="form-control" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>{{ 'Nachname'|trans }}</label>
+                                    <label>{{ 'Nachname'|trans }} *</label>
                                     <input type="text" name="lastname" class="form-control" required>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>{{ 'IServ-Account'|trans }} ({{ 'z.B. max.mustermann'|trans }})</label>
-                            <input type="text" name="act" class="form-control" required>
+                            <label>{{ 'Benutzername / Login'|trans }} (Optional)</label>
+                            <input type="text" name="act" class="form-control" placeholder="z.B. max.mustermann">
+                            <small class="text-muted">
+                                {{ icon('info-sign') }} Wenn keine E-Mail oder Benutzername angegeben wird, kann der User sich später nicht selbst einloggen.
+                            </small>
                         </div>
 
                         <hr>
-                        <h4 class="text-primary">{{ 'Teilnehmer-Details'|trans }}</h4>
+                        <h4 class="text-primary">{{ icon('list-alt') }} {{ 'Teilnehmer-Details'|trans }}</h4>
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>{{ 'Geburtsdatum'|trans }}</label>
+                                    <label>{{ 'Geburtsdatum'|trans }} *</label>
                                     <input type="date" name="dob" class="form-control" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>{{ 'Geschlecht'|trans }}</label>
+                                    <label>{{ 'Geschlecht'|trans }} *</label>
                                     <select name="gender" class="form-control">
                                         <option value="MALE">{{ 'Männlich'|trans }}</option>
                                         <option value="FEMALE">{{ 'Weiblich'|trans }}</option>
-                                        <option value="DIVERSE">{{ 'Divers'|trans }}</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>{{ 'Klasse / Gruppe'|trans }}</label>
-                            <select name="group" class="form-control">
-                                {% for group in availableGroups %}
-                                    <option value="{{ group.id }}">{{ group.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <hr>
+                        <h4 class="text-primary">{{ icon('folder-open') }} {{ 'Zuordnungen'|trans }}</h4>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Klasse / Gruppe'|trans }}</label>
+                                    <select name="group" id="group_select" class="form-control" onchange="toggleNewInput('group_select', 'new_group_wrapper', 'new_group_name')">
+                                        <option value="">-- Keine Gruppe zuordnen --</option>
+                                        {% for group in availableGroups %}
+                                            <option value="{{ group.id }}">{{ group.name }}</option>
+                                        {% endfor %}
+                                        <option value="new" class="text-success font-weight-bold">+++ Neue Gruppe anlegen +++</option>
+                                    </select>
+                                    <div id="new_group_wrapper" style="display: none; margin-top: 10px;">
+                                        <input type="text" name="new_group_name" id="new_group_name" class="form-control" placeholder="Name der neuen Gruppe">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ 'Prüfung'|trans }}</label>
+                                    <select name="exam" id="exam_select" class="form-control" onchange="toggleNewInput('exam_select', 'new_exam_wrapper', 'new_exam_name')">
+                                        <option value="">-- Keine Prüfung zuordnen --</option>
+                                        {% for exam in availableExams %}
+                                            {# Passe exam.name/exam.year an deine Entity an #}
+                                            <option value="{{ exam.id }}">{{ exam.examYear }} ({{ exam.id }})</option>
+                                        {% endfor %}
+                                        <option value="new" class="text-success font-weight-bold">+++ Neue Prüfung anlegen +++</option>
+                                    </select>
+                                    <div id="new_exam_wrapper" style="display: none; margin-top: 10px;">
+                                        <input type="number" name="new_exam_year" id="new_exam_name" class="form-control" placeholder="Prüfungsjahr (z.B. {{ 'now'|date('Y') }})" value="{{ 'now'|date('Y') }}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="well well-sm">
-                            <p class="text-info">
-                                {{ icon('info-sign') }} 
-                                {{ 'Hinweis: Es wird automatisch ein lokaler User-Account erstellt, falls dieser noch nicht existiert.'|trans }}
-                            </p>
-                        </div>
-
-                        <div class="text-right">
+                        <div class="text-right mt-4" style="margin-top: 20px;">
                             <a href="{{ path('admin_participants_index') }}" class="btn btn-default">{{ 'Abbrechen'|trans }}</a>
                             <button type="submit" class="btn btn-success">{{ icon('floppy-disk') }} {{ 'Anlegen'|trans }}</button>
                         </div>
@@ -80,5 +104,22 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            function toggleNewInput(selectId, wrapperId, inputId) {
+                var select = document.getElementById(selectId);
+                var wrapper = document.getElementById(wrapperId);
+                var input = document.getElementById(inputId);
+                
+                if (select.value === 'new') {
+                    wrapper.style.display = 'block';
+                    input.required = true;
+                } else {
+                    wrapper.style.display = 'none';
+                    input.required = false;
+                    input.value = '';
+                }
+            }
+        </script>
     </div>
 {% endblock %}

@@ -7,6 +7,8 @@ namespace App\Controller\Admin; // Neuer Namespace für Admin-Subordner
 use App\Entity\Participant;
 use App\Entity\User;
 use App\Entity\Group;
+use App\Entity\Exam; 
+use App\Entity\ExamParticipant;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
