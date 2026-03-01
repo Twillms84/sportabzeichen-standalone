@@ -17,10 +17,10 @@
             <div class="btn-group shadow-sm">
                 {% if app.request.query.get('filter') starts with 'group_' %}
                     {% set activeGroupId = app.request.query.get('filter')|replace({'group_': ''}) %}
-                    <a href="{{ path('group_generate_logins', {id: activeGroupId}) }}" class="btn btn-warning btn-sm">
+                    <a href="{{ path('admin_participants_group_generate_logins', {id: activeGroupId}) }}" class="btn btn-warning btn-sm">
                         <i class="bi bi-magic"></i> {{ 'Tokens generieren'|trans }}
                     </a>
-                    <a href="{{ path('group_print_logins', {id: activeGroupId}) }}" class="btn btn-dark btn-sm">
+                    <a href="{{ path('admin_participants_group_print_logins', {id: activeGroupId}) }}" class="btn btn-dark btn-sm">
                         <i class="bi bi-printer-fill"></i> {{ 'Alle QR drucken'|trans }}
                     </a>
                 {% endif %}
