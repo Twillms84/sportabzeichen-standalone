@@ -294,13 +294,21 @@ final class ParticipantController extends AbstractController
     public function new(): Response
     {
         $institution = $this->getInstitutionOrDeny();
+        
+        // Gruppen laden
         $groups = $this->em->getRepository(Group::class)->findBy(
             ['institution' => $institution], ['name' => 'ASC']
+        );
+
+        // Prüfungen laden (Passe \App\Entity\Exam an deine echte Entity an)
+        $exams = $this->em->getRepository(\App\Entity\Exam::class)->findBy(
+            ['institution' => $institution], ['examYear' => 'DESC']
         );
 
         return $this->render('admin/participants/new.html.twig', [
             'activeTab' => 'participants_manage',
             'availableGroups' => $groups,
+            'availableExams' => $exams, // Neu hinzugefügt für das Dropdown
         ]);
     }
 
@@ -316,17 +324,36 @@ final class ParticipantController extends AbstractController
 
         try {
             $user = new User();
-            $user->setFirstname($request->request->get('firstname'));
-            $user->setLastname($request->request->get('lastname'));
-            $user->setAct($request->request->get('act'));
-            $user->setUsername($request->request->get('act')); 
+            $user->setFirstname(trim((string)$request->request->get('firstname')));
+            $user->setLastname(trim((string)$request->request->get('lastname')));
+            
+            // 1. Optionaler Login / Benutzername mit Fallback
+            $act = trim((string)$request->request->get('act'));
+            if (empty($act)) {
+                // Generiert eine eindeutige ID, falls nichts angegeben wurde (z.B. user_5f4a1b)
+                $act = 'user_' . substr(uniqid(), -8);
+            }
+            $user->setAct($act);
+            $user->setUsername($act); 
+            
             $user->setInstitution($institution);
-            $user->setRoles(['ROLE_USER']);
             $user->setPassword('manual_entry');
-            $user->setRoles(['ROLE_PARTICIPANT']);
+            
+            // Wichtig: array_unique nutzen oder direkt beide Rollen setzen, damit ROLE_USER nicht überschrieben wird
+            $user->setRoles(['ROLE_USER', 'ROLE_PARTICIPANT']); 
 
+            // 2. Gruppen-Logik (Bestehende oder Neue)
             $groupId = $request->request->get('group');
-            if ($groupId) {
+            if ($groupId === 'new') {
+                $newGroupName = trim((string)$request->request->get('new_group_name'));
+                if (!empty($newGroupName)) {
+                    $group = new Group();
+                    $group->setName($newGroupName);
+                    $group->setInstitution($institution);
+                    $this->em->persist($group);
+                    $user->addGroup($group); // User direkt hinzufügen
+                }
+            } elseif (!empty($groupId)) {
                 $group = $this->em->getRepository(Group::class)->find($groupId);
                 if ($group && $group->getInstitution() === $institution) {
                     $user->addGroup($group);
@@ -334,17 +361,47 @@ final class ParticipantController extends AbstractController
             }
             $this->em->persist($user);
 
+            // 3. Participant anlegen
             $participant = new Participant();
             $participant->setUser($user);
             $participant->setInstitution($institution);
             $participant->setBirthdate(new \DateTime($request->request->get('dob')));
-            $participant->setGender($request->request->get('gender'));
+            
+            // Divers herausgefiltert, falls manipuliert wird, greift der Fallback
+            $gender = $request->request->get('gender');
+            $participant->setGender(in_array($gender, ['MALE', 'FEMALE']) ? $gender : 'MALE'); 
+            
             $participant->setUpdatedAt(new \DateTime());
-
             $this->em->persist($participant);
+
+            // 4. Prüfungs-Logik (Exam) - Direkt in Prüfung packen
+            $examId = $request->request->get('exam');
+            $exam = null;
+
+            if ($examId === 'new') {
+                $newExamYear = (int)$request->request->get('new_exam_year');
+                if ($newExamYear > 1900) {
+                    $exam = new \App\Entity\Exam();
+                    $exam->setInstitution($institution);
+                    $exam->setExamYear($newExamYear);
+                    // Falls deine Exam-Entity noch weitere Pflichtfelder hat, setze sie hier
+                    $this->em->persist($exam);
+                }
+            } elseif (!empty($examId)) {
+                $exam = $this->em->getRepository(\App\Entity\Exam::class)->find($examId);
+            }
+
+            // Wenn eine Prüfung ausgewählt/erstellt wurde, Teilnehmer verknüpfen
+            if ($exam) {
+                $examParticipant = new \App\Entity\ExamParticipant();
+                $examParticipant->setExam($exam);
+                $examParticipant->setParticipant($participant);
+                $this->em->persist($examParticipant);
+            }
+
             $this->em->flush();
 
-            $this->addFlash('success', 'Teilnehmer angelegt.');
+            $this->addFlash('success', 'Teilnehmer erfolgreich angelegt.');
         } catch (\Exception $e) {
             $this->addFlash('error', 'Fehler: ' . $e->getMessage());
             return $this->redirectToRoute('admin_participants_new');
@@ -358,7 +415,8 @@ final class ParticipantController extends AbstractController
         return $this->createFormBuilder($participant)
             ->add('birthdate', DateType::class, ['widget' => 'single_text', 'label' => 'Geburtsdatum'])
             ->add('gender', ChoiceType::class, [
-                'choices' => ['Männlich' => 'MALE', 'Weiblich' => 'FEMALE', 'Divers' => 'DIVERSE'],
+                // "Divers" hier ebenfalls entfernt
+                'choices' => ['Männlich' => 'MALE', 'Weiblich' => 'FEMALE'],
                 'expanded' => true,
                 'label' => 'Geschlecht'
             ])
