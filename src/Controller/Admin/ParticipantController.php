@@ -299,15 +299,9 @@ final class ParticipantController extends AbstractController
             ['institution' => $institution], ['name' => 'ASC']
         );
 
-        // HIER GEÄNDERT: 'year' statt 'examYear'
-        $exams = $this->em->getRepository(\App\Entity\Exam::class)->findBy(
-            ['institution' => $institution], ['year' => 'DESC'] 
-        );
-
         return $this->render('admin/participants/new.html.twig', [
             'activeTab' => 'participants_manage',
             'availableGroups' => $groups,
-            'availableExams' => $exams,
         ]);
     }
 
@@ -373,44 +367,40 @@ final class ParticipantController extends AbstractController
             $participant->setUpdatedAt(new \DateTime());
             $this->em->persist($participant);
 
-            // 4. Prüfungs-Logik (Exam) - Direkt in Prüfung packen
-            $examId = $request->request->get('exam');
-            $exam = null;
+            // 4. Automatischer Prüfungs-Abgleich über die Gruppe
+            // Nur ausführen, wenn wir eine Gruppe haben
+            if (isset($group)) {
+                
+                // Wir suchen alle Prüfungen, in denen diese Gruppe bereits eingetragen ist
+                // (Wenn es eine neue Gruppe ist, liefert das einfach ein leeres Array)
+                $activeExams = $this->em->getRepository(\App\Entity\Exam::class)
+                    ->createQueryBuilder('e')
+                    ->join('e.groups', 'g')
+                    ->where('g = :group')
+                    ->setParameter('group', $group)
+                    ->getQuery()
+                    ->getResult();
 
-            if ($examId === 'new') {
-                $newExamYear = (int)$request->request->get('new_exam_year');
-                if ($newExamYear > 1900) {
-                    $exam = new \App\Entity\Exam();
-                    $exam->setInstitution($institution);
+                // Für jede gefundene Prüfung wird der Teilnehmer automatisch hinzugefügt
+                foreach ($activeExams as $exam) {
+                    $examParticipant = new \App\Entity\ExamParticipant();
+                    $examParticipant->setExam($exam);
+                    $examParticipant->setParticipant($participant);
                     
-                    // HIER GEÄNDERT: Die korrekten Setter aus deiner Entity
-                    $exam->setYear($newExamYear); 
-                    $exam->setName('Sportabzeichen ' . $newExamYear); // Pflichtfeld bedienen!
+                    // FEHLER-BEHEBUNG: Das age_year berechnen (Prüfungsjahr minus Geburtsjahr)
+                    $birthYear = (int)$participant->getBirthdate()->format('Y');
+                    $ageYear = $exam->getYear() - $birthYear;
+                    $examParticipant->setAgeYear($ageYear);
                     
-                    $this->em->persist($exam);
+                    // WICHTIG: Falls du noch Felder wie 'status' hast (in deinem Log stand "NONE"), hier setzen:
+                    // $examParticipant->setStatus('NONE'); 
+
+                    $this->em->persist($examParticipant);
                 }
-            } elseif (!empty($examId)) {
-                $exam = $this->em->getRepository(\App\Entity\Exam::class)->find($examId);
-            }
-
-            // Wenn eine Prüfung ausgewählt/erstellt wurde, Teilnehmer verknüpfen
-            if ($exam) {
-                $examParticipant = new \App\Entity\ExamParticipant();
-                $examParticipant->setExam($exam);
-                $examParticipant->setParticipant($participant);
-                $this->em->persist($examParticipant);
             }
 
             $this->em->flush();
-
             $this->addFlash('success', 'Teilnehmer erfolgreich angelegt.');
-        } catch (\Exception $e) {
-            // "dd" steht für Dump and Die - das stoppt das Skript und zeigt den Fehler an
-            dd($e->getMessage()); 
-            
-            // $this->addFlash('error', 'Fehler: ' . $e->getMessage());
-            // return $this->redirectToRoute('admin_participants_new');
-        }
 
         return $this->redirectToRoute('admin_participants_index');
     }
