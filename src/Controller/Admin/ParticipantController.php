@@ -404,6 +404,7 @@ final class ParticipantController extends AbstractController
 
         return $this->redirectToRoute('admin_participants_index');
     }
+    }
 
     private function createParticipantForm(Participant $participant, string $label): \Symfony\Component\Form\FormInterface
     {
