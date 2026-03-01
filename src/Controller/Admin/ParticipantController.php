@@ -461,11 +461,66 @@ final class ParticipantController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-    #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
-    public function printGroupQrCodes(\App\Entity\Group $group, \App\Repository\ParticipantRepository $repo): \Symfony\Component\HttpFoundation\Response
+    #[Route('/group/{id}/generate-logins', name: 'group_generate_logins', methods: ['GET', 'POST'])]
+    public function generateGroupLogins(int $id): Response
     {
-        // Holt alle Teilnehmer der Gruppe
-        $participants = $repo->findBy(['group' => $group]);
+        $institution = $this->getInstitutionOrDeny();
+        $group = $this->em->getRepository(Group::class)->findOneBy(['id' => $id, 'institution' => $institution]);
+
+        if (!$group) {
+            $this->addFlash('danger', 'Gruppe nicht gefunden.');
+            return $this->redirectToRoute('admin_participants_index');
+        }
+
+        // Finde alle Participants, deren User in dieser Gruppe ist
+        $participants = $this->em->getRepository(Participant::class)->createQueryBuilder('p')
+            ->join('p.user', 'u')
+            ->join('u.groups', 'g')
+            ->where('g.id = :groupId')
+            ->setParameter('groupId', $id)
+            ->getQuery()
+            ->getResult();
+
+        $count = 0;
+        foreach ($participants as $participant) {
+            $user = $participant->getUser();
+            // Nur generieren, wenn es noch kein Token gibt
+            if ($user && empty($user->getLoginToken())) {
+                $user->setLoginToken(bin2hex(random_bytes(8))); // 16-stelliger Token
+                $count++;
+            }
+        }
+
+        $this->em->flush();
+
+        if ($count > 0) {
+            $this->addFlash('success', $count . ' Login-Tokens wurden erfolgreich generiert.');
+        } else {
+            $this->addFlash('info', 'Alle Teilnehmer dieser Gruppe haben bereits ein Token.');
+        }
+
+        return $this->redirectToRoute('admin_participants_index', ['filter' => 'group_' . $id]);
+    }
+
+    #[Route('/group/{id}/print-logins', name: 'group_print_logins')]
+    public function printGroupQrCodes(int $id): Response
+    {
+        $institution = $this->getInstitutionOrDeny();
+        $group = $this->em->getRepository(Group::class)->findOneBy(['id' => $id, 'institution' => $institution]);
+
+        if (!$group) {
+            $this->addFlash('danger', 'Gruppe nicht gefunden.');
+            return $this->redirectToRoute('admin_participants_index');
+        }
+
+        // Gleiche sichere Abfrage wie beim Generieren
+        $participants = $this->em->getRepository(Participant::class)->createQueryBuilder('p')
+            ->join('p.user', 'u')
+            ->join('u.groups', 'g')
+            ->where('g.id = :groupId')
+            ->setParameter('groupId', $id)
+            ->getQuery()
+            ->getResult();
 
         return $this->render('admin/participants/qr_print.html.twig', [
             'participants' => $participants,
