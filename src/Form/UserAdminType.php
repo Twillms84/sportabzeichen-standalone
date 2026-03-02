@@ -28,7 +28,7 @@ class UserAdminType extends AbstractType
                 'label' => 'Nachname',
                 'attr' => ['class' => 'form-control']
             ])
-            -->add('email', EmailType::class, [
+            ->add('email', EmailType::class, [
                 'label' => 'E-Mail / Login',
                 'attr' => ['class' => 'form-control'],
                 'constraints' => [
