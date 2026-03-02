@@ -11,7 +11,7 @@
                     <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Mein Konto</h5>
                 </div>
                 
-                <div class="card-body p-4">
+                <div class="card-body p-4 text-body"> {# text-body stellt korrekte Schriftfarbe sicher #}
                     {{ form_start(form) }}
                         <div class="row">
                             <div class="col-md-6 mb-3">{{ form_row(form.firstname) }}</div>
@@ -30,33 +30,38 @@
                         
                         <h6 class="fw-bold mb-3 text-uppercase small text-muted">Sicherheit & Passwort</h6>
                         
-                        {# Passwort-Hinweise #}
-                        <div class="alert alert-info border-0 shadow-sm small mb-4">
+                        {# Interaktive Passwort-Checkliste #}
+                        <div class="alert alert-secondary border-0 shadow-sm small mb-4">
                             <div class="d-flex">
-                                <i class="fas fa-shield-alt me-3 mt-1 h5"></i>
+                                <i class="fas fa-shield-alt me-3 mt-1 h5 text-primary"></i>
                                 <div>
-                                    <strong>Anforderungen an dein Passwort:</strong>
-                                    <ul class="mb-0 mt-1 ps-3">
-                                        <li>Mindestens <strong>8 Zeichen</strong></li>
-                                        <li>Groß- & Kleinbuchstaben</li>
-                                        <li>Mindestens eine <strong>Zahl</strong></li>
-                                        <li>Ein <strong>Sonderzeichen</strong> (z.B. ! @ # $)</li>
+                                    <strong>Passwort-Anforderungen:</strong>
+                                    <ul class="list-unstyled mb-0 mt-2" id="pw-requirements">
+                                        <li id="req-length" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Mind. 8 Zeichen</li>
+                                        <li id="req-upper" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Groß- & Kleinbuchstaben</li>
+                                        <li id="req-number" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Mind. eine Zahl</li>
+                                        <li id="req-special" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Ein Sonderzeichen</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-light p-3 rounded border mb-4">
+                        {# Passwort-Eingabebereich mit angepassten Farben #}
+                        <div class="bg-body-tertiary p-3 rounded border mb-4 shadow-sm">
                             {% if form.currentPassword is defined %}
                                 <div class="mb-3">
                                     {{ form_row(form.currentPassword) }}
                                 </div>
-                                <hr>
+                                <hr class="opacity-10">
                             {% endif %}
                             
                             <div class="row">
-                                <div class="col-md-6">{{ form_row(form.plainPassword.first) }}</div>
-                                <div class="col-md-6">{{ form_row(form.plainPassword.second) }}</div>
+                                <div class="col-md-6">
+                                    {{ form_row(form.plainPassword.first, {'attr': {'class': 'pw-input'}}) }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form_row(form.plainPassword.second) }}
+                                </div>
                             </div>
                         </div>
 
@@ -71,4 +76,38 @@
         </div>
     </div>
 </div>
+
+<style>
+    .font-xs { font-size: 0.5rem; vertical-align: middle; }
+    .req-met { color: #198754 !important; font-weight: bold; } /* Erfolg-Grün */
+    .req-met i { color: #198754 !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pwInput = document.querySelector('.pw-input');
+    if (!pwInput) return;
+
+    const reqs = {
+        length: { el: document.getElementById('req-length'), reg: /.{8,}/ },
+        upper: { el: document.getElementById('req-upper'), reg: /(?=.*[a-z])(?=.*[A-Z])/ },
+        number: { el: document.getElementById('req-number'), reg: /[0-9]/ },
+        special: { el: document.getElementById('req-special'), reg: /[\W_]/ }
+    };
+
+    pwInput.addEventListener('input', function() {
+        const val = this.value;
+        
+        for (const key in reqs) {
+            if (reqs[key].reg.test(val)) {
+                reqs[key].el.classList.add('req-met');
+                reqs[key].el.querySelector('i').classList.replace('fa-circle', 'fa-check-circle');
+            } else {
+                reqs[key].el.classList.remove('req-met');
+                reqs[key].el.querySelector('i').classList.replace('fa-check-circle', 'fa-circle');
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
