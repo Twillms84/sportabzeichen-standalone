@@ -47,7 +47,7 @@ class TrainingDetailController extends AbstractController
         $age = $currentYear - (int)$birthDate->format('Y');
 
         $req = $this->conn->fetchAssociative("
-            SELECT d.name, d.einheit, r.bronze, r.silber, r.gold
+            SELECT d.id, d.name, d.einheit, r.bronze, r.silber, r.gold
             FROM sportabzeichen_requirements r
             JOIN sportabzeichen_disciplines d ON r.discipline_id = d.id
             WHERE d.id = :did 
