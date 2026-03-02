@@ -4,25 +4,10 @@ export default class extends Controller {
     static targets = ["first", "second", "requirement"]
 
     connect() {
-        console.log("✅ Password-Validator: Controller verbunden!");
-        console.log("🔍 Gefundene Targets:", {
-            firstInput: this.hasFirstTarget,
-            secondInput: this.hasSecondTarget,
-            requirementsCount: this.requirementTargets.length
-        });
-
-        // Falls Targets fehlen, warnen
-        if (!this.hasFirstTarget || !this.hasSecondTarget) {
-            console.error("❌ Password-Validator: Eingabefelder wurden nicht gefunden! Prüfe 'data-password-validator-target'.");
-        }
-
         this.validate();
     }
 
     validate() {
-        console.log("⌨️ Validierung läuft...");
-
-        // Werte sicher abgreifen
         const val1 = this.hasFirstTarget ? this.firstTarget.value : '';
         const val2 = this.hasSecondTarget ? this.secondTarget.value : '';
 
@@ -33,7 +18,7 @@ export default class extends Controller {
             special: /[\W_]/
         };
 
-        this.requirementTargets.forEach((el, index) => {
+        this.requirementTargets.forEach((el) => {
             const type = el.dataset.pwRequirement;
             let isMet = false;
 
@@ -43,7 +28,6 @@ export default class extends Controller {
                 isMet = rules[type].test(val1);
             }
 
-            console.log(`📋 Regel [${type}]: ${isMet ? '✅ erfüllt' : '❌ offen'}`);
             this._updateStatus(el, isMet);
         });
     }
@@ -54,12 +38,13 @@ export default class extends Controller {
         if (isMet) {
             element.classList.add('req-met');
             if (icon) {
+                // Wir tauschen den leeren Kreis gegen den Check-Circle
                 icon.classList.replace('fa-circle', 'fa-check-circle');
-                icon.classList.replace('fa-times-circle', 'fa-check-circle');
             }
         } else {
             element.classList.remove('req-met');
             if (icon) {
+                // Zurück zum leeren Kreis
                 icon.classList.replace('fa-check-circle', 'fa-circle');
             }
         }
