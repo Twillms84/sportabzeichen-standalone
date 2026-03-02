@@ -110,3 +110,45 @@
 /* Korrektur für Card-Header Text, da app.css ihn auf osa-green setzt */
 .card-header .card-title { color: #ffffff; }
 .card-header .text-muted { color: rgba(255,255,255,0.7) !important; }
+
+/* Ergänzungen für my_results */
+.bg-osa-green { background-color: var(--osa-green) !important; color: #fff !important; }
+.text-osa-green { color: var(--osa-green) !important; }
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--app-border);
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-success-subtle { background-color: rgba(46, 204, 113, 0.1); color: #27ae60; border-color: rgba(46, 204, 113, 0.2); }
+.bg-danger-subtle { background-color: rgba(231, 76, 60, 0.1); color: #c0392b; border-color: rgba(231, 76, 60, 0.2); }
+
+.requirement-box {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    background-color: var(--app-background);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--app-border);
+}
+
+.result-box-official {
+    border: 2px solid var(--osa-green);
+    background-color: rgba(46, 204, 113, 0.03);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.result-box-training {
+    border: 1px dashed var(--app-border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+}
