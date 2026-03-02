@@ -247,40 +247,83 @@ final class ParticipantController extends AbstractController
         $email = trim((string)$request->request->get('email'));
         $dob = $request->request->get('dob');
         $gender = $request->request->get('gender');
+        
+        // Gruppen-Daten aus dem Request
         $groupId = $request->request->get('group_id');
+        $newGroupName = trim((string)$request->request->get('new_group_name'));
 
-        // 1. E-Mail & Token-Logik
         if ($user) {
+            // 1. E-Mail Check
             if (!empty($email)) {
-                // E-Mail Dubletten-Check
                 $existing = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
                 if ($existing && $existing->getId() !== $user->getId()) {
                     $this->addFlash('danger', 'E-Mail wird bereits verwendet.');
                     return $this->redirectToRoute('admin_participants_index');
                 }
                 $user->setEmail($email);
-                
-                // Automatisch Token generieren, wenn E-Mail vorhanden aber kein Token da ist
                 if (!$user->getLoginToken()) {
                     $user->setLoginToken(bin2hex(random_bytes(16)));
                 }
             } else {
                 $user->setEmail(null);
-                // Optional: Token löschen, wenn E-Mail entfernt wird? 
-                // $user->setLoginToken(null); 
             }
 
-            // Gruppe aktualisieren
-            foreach ($user->getGroups() as $oldGroup) { $user->removeGroup($oldGroup); }
-            if ($groupId) {
-                $group = $this->em->getRepository(Group::class)->find($groupId);
-                if ($group && $group->getInstitution() === $institution) { $user->addGroup($group); }
+            // 2. Gruppen-Logik (DAS FIXT DEN FEHLER)
+            $selectedGroup = null;
+
+            if ($groupId === 'new' && !empty($newGroupName)) {
+                // Neue Gruppe anlegen
+                $selectedGroup = new Group();
+                $selectedGroup->setName($newGroupName);
+                $selectedGroup->setInstitution($institution);
+                $this->em->persist($selectedGroup);
+            } elseif (!empty($groupId) && $groupId !== 'new') {
+                // Bestehende Gruppe suchen (nur wenn ID numerisch/valid ist)
+                $selectedGroup = $this->em->getRepository(Group::class)->find($groupId);
+            }
+
+            // Gruppen am User aktualisieren
+            if ($selectedGroup && $selectedGroup->getInstitution() === $institution) {
+                // Alte Gruppen entfernen
+                foreach ($user->getGroups() as $oldGroup) {
+                    $user->removeGroup($oldGroup);
+                }
+                $user->addGroup($selectedGroup);
+
+                // --- NEU: Prüfungs-Abgleich (wie in create) ---
+                $activeExams = $this->em->getRepository(Exam::class)->createQueryBuilder('e')
+                    ->join('e.groups', 'g')
+                    ->where('g = :group')
+                    ->setParameter('group', $selectedGroup)
+                    ->getQuery()
+                    ->getResult();
+
+                foreach ($activeExams as $exam) {
+                    // Prüfen, ob Teilnehmer schon in der Prüfung ist
+                    $exists = $this->em->getRepository(ExamParticipant::class)->findOneBy([
+                        'exam' => $exam,
+                        'participant' => $participant
+                    ]);
+
+                    if (!$exists) {
+                        $ep = new ExamParticipant();
+                        $ep->setExam($exam);
+                        $ep->setParticipant($participant);
+                        $birthYear = (int)$participant->getBirthdate()->format('Y');
+                        $ep->setAgeYear($exam->getYear() - $birthYear);
+                        $this->em->persist($ep);
+                    }
+                }
             }
         }
 
-        // 2. Participant Daten
-        if ($dob) { $participant->setBirthdate(new \DateTime($dob)); }
-        if (in_array($gender, ['MALE', 'FEMALE'])) { $participant->setGender($gender); }
+        // 3. Participant Daten
+        if ($dob) {
+            $participant->setBirthdate(new \DateTime($dob));
+        }
+        if (in_array($gender, ['MALE', 'FEMALE'])) {
+            $participant->setGender($gender);
+        }
 
         $participant->setUpdatedAt(new \DateTime());
         $this->em->flush();
@@ -288,7 +331,6 @@ final class ParticipantController extends AbstractController
         $this->addFlash('success', 'Daten für ' . ($user ? $user->getFirstname() : 'Teilnehmer') . ' gespeichert.');
         return $this->redirectToRoute('admin_participants_index');
     }
-
 
     #[Route('/new', name: 'new')]
     public function new(): Response
