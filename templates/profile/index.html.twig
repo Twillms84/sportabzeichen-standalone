@@ -11,7 +11,7 @@
                     <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Mein Konto</h5>
                 </div>
                 
-                <div class="card-body p-4 text-body"> {# text-body stellt korrekte Schriftfarbe sicher #}
+                <div class="card-body p-4 text-body">
                     {{ form_start(form) }}
                         <div class="row">
                             <div class="col-md-6 mb-3">{{ form_row(form.firstname) }}</div>
@@ -30,23 +30,22 @@
                         
                         <h6 class="fw-bold mb-3 text-uppercase small text-muted">Sicherheit & Passwort</h6>
                         
-                        {# Interaktive Passwort-Checkliste #}
                         <div class="alert alert-secondary border-0 shadow-sm small mb-4">
                             <div class="d-flex">
                                 <i class="fas fa-shield-alt me-3 mt-1 h5 text-primary"></i>
                                 <div>
-                                    <strong>Passwort-Anforderungen:</strong>
+                                    <strong>Passwort-Check:</strong>
                                     <ul class="list-unstyled mb-0 mt-2" id="pw-requirements">
-                                        <li id="req-length" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Mind. 8 Zeichen</li>
-                                        <li id="req-upper" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Groß- & Kleinbuchstaben</li>
-                                        <li id="req-number" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Mind. eine Zahl</li>
-                                        <li id="req-special" class="text-muted"><i class="fas fa-circle me-2 font-xs"></i>Ein Sonderzeichen</li>
+                                        <li id="req-length" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Mind. 8 Zeichen</li>
+                                        <li id="req-upper" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Groß- & Kleinbuchstaben</li>
+                                        <li id="req-number" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Mind. eine Zahl</li>
+                                        <li id="req-special" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Ein Sonderzeichen</li>
+                                        <li id="req-match" class="text-muted mt-2 pt-2 border-top"><i class="fas fa-circle me-2 font-xs"></i>Passwörter identisch</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
-                        {# Passwort-Eingabebereich mit angepassten Farben #}
                         <div class="bg-body-tertiary p-3 rounded border mb-4 shadow-sm">
                             {% if form.currentPassword is defined %}
                                 <div class="mb-3">
@@ -57,16 +56,18 @@
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    {{ form_row(form.plainPassword.first, {'attr': {'class': 'pw-input'}}) }}
+                                    {# Erstes Feld mit ID/Klasse für JS #}
+                                    {{ form_row(form.plainPassword.first, {'attr': {'class': 'pw-first'}}) }}
                                 </div>
                                 <div class="col-md-6">
-                                    {{ form_row(form.plainPassword.second) }}
+                                    {# Zweites Feld mit ID/Klasse für JS #}
+                                    {{ form_row(form.plainPassword.second, {'attr': {'class': 'pw-second'}}) }}
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success px-5 shadow-sm">
+                            <button type="submit" id="submit-btn" class="btn btn-success px-5 shadow-sm">
                                 <i class="fas fa-save me-2"></i>Speichern
                             </button>
                         </div>
@@ -79,35 +80,64 @@
 
 <style>
     .font-xs { font-size: 0.5rem; vertical-align: middle; }
-    .req-met { color: #198754 !important; font-weight: bold; } /* Erfolg-Grün */
+    .req-met { color: #198754 !important; font-weight: bold; transition: all 0.3s ease; }
     .req-met i { color: #198754 !important; }
+    /* Optionale Animation beim abhaken */
+    .fa-check-circle { transform: scale(1.1); }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const pwInput = document.querySelector('.pw-input');
-    if (!pwInput) return;
-
-    const reqs = {
+    const pwFirst = document.querySelector('.pw-first');
+    const pwSecond = document.querySelector('.pw-second');
+    
+    const reqElements = {
         length: { el: document.getElementById('req-length'), reg: /.{8,}/ },
         upper: { el: document.getElementById('req-upper'), reg: /(?=.*[a-z])(?=.*[A-Z])/ },
         number: { el: document.getElementById('req-number'), reg: /[0-9]/ },
-        special: { el: document.getElementById('req-special'), reg: /[\W_]/ }
+        special: { el: document.getElementById('req-special'), reg: /[\W_]/ },
+        match: { el: document.getElementById('req-match') }
     };
 
-    pwInput.addEventListener('input', function() {
-        const val = this.value;
-        
-        for (const key in reqs) {
-            if (reqs[key].reg.test(val)) {
-                reqs[key].el.classList.add('req-met');
-                reqs[key].el.querySelector('i').classList.replace('fa-circle', 'fa-check-circle');
+    function validate() {
+        const val1 = pwFirst.value;
+        const val2 = pwSecond.value;
+
+        // 1. Anforderungen prüfen (Erstes Feld)
+        for (const key in reqElements) {
+            if (key === 'match') continue;
+
+            if (reqElements[key].reg.test(val1)) {
+                markAsMet(reqElements[key].el);
             } else {
-                reqs[key].el.classList.remove('req-met');
-                reqs[key].el.querySelector('i').classList.replace('fa-check-circle', 'fa-circle');
+                markAsUnmet(reqElements[key].el);
             }
         }
-    });
+
+        // 2. Match prüfen (Beide Felder)
+        // Nur prüfen, wenn überhaupt etwas eingegeben wurde
+        if (val1 !== '' && val1 === val2) {
+            markAsMet(reqElements.match.el);
+        } else {
+            markAsUnmet(reqElements.match.el);
+        }
+    }
+
+    function markAsMet(element) {
+        element.classList.add('req-met');
+        const icon = element.querySelector('i');
+        icon.classList.replace('fa-circle', 'fa-check-circle');
+        icon.classList.replace('fa-times-circle', 'fa-check-circle');
+    }
+
+    function markAsUnmet(element) {
+        element.classList.remove('req-met');
+        const icon = element.querySelector('i');
+        icon.classList.replace('fa-check-circle', 'fa-circle');
+    }
+
+    pwFirst.addEventListener('input', validate);
+    pwSecond.addEventListener('input', validate);
 });
 </script>
 {% endblock %}
