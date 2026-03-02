@@ -186,3 +186,34 @@
     text-transform: uppercase;
     letter-spacing: 1px;
 }
+
+/* --- COLLAPSE STYLES --- */
+.category-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: var(--app-background);
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.category-header:hover {
+    background-color: rgba(0,0,0,0.03);
+}
+
+.category-header .collapse-icon {
+    transition: transform 0.3s ease;
+    color: var(--app-muted);
+}
+
+/* Drehung des Pfeils, wenn ausgeklappt */
+.category-header[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180 doctrine-deg);
+}
+
+/* Farben für die deutsche Medaillen-Anzeige */
+.color-gold { color: #D4AF37 !important; }
+.color-silber { color: #A0A0A0 !important; }
+.color-bronze { color: #CD7F32 !important; }

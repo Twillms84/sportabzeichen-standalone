@@ -2,7 +2,6 @@
 
 {% block title %}Mein Sportabzeichen {{ year }}{% endblock %}
 
-{# CSS einbinden (Wichtig für CSP) #}
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/dashboard_css.css') }}">
@@ -11,7 +10,7 @@
 {% block body %}
 {% set unitMap = {'UNIT_METERS': 'm', 'UNIT_CENTIMETERS': 'cm', 'UNIT_SECONDS': 's', 'UNIT_MINUTES': 'min', 'UNIT_HOURS': 'Std.', 'UNIT_NUMBER': 'x', 'UNIT_PIECES': 'Stk.'} %}
 
-{# --- 1. LOGIK: STATUS ERMITTELN --- #}
+{# --- 1. LOGIK: STATUS & ÜBERSETZUNG --- #}
 {% set totalPoints = 0 %}
 {% set catStatus = {'Ausdauer': false, 'Kraft': false, 'Schnelligkeit': false, 'Koordination': false} %}
 
@@ -26,15 +25,13 @@
     {% endfor %}
 {% endfor %}
 
-{# Prüfung auf vollständiges Abzeichen #}
-{% set allCatsDone = (catStatus['Ausdauer'] and catStatus['Kraft'] and catStatus['Schnelligkeit'] and catStatus['Koordination']) %}
-{% set isFullComplete = (allCatsDone and swim_valid) %}
+{% set isFullComplete = (catStatus['Ausdauer'] and catStatus['Kraft'] and catStatus['Schnelligkeit'] and catStatus['Koordination'] and swim_valid) %}
 
-{# Medaillen-Typ bestimmen #}
-{% set medalType = 'NONE' %}
+{# Medaillen-Typ auf Deutsch #}
+{% set medalType = 'KEINES' %}
 {% if isFullComplete %}
     {% if totalPoints >= 11 %}{% set medalType = 'GOLD' %}
-    {% elseif totalPoints >= 8 %}{% set medalType = 'SILVER' %}
+    {% elseif totalPoints >= 8 %}{% set medalType = 'SILBER' %}
     {% else %}{% set medalType = 'BRONZE' %}{% endif %}
 {% endif %}
 
@@ -46,7 +43,7 @@
             {# Medaille & Titel #}
             <div class="col-md-6 d-flex align-items-center">
                 <div class="total-medal-display me-4">
-                    {% if medalType != 'NONE' %}
+                    {% if medalType != 'KEINES' %}
                         <i class="fas fa-award medal-main color-{{ medalType|lower }}"></i>
                         <span class="medal-text color-{{ medalType|lower }}">{{ medalType }}</span>
                     {% else %}
@@ -58,7 +55,6 @@
                     <h1 class="h3 fw-bold mb-1 text-osa-green">Sportabzeichen {{ year }}</h1>
                     <p class="text-muted small mb-3">AK {{ age }} | {{ (participant_sex|default('MALE')) == 'FEMALE' ? 'Weiblich' : 'Männlich' }}</p>
                     
-                    {# Kategorien Häkchen-Leiste #}
                     <div class="d-flex flex-wrap gap-2">
                         {% for name, done in catStatus %}
                             <div class="category-status-item {% if done %}is-complete shadow-sm{% else %}opacity-50{% endif %}">
@@ -72,10 +68,9 @@
 
             {# Badges #}
             <div class="col-md-6 d-flex justify-content-md-end gap-3 align-items-center">
-                {# Schwimm-Badge #}
-                <div class="status-badge {% if swim_valid %}bg-success-subtle border-success{% else %}bg-danger-subtle border-danger{% endif %} shadow-sm">
+                <div class="status-badge {% if swim_valid %}bg-success-subtle border-success{% else %}bg-danger-subtle border-danger{% endif %} shadow-sm text-center">
                     <span class="x-small fw-bold text-uppercase">Schwimm-Nachweis</span>
-                    <span class="fw-bold">
+                    <span class="fw-bold d-block">
                         {% if swim_valid %}
                             <i class="fas fa-swimmer me-1"></i>GÜLTIG
                         {% else %}
@@ -85,10 +80,9 @@
                     {% if swim_valid %}<small class="x-small opacity-75">bis {{ swim_valid_until }}</small>{% endif %}
                 </div>
 
-                {# Punkte-Badge #}
-                <div class="status-badge bg-osa-green shadow-sm border-0">
+                <div class="status-badge bg-osa-green shadow-sm border-0 text-center">
                     <span class="x-small fw-bold text-uppercase text-white-50">Gesamtpunkte</span>
-                    <div class="d-flex align-items-baseline">
+                    <div class="d-flex align-items-baseline justify-content-center">
                         <span class="h2 mb-0 fw-bold text-white">{{ totalPoints }}</span>
                         <span class="ms-1 text-white-50 small">/ 12</span>
                     </div>
@@ -97,85 +91,93 @@
         </div>
     </div>
 
-    {# --- KATEGORIEN LISTE --- #}
+    {# --- KATEGORIEN LISTE MIT COLLAPSE --- #}
     {% for catName, disciplines in categories %}
-        <section class="mb-5">
-            <h3 class="h5 fw-bold mb-3 text-uppercase tracking-wider text-muted">
-                <i class="fas fa-layer-group me-2 text-osa-green"></i>{{ catName }}
-            </h3>
+        {% set collapseId = 'collapse' ~ loop.index %}
+        <section class="mb-4">
+            {# Klickbare Überschrift #}
+            <div class="category-header mb-2" 
+                 data-bs-toggle="collapse" 
+                 data-bs-target="#{{ collapseId }}" 
+                 aria-expanded="true" 
+                 aria-controls="{{ collapseId }}">
+                <h3 class="h5 fw-bold mb-0 text-uppercase tracking-wider text-muted">
+                    <i class="fas fa-layer-group me-2 text-osa-green"></i>{{ catName }}
+                </h3>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
             
-            <div class="row g-3">
-                {% for row in disciplines %}
-                    {% set has_off = row.official_result is not empty %}
-                    {% set has_tra = row.training_value is not empty %}
-                    {% set is_done = has_off and row.official_result.points > 0 %}
-                    {% set unit = unitMap[row.einheit]|default('') %}
+            {# Einklappbarer Bereich #}
+            <div class="collapse show" id="{{ collapseId }}">
+                <div class="row g-3 pb-3">
+                    {% for row in disciplines %}
+                        {% set has_off = row.official_result is not empty %}
+                        {% set has_tra = row.training_value is not empty %}
+                        {% set is_done = has_off and row.official_result.points > 0 %}
+                        {% set unit = unitMap[row.einheit]|default('') %}
 
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 exam-card border-0">
-                            {# Header #}
-                            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center 
-                                {% if is_done %}bg-osa-green{% else %}bg-secondary{% endif %}">
-                                <span class="fw-bold text-white">{{ row.name }}</span>
-                                {% if is_done %}<i class="fas fa-certificate text-white"></i>{% endif %}
-                            </div>
-
-                            <div class="card-body">
-                                {# Anforderungs-Tabelle #}
-                                <div class="requirement-box mb-4">
-                                    <div class="flex-fill">
-                                        <small class="text-muted d-block x-small">Bronze</small>
-                                        <b class="color-bronze">{{ row.bronze }}</b>
-                                    </div>
-                                    <div class="flex-fill border-start border-end">
-                                        <small class="text-muted d-block x-small">Silber</small>
-                                        <b class="color-silver">{{ row.silber }}</b>
-                                    </div>
-                                    <div class="flex-fill">
-                                        <small class="text-muted d-block x-small">Gold</small>
-                                        <b class="color-gold">{{ row.gold }}</b>
-                                    </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 exam-card border-0">
+                                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center 
+                                    {% if is_done %}bg-osa-green{% else %}bg-secondary{% endif %}">
+                                    <span class="fw-bold text-white">{{ row.name }}</span>
+                                    {% if is_done %}<i class="fas fa-certificate text-white"></i>{% endif %}
                                 </div>
 
-                                {# Offizielle Wertung #}
-                                <div class="result-box-official text-center {% if not has_off %}opacity-50 bg-light{% endif %}">
-                                    <small class="text-uppercase fw-bold text-muted d-block x-small mb-1">Prüfer-Ergebnis</small>
-                                    {% if has_off %}
-                                        <div class="h3 mb-0 fw-bold">{{ row.official_result.leistung }} <small class="h6">{{ unit }}</small></div>
-                                        <div class="mt-1">
-                                            {% if row.official_result.points > 0 %}
-                                                {% for i in 1..row.official_result.points %}
-                                                    <i class="fas fa-medal text-warning"></i>
-                                                {% endfor %}
-                                                <span class="small fw-bold ms-1">{{ row.official_result.points }} Pkt.</span>
-                                            {% endif %}
+                                <div class="card-body">
+                                    <div class="requirement-box mb-4">
+                                        <div class="flex-fill">
+                                            <small class="text-muted d-block x-small">Bronze</small>
+                                            <b class="color-bronze">{{ row.bronze }}</b>
                                         </div>
-                                    {% else %}
-                                        <div class="h4 mb-0 text-muted">--</div>
-                                    {% endif %}
-                                </div>
+                                        <div class="flex-fill border-start border-end">
+                                            <small class="text-muted d-block x-small">Silber</small>
+                                            <b class="color-silber">{{ row.silber }}</b>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <small class="text-muted d-block x-small">Gold</small>
+                                            <b class="color-gold">{{ row.gold }}</b>
+                                        </div>
+                                    </div>
 
-                                {# Eigene Trainingsdaten #}
-                                <div class="result-box-training text-center">
-                                    <small class="text-muted text-uppercase d-block x-small mb-1">Beste Trainingsleistung</small>
-                                    <span class="fw-bold {% if has_tra %}text-primary{% else %}text-muted opacity-50{% endif %}">
-                                        {% if has_tra %}
-                                            <i class="fas fa-running me-1"></i>{{ row.training_value }} {{ unit }}
+                                    <div class="result-box-official text-center {% if not has_off %}opacity-50 bg-light{% endif %}">
+                                        <small class="text-uppercase fw-bold text-muted d-block x-small mb-1">Prüfer-Ergebnis</small>
+                                        {% if has_off %}
+                                            <div class="h3 mb-0 fw-bold">{{ row.official_result.leistung }} <small class="h6">{{ unit }}</small></div>
+                                            <div class="mt-1">
+                                                {% if row.official_result.points > 0 %}
+                                                    {% for i in 1..row.official_result.points %}
+                                                        <i class="fas fa-medal text-warning"></i>
+                                                    {% endfor %}
+                                                    <span class="small fw-bold ms-1">{{ row.official_result.points }} Pkt.</span>
+                                                {% endif %}
+                                            </div>
                                         {% else %}
-                                            Kein Eintrag
+                                            <div class="h4 mb-0 text-muted">--</div>
                                         {% endif %}
-                                    </span>
-                                </div>
-                            </div>
+                                    </div>
 
-                            <div class="card-footer border-0 bg-transparent">
-                                <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}" class="btn btn-sm btn-outline-secondary w-100">
-                                    <i class="fas fa-history me-1"></i>Historie & Training
-                                </a>
+                                    <div class="result-box-training text-center">
+                                        <small class="text-muted text-uppercase d-block x-small mb-1">Beste Trainingsleistung</small>
+                                        <span class="fw-bold {% if has_tra %}text-primary{% else %}text-muted opacity-50{% endif %}">
+                                            {% if has_tra %}
+                                                <i class="fas fa-running me-1"></i>{{ row.training_value }} {{ unit }}
+                                            {% else %}
+                                                Kein Eintrag
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer border-0 bg-transparent">
+                                    <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}" class="btn btn-sm btn-outline-secondary w-100">
+                                        <i class="fas fa-history me-1"></i>Details
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
         </section>
     {% endfor %}
