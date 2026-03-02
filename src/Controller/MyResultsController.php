@@ -139,22 +139,19 @@ class MyResultsController extends AbstractController
         // --- 6. SCHWIMMANACHWEIS ABFRAGEN ---
         $swimData = $this->conn->fetchAssociative("
             SELECT valid_until 
-            FROM sportabzeichen_swim_proofs 
+            FROM sportabzeichen_swimming_proofs 
             WHERE participant_id = :pid 
             ORDER BY valid_until DESC LIMIT 1
-        ", ['pid' => $participant['id']]);
+        ", ['pid' => (int)$participant['id']]);
 
         $isSwimValid = false;
         $swimValidUntil = null;
 
         if ($swimData) {
-            try {
-                $date = new \DateTime($swimData['valid_until']);
-                $isSwimValid = $date >= new \DateTime('today');
-                $swimValidUntil = $date->format('d.m.Y');
-            } catch (\Exception $e) {
-                // Fallback falls Datum korrupt
-            }
+            // Falls DB-Datum ein String ist, in DateTime konvertieren
+            $validUntilDate = new \DateTime($swimData['valid_until']);
+            $isSwimValid = $validUntilDate >= new \DateTime('today');
+            $swimValidUntil = $validUntilDate->format('d.m.Y');
         }
 
         return $this->render('my_results/index.html.twig', [
