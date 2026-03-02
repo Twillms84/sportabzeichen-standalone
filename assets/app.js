@@ -39,6 +39,7 @@ import './controllers/exam_dashboard.js';
 import './styles/app.css';
 import './styles/results.css';
 import './styles/dashboard_css.css';
+import './styles/profile.css';
 
 console.log('App started & patched 🛠️');
 
