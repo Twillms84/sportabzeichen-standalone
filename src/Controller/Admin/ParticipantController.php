@@ -276,9 +276,14 @@ final class ParticipantController extends AbstractController
                 $selectedGroup = new Group();
                 $selectedGroup->setName($newGroupName);
                 $selectedGroup->setInstitution($institution);
+                
                 $this->em->persist($selectedGroup);
+                
+                // WICHTIG: Sofort speichern, damit die Gruppe eine ID erhält!
+                // Ohne ID kann Doctrine sie nicht in der Query für die Exams verwenden.
+                $this->em->flush(); 
+                
             } elseif (!empty($groupId) && $groupId !== 'new') {
-                // Bestehende Gruppe suchen (nur wenn ID numerisch/valid ist)
                 $selectedGroup = $this->em->getRepository(Group::class)->find($groupId);
             }
 
@@ -290,16 +295,15 @@ final class ParticipantController extends AbstractController
                 }
                 $user->addGroup($selectedGroup);
 
-                // --- NEU: Prüfungs-Abgleich (wie in create) ---
+                // Jetzt hat $selectedGroup garantiert eine ID, auch wenn sie neu ist
                 $activeExams = $this->em->getRepository(Exam::class)->createQueryBuilder('e')
                     ->join('e.groups', 'g')
                     ->where('g = :group')
-                    ->setParameter('group', $selectedGroup)
+                    ->setParameter('group', $selectedGroup) // Hier knallt es jetzt nicht mehr!
                     ->getQuery()
                     ->getResult();
 
                 foreach ($activeExams as $exam) {
-                    // Prüfen, ob Teilnehmer schon in der Prüfung ist
                     $exists = $this->em->getRepository(ExamParticipant::class)->findOneBy([
                         'exam' => $exam,
                         'participant' => $participant
