@@ -153,9 +153,9 @@
                                 </td>
                                 <td>{{ p.birthdate ? p.birthdate|date('d.m.Y') : '-' }}</td>
                                 <td>
-                                    {% set genders = {'MALE': 'M', 'FEMALE': 'W', 'DIVERSE': 'D'} %}
+                                    {% set genders = {'MALE': 'M', 'FEMALE': 'W'} %} {# DIVERSE hier auch raus #}
                                     <span class="badge bg-light text-dark border">
-                                        {{ genders[p.gender] ?? p.gender }}
+                                        {{ genders[p.gender] ?? '?' }}
                                     </span>
                                 </td>
                                 <td class="text-end">
@@ -247,10 +247,10 @@
                         </div>
                         <div class="mb-3">
                             <label for="modalGender" class="form-label">{{'Geschlecht'|trans}}</label>
-                            <select name="gender" id="modalGender" class="form-select">
+                            <select name="gender" id="modalGender" class="form-control"> {# Hier war form-select, beides ok #}
                                 <option value="MALE">{{'Männlich'|trans}} (M)</option>
                                 <option value="FEMALE">{{'Weiblich'|trans}} (W)</option>
-                                <option value="DIVERSE">{{'Divers'|trans}} (D)</option>
+                                {# Die Zeile für DIVERSE einfach löschen #}
                             </select>
                         </div>
                         <div class="mb-3">
