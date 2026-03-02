@@ -2,6 +2,11 @@
 
 {% block title %}Mein Konto{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/profile.css') }}">
+{% endblock %}
+
 {% block body %}
 <div class="container mt-4">
     <div class="row justify-content-center">
