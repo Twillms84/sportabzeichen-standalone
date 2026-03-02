@@ -120,7 +120,8 @@
                                 <td>
                                     {% if p.user %}
                                         <strong>{{ p.user.lastname }}</strong>, {{ p.user.firstname }}
-                                        {% if p.user.act %}
+                                        {# Nur anzeigen, wenn act gesetzt ist UND NICHT mit 'user_' beginnt #}
+                                        {% if p.user.act and not p.user.act starts with 'user_' %}
                                             <br><small class="text-muted">({{ p.user.act }})</small>
                                         {% endif %}
                                     {% else %}
