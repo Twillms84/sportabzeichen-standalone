@@ -9,10 +9,6 @@
                 "enabled": false,
                 "fetch": "eager"
             }
-        },
-        "password-validator": {
-            "enabled": true,
-            "fetch": "eager"
         }
     },
     "entrypoints": []
