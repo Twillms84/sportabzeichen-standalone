@@ -260,12 +260,20 @@
                         </div>
                         <div class="mb-3">
                             <label for="modalGroup" class="form-label">{{ 'Klasse/Gruppe'|trans }}</label>
-                            <select name="group_id" id="modalGroup" class="form-select">
+                            <select name="group_id" id="modalGroup" class="form-select" 
+                                    onchange="toggleModalGroupInput(this)">
                                 <option value="">-- {{ 'Keine Gruppe'|trans }} --</option>
                                 {% for group in availableGroups %}
                                     <option value="{{ group.id }}">{{ group.name }}</option>
                                 {% endfor %}
+                                <option value="new" class="text-success fw-bold">+++ {{ 'Neue Gruppe anlegen'|trans }} +++</option>
                             </select>
+                            
+                            {# Das versteckte Input-Feld für die neue Gruppe #}
+                            <div id="modal_new_group_wrapper" style="display: none; margin-top: 10px;">
+                                <input type="text" name="new_group_name" id="modal_new_group_name" 
+                                    class="form-control" placeholder="{{ 'Name der neuen Gruppe'|trans }}">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -276,4 +284,30 @@
             </form>
         </div>
     </div>
+
+<script>
+    // Funktion zum Ein-/Ausblenden des Gruppen-Inputs
+    function toggleModalGroupInput(selectElement) {
+        const wrapper = document.getElementById('modal_new_group_wrapper');
+        const input = document.getElementById('modal_new_group_name');
+        
+        if (selectElement.value === 'new') {
+            wrapper.style.display = 'block';
+            input.required = true;
+            input.focus();
+        } else {
+            wrapper.style.display = 'none';
+            input.required = false;
+            input.value = '';
+        }
+    }
+
+    // WICHTIG: Wenn das Modal geöffnet wird, sicherstellen, dass das Zusatzfeld versteckt ist
+    document.getElementById('genericEditModal')?.addEventListener('show.bs.modal', function () {
+        document.getElementById('modal_new_group_wrapper').style.display = 'none';
+        document.getElementById('modal_new_group_name').required = false;
+        document.getElementById('modal_new_group_name').value = '';
+    });
+</script>
+
 {% endblock %}
