@@ -10,84 +10,131 @@
 } %}
 
 <div class="container py-4">
-    <header class="mb-5 text-center">
-        <h1 class="display-5 fw-bold text-primary">Mein Sportabzeichen {{ year }}</h1>
-        <p class="lead text-muted">Deine sportlichen Ziele im Überblick (Alter: {{ age }} Jahre)</p>
-        <hr class="short-hr">
+    <header class="mb-5">
+        <h1 class="h2 fw-bold" style="color: var(--osa-green);">Mein Sportabzeichen {{ year }}</h1>
+        <p class="text-muted">Status deiner Disziplinen & Training (Alter: {{ age }} Jahre)</p>
     </header>
 
     {% for catName, disciplines in categories %}
         {% if disciplines is not empty %}
-            <div class="category-section mb-5">
-                <h3 class="h4 mb-4 d-flex align-items-center">
-                    <span class="badge bg-primary me-2">{{ loop.index }}</span>
-                    {{ catName }}
-                </h3>
+            <section class="mb-5">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="category-dot me-2"></div>
+                    <h3 class="h5 fw-bold mb-0 text-uppercase tracking-wider">{{ catName }}</h3>
+                </div>
                 
                 <div class="row g-3">
                     {% for row in disciplines %}
                         {% set einheit_label = unitMap[row.einheit]|default(row.einheit) %}
+                        
+                        {# LOGIK: Welches Ergebnis ist das "führende"? #}
+                        {% set has_official = row.official_result is not empty %}
+                        {% set has_training = row.training_value is not empty %}
+                        {% set is_completed = has_official and row.official_result.points > 0 %}
+
                         <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 shadow-sm border-0 hover-lift">
+                            <div class="card h-100 shadow-sm border-0 {% if is_completed %}card-completed{% endif %}">
+                                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">{{ row.name }}</span>
+                                    {% if is_completed %}
+                                        <i class="fas fa-check-circle text-white"></i>
+                                    {% endif %}
+                                </div>
+
                                 <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h5 class="card-title fw-bold mb-0">{{ row.name }}</h5>
-                                        <span class="badge bg-light text-dark border">{{ einheit_label }}</span>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="badge bg-light text-dark border font-monospace small">{{ einheit_label }}</span>
+                                        {% if has_official %}
+                                            <span class="badge osa-badge-gold">Prüfung abgelegt</span>
+                                        {% endif %}
                                     </div>
 
-                                    <div class="d-flex justify-content-between small text-center my-3 bg-light rounded p-2">
-                                        <div class="px-2">
-                                            <div class="text-muted small">Bronze</div>
-                                            <div class="fw-bold" style="color: #cd7f32;">{{ row.bronze }}</div>
+                                    <div class="requirement-grid mb-4">
+                                        <div class="req-item">
+                                            <span class="label">Bronze</span>
+                                            <span class="val color-bronze">{{ row.bronze }}</span>
                                         </div>
-                                        <div class="px-2 border-start border-end">
-                                            <div class="text-muted small">Silber</div>
-                                            <div class="fw-bold text-secondary">{{ row.silber }}</div>
+                                        <div class="req-item border-start border-end">
+                                            <span class="label">Silber</span>
+                                            <span class="val color-silver">{{ row.silber }}</span>
                                         </div>
-                                        <div class="px-2">
-                                            <div class="text-muted small">Gold</div>
-                                            <div class="fw-bold" style="color: #d4af37;">{{ row.gold }}</div>
+                                        <div class="req-item">
+                                            <span class="label">Gold</span>
+                                            <span class="val color-gold">{{ row.gold }}</span>
                                         </div>
                                     </div>
 
-                                    <div class="official-result-box mb-3 p-2 border rounded text-center">
-                                        <div class="small text-muted uppercase">Offizielles Ergebnis</div>
-                                        {% if row.official_result %}
-                                            <div class="h4 mb-0 fw-bold">{{ row.official_result.leistung }}</div>
-                                            {% if row.official_result.points == 3 %}
-                                                <span class="text-warning small"><i class="fas fa-medal"></i> Gold erreicht</span>
-                                            {% elseif row.official_result.points == 2 %}
-                                                <span class="text-secondary small"><i class="fas fa-medal"></i> Silber erreicht</span>
-                                            {% elseif row.official_result.points == 1 %}
-                                                <span class="text-bronze small"><i class="fas fa-medal"></i> Bronze erreicht</span>
+                                    <div class="result-display p-3 rounded mb-2 text-center {% if has_official %}bg-official{% else %}bg-training{% endif %}">
+                                        <div class="small text-muted text-uppercase fw-bold mb-1">
+                                            {% if has_official %}Offizielle Leistung{% else %}Beste Trainingsleistung{% endif %}
+                                        </div>
+                                        
+                                        {% if has_official or has_training %}
+                                            <div class="h3 mb-0 fw-bold">
+                                                {{ has_official ? row.official_result.leistung : row.training_value }}
+                                                <small class="h6">{{ einheit_label }}</small>
+                                            </div>
+                                            
+                                            {% if has_official %}
+                                                <div class="mt-2">
+                                                    {% for i in 1..row.official_result.points %}
+                                                        <i class="fas fa-medal text-warning"></i>
+                                                    {% endfor %}
+                                                    <span class="small fw-bold ms-1">{{ row.official_result.points }} Punkte</span>
+                                                </div>
                                             {% endif %}
                                         {% else %}
-                                            <div class="text-muted fst-italic">Noch keine Prüfung</div>
+                                            <div class="text-muted fst-italic small">Noch kein Wert erfasst</div>
                                         {% endif %}
                                     </div>
                                 </div>
                                 
-                                <div class="card-footer bg-transparent border-0 pb-3">
+                                <div class="card-footer bg-transparent border-0 pt-0 pb-3">
                                     <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}" 
-                                       class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center">
-                                        <span><i class="fas fa-running me-2"></i> Training</span>
-                                        <span class="fw-bold">{{ row.training_value|default('Starten') }}</span>
+                                       class="btn btn-osa-outline w-100">
+                                        <i class="fas fa-chart-line me-2"></i> Details & Training
                                     </a>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
-            </div>
+            </section>
         {% endif %}
     {% endfor %}
 </div>
 
 <style>
-    .hover-lift { transition: transform 0.2s ease, shadow 0.2s ease; }
-    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important; }
-    .text-bronze { color: #cd7f32; }
-    .short-hr { width: 50px; border-top: 3px solid var(--bs-primary); margin: 1rem auto; opacity: 1; }
-    .category-section h3 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    /* OSA Design Anpassungen */
+    .category-dot { width: 12px; height: 12px; background-color: var(--sidebar-accent); border-radius: 50%; }
+    .card { transition: all 0.2s ease; border-radius: 0.75rem !important; overflow: hidden; }
+    .card-completed { border: 2px solid var(--osa-green) !important; }
+    
+    .requirement-grid { display: flex; background: var(--app-bg); padding: 10px; border-radius: 0.5rem; text-align: center; }
+    .req-item { flex: 1; }
+    .req-item .label { display: block; font-size: 0.7rem; text-uppercase; color: var(--app-muted); font-weight: bold; }
+    .req-item .val { font-weight: 800; font-family: 'Monaco', 'Consolas', monospace; }
+    
+    .color-bronze { color: #cd7f32; }
+    .color-silver { color: #8e8e8e; }
+    .color-gold { color: #d4af37; }
+
+    /* Ergebnis-Boxen */
+    .bg-official { background-color: rgba(44, 94, 50, 0.1); border: 1px dashed var(--osa-green); }
+    .bg-training { background-color: var(--app-bg); border: 1px solid var(--app-border); }
+    
+    .btn-osa-outline { 
+        border: 1px solid var(--osa-green); 
+        color: var(--osa-green); 
+        background: transparent;
+    }
+    .btn-osa-outline:hover {
+        background: var(--osa-green);
+        color: #fff;
+    }
+
+    .osa-badge-gold { background-color: #d4af37; color: #fff; font-size: 0.65rem; }
+    
+    .tracking-wider { letter-spacing: 0.05em; }
 </style>
 {% endblock %}
