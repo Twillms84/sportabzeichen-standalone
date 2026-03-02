@@ -281,11 +281,10 @@ final class AdminController extends AbstractController
         $topList = [];
 
         foreach ($allParticipants as $ep) {
-            // 1. Medaillen-Statistik (bleibt gleich)
-            $pts = $ep->getTotalPoints();
-            if ($pts >= 11) $stats['Gold']++;
-            elseif ($pts >= 8) $stats['Silber']++;
-            elseif ($pts >= 4) $stats['Bronze']++;
+            $medal = strtoupper((string)$ep->getFinalMedal());
+            if ($medal === 'GOLD') $stats['Gold']++;
+            elseif ($medal === 'SILVER') $stats['Silber']++;
+            elseif ($medal === 'BRONZE') $stats['Bronze']++;
             else $stats['Ohne']++;
 
             $participant = $ep->getParticipant();

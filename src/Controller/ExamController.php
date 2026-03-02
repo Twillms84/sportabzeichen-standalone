@@ -76,11 +76,10 @@ final class ExamController extends AbstractController
                      $yearlyStats[$year]['unique_users'][$userId] = true;
                 }
 
-                $pts = $ep->getTotalPoints(); 
-                
-                if ($pts >= 11) $yearlyStats[$year]['stats']['Gold']++;
-                elseif ($pts >= 8) $yearlyStats[$year]['stats']['Silber']++;
-                elseif ($pts >= 4) $yearlyStats[$year]['stats']['Bronze']++;
+                $medal = strtoupper((string)$ep->getFinalMedal()); // Sicherstellen, dass Case passt
+                if ($medal === 'GOLD') $yearlyStats[$year]['stats']['Gold']++;
+                elseif ($medal === 'SILVER') $yearlyStats[$year]['stats']['Silber']++;
+                elseif ($medal === 'BRONZE') $yearlyStats[$year]['stats']['Bronze']++;
                 else $yearlyStats[$year]['stats']['Ohne']++;
             }
         }
@@ -409,10 +408,10 @@ final class ExamController extends AbstractController
         $stats = ['Gold' => 0, 'Silber' => 0, 'Bronze' => 0, 'Ohne' => 0];
 
         foreach ($participants as $ep) {
-            $pts = $ep->getTotalPoints();
-            if ($pts >= 11) $stats['Gold']++;
-            elseif ($pts >= 8) $stats['Silber']++;
-            elseif ($pts >= 4) $stats['Bronze']++;
+            $medal = strtoupper((string)$ep->getFinalMedal());
+            if ($medal === 'GOLD') $stats['Gold']++;
+            elseif ($medal === 'SILVER') $stats['Silber']++;
+            elseif ($medal === 'BRONZE') $stats['Bronze']++;
             else $stats['Ohne']++;
         }
 
