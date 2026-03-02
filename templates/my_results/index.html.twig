@@ -137,9 +137,10 @@
                                                 {{ val }} <small class="h6">{{ einheit_label }}</small>
                                             </div>
                                             
-                                            {% if has_official %}
+                                            {% if has_official and row.official_result.points > 0 %}
                                                 <div class="mt-2">
-                                                    {% for i in range(1, row.official_result.points) if row.official_result.points > 0 %}
+                                                    {# Wir nutzen eine einfache Schleife von 1 bis zu den Punkten #}
+                                                    {% for i in 1..row.official_result.points %}
                                                         <i class="fas fa-medal text-warning"></i>
                                                     {% endfor %}
                                                     <span class="small fw-bold ms-1 text-dark">{{ row.official_result.points }} Pkt.</span>
