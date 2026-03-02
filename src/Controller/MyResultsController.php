@@ -23,71 +23,48 @@ class MyResultsController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        
         if (!$user) {
             throw $this->createAccessDeniedException('Bitte loggen Sie sich ein.');
         }
 
         $currentYear = (int)date('Y');
-        
-        // --- 1. ID ERMITTELN (Jetzt 100% sicher über das Entity) ---
         $userId = $user->getId();
-        // Wir nehmen getUsername als Fallback für das Participant-Profil, falls kein act gesetzt ist
         $username = $user->getAct() ?? $user->getUsername() ?? $user->getEmail() ?? 'user_' . $userId;
 
-        // --- 2. TEILNEHMER-PROFIL PRÜFEN ---
+        // --- 1. TEILNEHMER-PROFIL ---
         $participant = $this->conn->fetchAssociative("
             SELECT id, geburtsdatum, geschlecht 
             FROM sportabzeichen_participants 
             WHERE user_id = :uid
         ", ['uid' => $userId]);
 
-        // Auto-Create falls Profil fehlt (z.B. beim allerersten Klick auf "Meine Ergebnisse")
         if (!$participant) {
-            
-            // NEU: Institution des Users abfragen (mit Nullsafe-Operator ?->)
             $institutionId = $user->getInstitution()?->getId();
-            
-            // Wenn der User gar keine Institution hat, dürfen wir keinen Participant anlegen, 
-            // da die DB das verbietet. Wir werfen eine saubere Exception.
             if (!$institutionId) {
-                throw $this->createAccessDeniedException('Dein Account ist noch keiner Schule/Institution zugeordnet. Das Profil konnte nicht erstellt werden.');
+                throw $this->createAccessDeniedException('Keine Institution zugeordnet.');
             }
 
-            // NEU: institution_id im INSERT-Statement hinzugefügt
             $this->conn->executeStatement("
                 INSERT INTO sportabzeichen_participants (user_id, username, geburtsdatum, geschlecht, institution_id)
                 VALUES (:uid, :act, :dob, :sex, :inst_id)
             ", [
-                'uid'     => $userId,
-                'act'     => $username,
-                'dob'     => '2000-01-01', 
-                'sex'     => 'MALE',       
-                'inst_id' => $institutionId 
+                'uid' => $userId, 'act' => $username, 'dob' => '2000-01-01', 'sex' => 'MALE', 'inst_id' => $institutionId 
             ]);
             
-            // Den frisch erstellten Participant direkt neu laden
-            $participant = $this->conn->fetchAssociative("
-                SELECT id, geburtsdatum, geschlecht 
-                FROM sportabzeichen_participants 
-                WHERE user_id = :uid
-            ", ['uid' => $userId]);
-            
-            $this->addFlash('info', 'Dein Sportprofil wurde automatisch erstellt. Bitte überprüfe dein Geburtsdatum in den Einstellungen.');
+            $participant = $this->conn->fetchAssociative("SELECT id, geburtsdatum, geschlecht FROM sportabzeichen_participants WHERE user_id = :uid", ['uid' => $userId]);
         }
 
-        // --- 3. ALTER BERECHNEN ---
-        // Sportabzeichen-Logik: (Aktuelles Jahr) - (Geburtsjahr) = Alter in dem Jahr
         $birthYear = (int)(new \DateTime($participant['geburtsdatum']))->format('Y');
         $age = $currentYear - $birthYear;
 
-        // --- 4. OFFIZIELLE ERGEBNISSE LADEN ---
+        // --- 2. OFFICIELLE ERGEBNISSE (JOIN optimiert) ---
+        // WICHTIG: Wir joinen über sportabzeichen_exam_participants
         $sqlResults = "
             SELECT r.discipline_id, r.leistung, r.points
             FROM sportabzeichen_exam_results r
-            JOIN sportabzeichen_exam_participants ep ON r.ep_id = ep.id
-            JOIN sportabzeichen_exams e ON ep.exam_id = e.id
-            WHERE ep.participant_id = :pid AND e.exam_year = :year
+            INNER JOIN sportabzeichen_exam_participants ep ON r.ep_id = ep.id
+            WHERE ep.participant_id = :pid 
+            AND ep.exam_id IN (SELECT id FROM sportabzeichen_exams WHERE exam_year = :year)
         ";
         $rawResults = $this->conn->fetchAllAssociative($sqlResults, [
             'pid'  => (int)$participant['id'],
@@ -99,28 +76,23 @@ class MyResultsController extends AbstractController
             $officialResults[$r['discipline_id']] = $r;
         }
 
-        // --- 5. TRAININGSDATEN LADEN ---
-        // Holt nur den jeweils neusten Eintrag (MAX(id)) pro Disziplin
+        // --- 3. TRAININGSDATEN ---
         $trainingData = $this->conn->fetchAllAssociative("
             SELECT t.discipline_id, t.value
             FROM sportabzeichen_training t
             WHERE t.id IN (
-                SELECT MAX(id) 
-                FROM sportabzeichen_training 
+                SELECT MAX(id) FROM sportabzeichen_training 
                 WHERE user_id = :uid AND year = :year
                 GROUP BY discipline_id
             )
-        ", [
-            'uid'  => $userId,
-            'year' => $currentYear
-        ]);
+        ", ['uid' => $userId, 'year' => $currentYear]);
         
         $myTraining = [];
         foreach ($trainingData as $t) {
             $myTraining[$t['discipline_id']] = $t['value'];
         }
 
-        // --- 6. ANFORDERUNGEN (Requirements) ---
+        // --- 4. ANFORDERUNGEN (Mit Filtern gegen "Verband" und "Schwimmen") ---
         $sqlReq = "
             SELECT 
                 d.id as discipline_id, d.name, d.kategorie, d.einheit,
@@ -130,6 +102,8 @@ class MyResultsController extends AbstractController
             WHERE r.geschlecht = :sex 
               AND :age BETWEEN r.age_min AND r.age_max
               AND r.jahr = :year
+              AND d.einheit NOT IN ('NONE', 'UNIT_NONE') -- Filtert 'Verband'
+              AND d.kategorie != 'Schwimmen'             -- Filtert Kategorie Schwimmen
             ORDER BY d.kategorie ASC, d.name ASC
         ";
         
@@ -139,34 +113,23 @@ class MyResultsController extends AbstractController
             'year' => $currentYear
         ]);
 
-        // --- 7. ZUSAMMENBAU FÜRS TEMPLATE ---
-        $categories = [
-            'Ausdauer'      => [], 
-            'Kraft'         => [], 
-            'Schnelligkeit' => [], 
-            'Koordination'  => []
-        ];
+        $categories = ['Ausdauer' => [], 'Kraft' => [], 'Schnelligkeit' => [], 'Koordination' => []];
 
         foreach ($rows as $row) {
             $dId = $row['discipline_id'];
-            
-            // Verknüpfe offizielle Daten und eigenes Training
             $row['official_result'] = $officialResults[$dId] ?? null;
             $row['training_value']  = $myTraining[$dId] ?? null;
 
             $cat = $row['kategorie'];
             if (isset($categories[$cat])) {
                 $categories[$cat][] = $row;
-            } else {
-                 // Fallback, falls mal eine Kategorie in der DB anders heißt
-                 $categories[$cat] = [$row];
             }
         }
 
         return $this->render('my_results/index.html.twig', [
-            'year'       => $currentYear,
-            'age'        => $age,
-            'categories' => $categories,
+            'year' => $currentYear,
+            'age' => $age,
+            'categories' => array_filter($categories) // Entfernt leere Kategorien
         ]);
     }
 }

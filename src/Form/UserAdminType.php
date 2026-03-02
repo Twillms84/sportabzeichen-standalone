@@ -12,6 +12,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints\Email;
 
 class UserAdminType extends AbstractType
 {
@@ -26,9 +28,13 @@ class UserAdminType extends AbstractType
                 'label' => 'Nachname',
                 'attr' => ['class' => 'form-control']
             ])
-            ->add('email', EmailType::class, [
+            -->add('email', EmailType::class, [
                 'label' => 'E-Mail / Login',
-                'attr' => ['class' => 'form-control']
+                'attr' => ['class' => 'form-control'],
+                'constraints' => [
+                    new NotBlank(['message' => 'Bitte eine E-Mail-Adresse angeben']),
+                    new Email(['message' => 'Keine gültige E-Mail-Adresse']),
+                ]
             ])
             ->add('roles', ChoiceType::class, [
                 'label' => 'Berechtigungs-Stufe',
