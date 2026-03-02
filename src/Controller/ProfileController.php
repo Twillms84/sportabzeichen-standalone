@@ -65,4 +65,22 @@ class ProfileController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
+    #[Route('/settings', name: 'settings')]
+    public function settings(Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        $form = $this->createForm(UserSettingsType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+            // Hier kein Flash nötig, der visuelle Change reicht oft, aber kann man machen
+            return $this->redirectToRoute('profile_settings');
+        }
+
+        return $this->render('profile/settings.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
 }
