@@ -11,65 +11,70 @@
 
 {# --- BERECHNUNG GESAMTSTATUS --- #}
 {% set totalPoints = 0 %}
-{% set completedCategories = 0 %}
+{% set completedCategoriesCount = 0 %}
 {% for catName, disciplines in categories %}
     {% set catDone = false %}
     {% for row in disciplines %}
-        {% if row.official_result and row.official_result.points > 0 and not catDone %}
-            {% set totalPoints = totalPoints + row.official_result.points %}
-            {% set completedCategories = completedCategories + 1 %}
-            {% set catDone = true %}
+        {% if row.official_result is defined and row.official_result is not null %}
+            {% if row.official_result.points > 0 and not catDone %}
+                {% set totalPoints = totalPoints + row.official_result.points %}
+                {% set completedCategoriesCount = completedCategoriesCount + 1 %}
+                {% set catDone = true %}
+            {% endif %}
         {% endif %}
     {% endfor %}
 {% endfor %}
 
 <div class="container py-4">
     {# --- HEADER DASHBOARD --- #}
-    <div class="card border-0 shadow-sm mb-5 overflow-hidden" style="border-radius: 1rem;">
+    <div class="card border-0 shadow-sm mb-5 overflow-hidden osa-card" style="border-radius: 1rem;">
         <div class="card-body p-0">
             <div class="row g-0">
                 <div class="col-lg-8 p-4">
                     <h1 class="h3 fw-bold mb-1" style="color: var(--osa-green);">Mein Sportabzeichen {{ year }}</h1>
-                    <p class="text-muted small mb-4">Fortschritt für Altersklasse {{ age }} ({{ participant_sex == 'FEMALE' ? 'Weiblich' : 'Männlich' }})</p>
+                    <p class="text-muted small mb-4">Fortschritt für Altersklasse {{ age }} ({{ (participant_sex|default('MALE')) == 'FEMALE' ? 'Weiblich' : 'Männlich' }})</p>
                     
                     <div class="row g-3">
                         <div class="col-6 col-md-3">
                             <div class="p-3 rounded bg-light border text-center">
-                                <div class="small text-muted text-uppercase fw-bold">Punkte</div>
-                                <div class="h4 mb-0 fw-bold">{{ totalPoints }}</div>
+                                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Gesamtpunkte</div>
+                                <div class="h4 mb-0 fw-bold" style="color: var(--osa-green);">{{ totalPoints }}</div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
                             <div class="p-3 rounded bg-light border text-center">
-                                <div class="small text-muted text-uppercase fw-bold">Disziplinen</div>
-                                <div class="h4 mb-0 fw-bold">{{ completedCategories }} / 4</div>
+                                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Kategorien</div>
+                                <div class="h4 mb-0 fw-bold">{{ completedCategoriesCount }} / 4</div>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <div class="p-3 rounded {% if swim_valid %}bg-osa-light{% else %}bg-soft-danger{% endif %} border text-center h-100 d-flex flex-column justify-content-center">
-                                <div class="small text-muted text-uppercase fw-bold">Schwimmnachweis</div>
-                                <div class="fw-bold {% if swim_valid %}text-success{% else %}text-danger{% endif %}">
-                                    {% if swim_valid %}
-                                        <i class="fas fa-check-circle me-1"></i> Gültig bis {{ swim_valid_until }}
+                            {% set isSwimValid = swim_valid|default(false) %}
+                            <div class="p-3 rounded border text-center h-100 d-flex flex-column justify-content-center {% if isSwimValid %}bg-osa-light{% else %}bg-soft-danger{% endif %}">
+                                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Schwimmnachweis</div>
+                                <div class="fw-bold {% if isSwimValid %}text-success{% else %}text-danger{% endif %}">
+                                    {% if isSwimValid %}
+                                        <i class="fas fa-check-circle me-1"></i> Gültig bis {{ swim_valid_until|default('unbekannt') }}
                                     {% else %}
-                                        <i class="fas fa-exclamation-triangle me-1"></i> Erforderlich!
+                                        <i class="fas fa-exclamation-triangle me-1"></i> Nachweis fehlt/abgelaufen
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 bg-osa-green d-flex align-items-center justify-content-center p-4 text-white text-center">
+                <div class="col-lg-4 d-flex align-items-center justify-content-center p-4 text-white text-center" style="background-color: var(--osa-green);">
                     <div>
                         <div class="small text-uppercase opacity-75 mb-2">Aktueller Status</div>
-                        {% if completedCategories >= 4 and swim_valid %}
+                        {% if completedCategoriesCount >= 4 and isSwimValid %}
                             <div class="display-6 fw-bold">
                                 {% if totalPoints >= 11 %}GOLD{% elseif totalPoints >= 8 %}SILBER{% else %}BRONZE{% endif %}
                             </div>
-                            <div class="mt-2"><i class="fas fa-trophy fa-2x text-warning"></i></div>
+                            <div class="mt-2 text-warning"><i class="fas fa-trophy fa-2x"></i></div>
                         {% else %}
-                            <div class="h4 mb-0">In Arbeit...</div>
-                            <div class="small opacity-75 mt-1">Noch nicht alle Anforderungen erfüllt</div>
+                            <div class="h4 mb-0">In Arbeit</div>
+                            <div class="small opacity-75 mt-1">
+                                {% if not isSwimValid %}Schwimmen fehlt{% else %}Disziplinen offen{% endif %}
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -83,63 +88,50 @@
             <section class="mb-5">
                 <div class="d-flex align-items-center mb-3">
                     <div class="category-dot me-2"></div>
-                    <h3 class="h5 fw-bold mb-0 text-uppercase tracking-wider" style="color: var(--app-text);">{{ catName }}</h3>
+                    <h3 class="h5 fw-bold mb-0 text-uppercase tracking-wider">{{ catName }}</h3>
                     <hr class="flex-grow-1 ms-3 opacity-10">
                 </div>
                 
                 <div class="row g-3">
                     {% for row in disciplines %}
                         {% set einheit_label = unitMap[row.einheit]|default(row.einheit) %}
-                        {% set has_official = row.official_result is not empty %}
+                        {% set has_official = row.official_result is defined and row.official_result is not null %}
                         {% set is_completed = has_official and row.official_result.points > 0 %}
 
                         <div class="col-md-6 col-lg-4">
                             <div class="card h-100 shadow-sm border-0 osa-card {% if is_completed %}card-completed{% endif %}">
                                 <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center"
-                                     style="background-color: {% if is_completed %}var(--osa-green){% else %}var(--app-muted){% endif %} !important;">
+                                     style="background-color: {% if is_completed %}var(--osa-green){% else %}var(--app-muted){% endif %} !important; color: white !important;">
                                     <span class="fw-bold">{{ row.name }}</span>
-                                    {% if is_completed %}
-                                        <i class="fas fa-check-circle text-white"></i>
-                                    {% endif %}
+                                    {% if is_completed %}<i class="fas fa-check-circle"></i>{% endif %}
                                 </div>
 
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between mb-3">
-                                        <span class="badge bg-light text-dark border font-monospace small px-2 py-1">{{ einheit_label }}</span>
+                                        <span class="badge bg-light text-dark border font-monospace small">{{ einheit_label }}</span>
                                         {% if has_official %}
-                                            <span class="badge osa-badge-gold"><i class="fas fa-stamp me-1"></i>Vom Prüfer</span>
+                                            <span class="badge osa-badge-gold">Prüfer-Wertung</span>
                                         {% endif %}
                                     </div>
 
                                     <div class="requirement-grid mb-4">
-                                        <div class="req-item">
-                                            <span class="label">Bronze</span>
-                                            <span class="val color-bronze">{{ row.bronze }}</span>
-                                        </div>
-                                        <div class="req-item border-start border-end">
-                                            <span class="label">Silber</span>
-                                            <span class="val color-silver">{{ row.silber }}</span>
-                                        </div>
-                                        <div class="req-item">
-                                            <span class="label">Gold</span>
-                                            <span class="val color-gold">{{ row.gold }}</span>
-                                        </div>
+                                        <div class="req-item"><span class="label">Bronze</span><span class="val color-bronze">{{ row.bronze }}</span></div>
+                                        <div class="req-item border-start border-end"><span class="label">Silber</span><span class="val color-silver">{{ row.silber }}</span></div>
+                                        <div class="req-item"><span class="label">Gold</span><span class="val color-gold">{{ row.gold }}</span></div>
                                     </div>
 
                                     <div class="result-display p-3 rounded mb-2 text-center {% if has_official %}bg-official{% else %}bg-training{% endif %}">
                                         <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.65rem;">
-                                            {% if has_official %}Offizielle Wertung{% else %}Dein bestes Training{% endif %}
+                                            {{ has_official ? 'Bestätigte Leistung' : 'Bestes Training' }}
                                         </div>
                                         
                                         {% set val = has_official ? row.official_result.leistung : row.training_value %}
                                         {% if val %}
-                                            <div class="h3 mb-0 fw-bold">
-                                                {{ val }} <small class="h6">{{ einheit_label }}</small>
+                                            <div class="h2 mb-0 fw-bold">
+                                                {{ val }} <small class="h6 text-muted">{{ einheit_label }}</small>
                                             </div>
-                                            
                                             {% if has_official and row.official_result.points > 0 %}
                                                 <div class="mt-2">
-                                                    {# Wir nutzen eine einfache Schleife von 1 bis zu den Punkten #}
                                                     {% for i in 1..row.official_result.points %}
                                                         <i class="fas fa-medal text-warning"></i>
                                                     {% endfor %}
@@ -155,7 +147,7 @@
                                 <div class="card-footer bg-transparent border-0 pt-0 pb-3">
                                     <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}" 
                                        class="btn btn-osa-outline w-100 btn-sm">
-                                        Übersicht & Training
+                                        <i class="fas fa-history me-1"></i> Details & Training
                                     </a>
                                 </div>
                             </div>
@@ -168,42 +160,22 @@
 </div>
 
 <style>
-    :root {
-        --osa-green: #2c5e32;
-        --sidebar-accent: #2ecc71;
-    }
-    .bg-osa-green { background-color: var(--osa-green); }
     .bg-osa-light { background-color: rgba(46, 204, 113, 0.1); }
     .bg-soft-danger { background-color: rgba(231, 76, 60, 0.1); }
-    
     .category-dot { width: 10px; height: 10px; background-color: var(--sidebar-accent); border-radius: 50%; }
-    
-    .osa-card { transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 0.75rem !important; }
-    .osa-card:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1) !important; }
-    
+    .osa-card { border-radius: 0.75rem !important; overflow: hidden; }
     .card-completed { border: 2px solid var(--osa-green) !important; }
-    
     .requirement-grid { display: flex; background: var(--app-bg); padding: 8px; border-radius: 0.5rem; text-align: center; }
     .req-item { flex: 1; }
     .req-item .label { display: block; font-size: 0.6rem; text-uppercase; color: var(--app-muted); font-weight: bold; }
-    .req-item .val { font-weight: 700; font-family: 'Segoe UI Mono', monospace; font-size: 0.9rem; }
-    
+    .req-item .val { font-weight: 700; font-size: 0.9rem; }
     .color-bronze { color: #cd7f32; }
     .color-silver { color: #8e8e8e; }
     .color-gold { color: #d4af37; }
-
     .bg-official { background-color: rgba(44, 94, 50, 0.08); border: 2px solid var(--osa-green); }
     .bg-training { background-color: var(--app-bg); border: 1px solid var(--app-border); }
-    
-    .btn-osa-outline { 
-        border: 1px solid var(--osa-green); 
-        color: var(--osa-green); 
-        font-weight: 600;
-        border-radius: 0.5rem;
-    }
+    .btn-osa-outline { border: 1px solid var(--osa-green); color: var(--osa-green); font-weight: 600; }
     .btn-osa-outline:hover { background: var(--osa-green); color: #fff; }
-
     .osa-badge-gold { background-color: #d4af37; color: #fff; }
-    .tracking-wider { letter-spacing: 0.05em; }
 </style>
 {% endblock %}
