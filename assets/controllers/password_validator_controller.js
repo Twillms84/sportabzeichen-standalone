@@ -36,15 +36,15 @@ export default class extends Controller {
         const icon = element.querySelector('i');
         
         if (isMet) {
-            element.classList.add('req-met');
-            if (icon) {
-                // Wir tauschen den leeren Kreis gegen den Check-Circle
-                icon.classList.replace('fa-circle', 'fa-check-circle');
+            if (!element.classList.contains('req-met')) {
+                element.classList.add('req-met');
+                if (icon) {
+                    icon.classList.replace('fa-circle', 'fa-check-circle');
+                }
             }
         } else {
             element.classList.remove('req-met');
             if (icon) {
-                // Zurück zum leeren Kreis
                 icon.classList.replace('fa-check-circle', 'fa-circle');
             }
         }
