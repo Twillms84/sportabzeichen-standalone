@@ -136,10 +136,34 @@ class MyResultsController extends AbstractController
             }
         }
 
+        // --- 6. SCHWIMMANACHWEIS ABFRAGEN ---
+        $swimData = $this->conn->fetchAssociative("
+            SELECT valid_until 
+            FROM sportabzeichen_swim_proofs 
+            WHERE participant_id = :pid 
+            ORDER BY valid_until DESC LIMIT 1
+        ", ['pid' => $participant['id']]);
+
+        $isSwimValid = false;
+        $swimValidUntil = null;
+
+        if ($swimData) {
+            try {
+                $date = new \DateTime($swimData['valid_until']);
+                $isSwimValid = $date >= new \DateTime('today');
+                $swimValidUntil = $date->format('d.m.Y');
+            } catch (\Exception $e) {
+                // Fallback falls Datum korrupt
+            }
+        }
+
         return $this->render('my_results/index.html.twig', [
             'year' => $currentYear,
             'age' => $age,
-            'categories' => array_filter($categories)
+            'categories' => array_filter($categories),
+            'participant_sex' => $participant['geschlecht'],
+            'swim_valid' => $isSwimValid,
+            'swim_valid_until' => $swimValidUntil
         ]);
     }
 }
