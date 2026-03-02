@@ -17,64 +17,51 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class ProfileController extends AbstractController
 {
-    #[Route('/', name: 'index')]
-    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
-    {
-        $user = $this->getUser();
-        $form = $this->createForm(UserProfileType::class, $user);
-        $form->handleRequest($request);
+    [Route('/', name: 'index')]
+public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
+{
+    $user = $this->getUser();
+    
+    // Prüfen, ob der User Prüfer ist (Rollen-Check)
+    $isExaminer = $this->isGranted('ROLE_EXAMINER');
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            
-            // Passwort Änderung Logik
-            $plainPassword = $form->get('plainPassword')->getData();
-            $currentPassword = $form->get('currentPassword')->getData();
+    // WICHTIG: Option an das Formular übergeben
+    $form = $this->createForm(UserProfileType::class, $user, [
+        'is_examiner' => $isExaminer
+    ]);
+    
+    $form->handleRequest($request);
 
-            // Wenn ein neues Passwort eingegeben wurde...
-            if ($plainPassword) {
-                // ... muss auch das alte eingegeben sein
+    if ($form->isSubmitted() && $form->isValid()) {
+        $plainPassword = $form->get('plainPassword')->getData();
+        
+        // Passwort-Logik
+        if ($plainPassword) {
+            // Falls das Feld currentPassword existiert (nur bei Prüfern der Fall laut FormType)
+            if ($form->has('currentPassword')) {
+                $currentPassword = $form->get('currentPassword')->getData();
+                
                 if (!$currentPassword) {
                     $form->get('currentPassword')->addError(new FormError('Bitte geben Sie zur Sicherheit Ihr aktuelles Passwort ein.'));
-                } 
-                // ... und das alte muss korrekt sein
-                elseif (!$passwordHasher->isPasswordValid($user, $currentPassword)) {
+                } elseif (!$passwordHasher->isPasswordValid($user, $currentPassword)) {
                     $form->get('currentPassword')->addError(new FormError('Das aktuelle Passwort ist falsch.'));
-                } 
-                // Alles okay -> Speichern
-                else {
-                    $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-                    $user->setPassword($hashedPassword);
+                } else {
+                    $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
                 }
-            }
-
-            // Nur speichern, wenn keine Fehler nachträglich hinzugefügt wurden
-            if ($form->isValid()) {
-                $em->flush();
-                $this->addFlash('success', 'Profildaten aktualisiert.');
-                return $this->redirectToRoute('profile_index');
+            } else {
+                // Für normale User ohne currentPassword-Zwang (z.B. Login via QR-Code Erst-Einrichtung)
+                $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
             }
         }
 
-        return $this->render('profile/index.html.twig', [
-            'form' => $form->createView(),
-        ]);
-    }
-
-    #[Route('/settings', name: 'settings')]
-    public function settings(Request $request, EntityManagerInterface $em): Response
-    {
-        $user = $this->getUser();
-        $form = $this->createForm(UserSettingsType::class, $user);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->getErrors(true)->count() === 0) {
             $em->flush();
-            // Hier kein Flash nötig, der visuelle Change reicht oft, aber kann man machen
-            return $this->redirectToRoute('profile_settings');
+            $this->addFlash('success', 'Profildaten aktualisiert.');
+            return $this->redirectToRoute('profile_index');
         }
-
-        return $this->render('profile/settings.html.twig', [
-            'form' => $form->createView(),
-        ]);
     }
+
+    return $this->render('profile/index.html.twig', [
+        'form' => $form->createView(),
+    ]);
 }

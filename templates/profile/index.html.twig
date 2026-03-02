@@ -6,12 +6,12 @@
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Mein Konto</h5>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Mein Konto</h5>
                 </div>
                 
-                <div class="card-body">
+                <div class="card-body p-4">
                     {{ form_start(form) }}
                         <div class="row">
                             <div class="col-md-6 mb-3">{{ form_row(form.firstname) }}</div>
@@ -20,33 +20,49 @@
                         
                         <div class="mb-3">{{ form_row(form.email) }}</div>
 
-                        {# PRÜFUNG: Nur rendern, wenn das Feld im Formular existiert #}
                         {% if form.examinerId is defined %}
-                            <div class="mb-3">{{ form_row(form.examinerId) }}</div>
+                            <div class="mb-4">
+                                {{ form_row(form.examinerId) }}
+                            </div>
                         {% endif %}
 
                         <hr class="my-4">
-                        <h6 class="text-muted mb-3"><i class="bi bi-shield-lock"></i> Sicherheit</h6>
                         
-                        <div class="alert alert-secondary small">
-                            Lassen Sie die Felder leer, wenn Sie Ihr Passwort <strong>nicht</strong> ändern möchten.
+                        <h6 class="fw-bold mb-3 text-uppercase small text-muted">Sicherheit & Passwort</h6>
+                        
+                        {# Passwort-Hinweise #}
+                        <div class="alert alert-info border-0 shadow-sm small mb-4">
+                            <div class="d-flex">
+                                <i class="fas fa-shield-alt me-3 mt-1 h5"></i>
+                                <div>
+                                    <strong>Anforderungen an dein Passwort:</strong>
+                                    <ul class="mb-0 mt-1 ps-3">
+                                        <li>Mindestens <strong>8 Zeichen</strong></li>
+                                        <li>Groß- & Kleinbuchstaben</li>
+                                        <li>Mindestens eine <strong>Zahl</strong></li>
+                                        <li>Ein <strong>Sonderzeichen</strong> (z.B. ! @ # $)</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="bg-body-tertiary p-3 rounded mb-3 border">
-                            {# PRÜFUNG: Auch hier für das aktuelle Passwort #}
+
+                        <div class="bg-light p-3 rounded border mb-4">
                             {% if form.currentPassword is defined %}
                                 <div class="mb-3">
                                     {{ form_row(form.currentPassword) }}
                                 </div>
-                                <hr class="border-secondary"> 
+                                <hr>
                             {% endif %}
                             
-                            {{ form_row(form.plainPassword) }}
+                            <div class="row">
+                                <div class="col-md-6">{{ form_row(form.plainPassword.first) }}</div>
+                                <div class="col-md-6">{{ form_row(form.plainPassword.second) }}</div>
+                            </div>
                         </div>
 
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-save"></i> Speichern
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-success px-5 shadow-sm">
+                                <i class="fas fa-save me-2"></i>Speichern
                             </button>
                         </div>
                     {{ form_end(form) }}
