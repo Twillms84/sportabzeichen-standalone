@@ -27,6 +27,7 @@ import ExamOverviewController from './controllers/exam_overview_controller.js';
 app.register('groups', GroupsController);
 app.register('admin-participant', ParticipantController); 
 app.register('exam-overview', ExamOverviewController);
+app.register('password-validator', PasswordValidatorController);
 
 // --- ANDERE JS LOGIK (Non-Stimulus oder Legacy) ---
 import './controllers/exam_results_autosave.js';
