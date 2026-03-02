@@ -39,8 +39,14 @@ security:
                 target: app_home
 
     access_control:
+        # 1. Spezifische Admin-Bereiche
         - { path: ^/admin/user, roles: ROLE_ADMIN }
         - { path: ^/admin/settings, roles: ROLE_ADMIN }
-        - { path: ^/exams, roles: [ROLE_EXAMINER] }
-        - { path: ^/admin/participants, roles: [ROLE_ADMIN, ROLE_EXAMINER] }
+        - { path: ^/admin/participants, roles: [ROLE_EXAMINER] } # ROLE_ADMIN ist durch hierarchy inklusive
+        
+        # 2. Prüfer-Bereich (Hier liegt vermutlich dein /admin/exams)
+        - { path: ^/exams, roles: ROLE_EXAMINER } 
+
+        # 3. Teilnehmer-Bereich (Hier muss 'my_results' liegen!)
+        # WICHTIG: Stelle sicher, dass die URL von 'my_results' mit /sportabzeichen beginnt
         - { path: ^/sportabzeichen, roles: ROLE_USER }
