@@ -5,7 +5,9 @@
 {% block body %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-8" 
+             data-controller="password-validator"> {# Stimulus Controller Name #}
+            
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white py-3">
                     <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Mein Konto</h5>
@@ -17,59 +19,67 @@
                             <div class="col-md-6 mb-3">{{ form_row(form.firstname) }}</div>
                             <div class="col-md-6 mb-3">{{ form_row(form.lastname) }}</div>
                         </div>
-                        
-                        <div class="mb-3">{{ form_row(form.email) }}</div>
+                        <div class="mb-2">{{ form_row(form.email) }}</div>
+                        <p class="text-muted small mb-4">
+                            <i class="fas fa-info-circle me-1"></i> Stammdaten sind schreibgeschützt.
+                        </p>
 
                         {% if form.examinerId is defined %}
-                            <div class="mb-4">
-                                {{ form_row(form.examinerId) }}
-                            </div>
+                            <div class="mb-4">{{ form_row(form.examinerId) }}</div>
                         {% endif %}
 
                         <hr class="my-4">
                         
-                        <h6 class="fw-bold mb-3 text-uppercase small text-muted">Sicherheit & Passwort</h6>
-                        
-                        <div class="alert alert-secondary border-0 shadow-sm small mb-4">
-                            <div class="d-flex">
-                                <i class="fas fa-shield-alt me-3 mt-1 h5 text-primary"></i>
-                                <div>
-                                    <strong>Passwort-Check:</strong>
-                                    <ul class="list-unstyled mb-0 mt-2" id="pw-requirements">
-                                        <li id="req-length" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Mind. 8 Zeichen</li>
-                                        <li id="req-upper" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Groß- & Kleinbuchstaben</li>
-                                        <li id="req-number" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Mind. eine Zahl</li>
-                                        <li id="req-special" class="text-muted mb-1"><i class="fas fa-circle me-2 font-xs"></i>Ein Sonderzeichen</li>
-                                        <li id="req-match" class="text-muted mt-2 pt-2 border-top"><i class="fas fa-circle me-2 font-xs"></i>Passwörter identisch</li>
-                                    </ul>
-                                </div>
-                            </div>
+                        {# Anforderungen mit data-target #}
+                        <div class="alert alert-secondary border-0 shadow-sm small mb-4 text-body">
+                            <strong>Passwort-Check:</strong>
+                            <ul class="list-unstyled mb-0 mt-2">
+                                <li data-password-validator-target="requirement" data-pw-requirement="length" class="mb-1">
+                                    <i class="fas fa-circle me-2 font-xs"></i>Mind. 8 Zeichen
+                                </li>
+                                <li data-password-validator-target="requirement" data-pw-requirement="upper" class="mb-1">
+                                    <i class="fas fa-circle me-2 font-xs"></i>Groß- & Kleinbuchstaben
+                                </li>
+                                <li data-password-validator-target="requirement" data-pw-requirement="number" class="mb-1">
+                                    <i class="fas fa-circle me-2 font-xs"></i>Mind. eine Zahl
+                                </li>
+                                <li data-password-validator-target="requirement" data-pw-requirement="special" class="mb-1">
+                                    <i class="fas fa-circle me-2 font-xs"></i>Ein Sonderzeichen
+                                </li>
+                                <li data-password-validator-target="requirement" data-pw-requirement="match" class="mt-2 pt-2 border-top">
+                                    <i class="fas fa-circle me-2 font-xs"></i>Passwörter identisch
+                                </li>
+                            </ul>
                         </div>
 
                         <div class="bg-body-tertiary p-3 rounded border mb-4 shadow-sm">
                             {% if form.currentPassword is defined %}
-                                <div class="mb-3">
-                                    {{ form_row(form.currentPassword) }}
-                                </div>
+                                <div class="mb-3">{{ form_row(form.currentPassword) }}</div>
                                 <hr class="opacity-10">
                             {% endif %}
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    {# Erstes Feld mit ID/Klasse für JS #}
-                                    {{ form_row(form.plainPassword.first, {'attr': {'class': 'pw-first'}}) }}
+                                    {{ form_row(form.plainPassword.first, {
+                                        'attr': {
+                                            'data-password-validator-target': 'first',
+                                            'data-action': 'input->password-validator#validate'
+                                        }
+                                    }) }}
                                 </div>
                                 <div class="col-md-6">
-                                    {# Zweites Feld mit ID/Klasse für JS #}
-                                    {{ form_row(form.plainPassword.second, {'attr': {'class': 'pw-second'}}) }}
+                                    {{ form_row(form.plainPassword.second, {
+                                        'attr': {
+                                            'data-password-validator-target': 'second',
+                                            'data-action': 'input->password-validator#validate'
+                                        }
+                                    }) }}
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" id="submit-btn" class="btn btn-success px-5 shadow-sm">
-                                <i class="fas fa-save me-2"></i>Speichern
-                            </button>
+                            <button type="submit" class="btn btn-success px-5">Speichern</button>
                         </div>
                     {{ form_end(form) }}
                 </div>
@@ -77,67 +87,4 @@
         </div>
     </div>
 </div>
-
-<style>
-    .font-xs { font-size: 0.5rem; vertical-align: middle; }
-    .req-met { color: #198754 !important; font-weight: bold; transition: all 0.3s ease; }
-    .req-met i { color: #198754 !important; }
-    /* Optionale Animation beim abhaken */
-    .fa-check-circle { transform: scale(1.1); }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const pwFirst = document.querySelector('.pw-first');
-    const pwSecond = document.querySelector('.pw-second');
-    
-    const reqElements = {
-        length: { el: document.getElementById('req-length'), reg: /.{8,}/ },
-        upper: { el: document.getElementById('req-upper'), reg: /(?=.*[a-z])(?=.*[A-Z])/ },
-        number: { el: document.getElementById('req-number'), reg: /[0-9]/ },
-        special: { el: document.getElementById('req-special'), reg: /[\W_]/ },
-        match: { el: document.getElementById('req-match') }
-    };
-
-    function validate() {
-        const val1 = pwFirst.value;
-        const val2 = pwSecond.value;
-
-        // 1. Anforderungen prüfen (Erstes Feld)
-        for (const key in reqElements) {
-            if (key === 'match') continue;
-
-            if (reqElements[key].reg.test(val1)) {
-                markAsMet(reqElements[key].el);
-            } else {
-                markAsUnmet(reqElements[key].el);
-            }
-        }
-
-        // 2. Match prüfen (Beide Felder)
-        // Nur prüfen, wenn überhaupt etwas eingegeben wurde
-        if (val1 !== '' && val1 === val2) {
-            markAsMet(reqElements.match.el);
-        } else {
-            markAsUnmet(reqElements.match.el);
-        }
-    }
-
-    function markAsMet(element) {
-        element.classList.add('req-met');
-        const icon = element.querySelector('i');
-        icon.classList.replace('fa-circle', 'fa-check-circle');
-        icon.classList.replace('fa-times-circle', 'fa-check-circle');
-    }
-
-    function markAsUnmet(element) {
-        element.classList.remove('req-met');
-        const icon = element.querySelector('i');
-        icon.classList.replace('fa-check-circle', 'fa-circle');
-    }
-
-    pwFirst.addEventListener('input', validate);
-    pwSecond.addEventListener('input', validate);
-});
-</script>
 {% endblock %}
