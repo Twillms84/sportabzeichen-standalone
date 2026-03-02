@@ -12,9 +12,15 @@ class SecurityController extends AbstractController
     #[Route(path: '/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
-        // Wenn schon eingeloggt -> ab ins Admin-Cockpit
-        if ($this->getUser()) {
-            return $this->redirectToRoute('admin_exam_overview');
+        // Wenn schon eingeloggt -> schlau weiterleiten
+        if ($user = $this->getUser()) {
+            // Admin zum Admin-Bereich
+            if (in_array('ROLE_ADMIN', $user->getRoles())) {
+                return $this->redirectToRoute('admin_exam_overview');
+            }
+            
+            // Teilnehmer zu seinen Ergebnissen
+            return $this->redirectToRoute('my_results');
         }
 
         $error = $authenticationUtils->getLastAuthenticationError();
