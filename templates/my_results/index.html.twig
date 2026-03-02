@@ -94,89 +94,44 @@
     {# --- KATEGORIEN LISTE MIT COLLAPSE --- #}
     {% for catName, disciplines in categories %}
         {% set collapseId = 'collapse' ~ loop.index %}
-        <section class="mb-4">
-            {# Klickbare Überschrift #}
-            <div class="category-header mb-2" 
+        <section class="mb-3">
+            {# Klickbare Überschrift: aria-expanded="false" signalisiert "geschlossen" #}
+            <div class="category-header shadow-sm mb-1" 
                  data-bs-toggle="collapse" 
                  data-bs-target="#{{ collapseId }}" 
-                 aria-expanded="true" 
+                 aria-expanded="false" 
                  aria-controls="{{ collapseId }}">
-                <h3 class="h5 fw-bold mb-0 text-uppercase tracking-wider text-muted">
-                    <i class="fas fa-layer-group me-2 text-osa-green"></i>{{ catName }}
+                
+                <h3 class="h6 fw-bold mb-0 text-uppercase tracking-wider">
+                    <i class="fas fa-layer-group me-2 text-osa-green"></i>
+                    {{ catName }} 
+                    <span class="ms-2 badge rounded-pill bg-light text-muted fw-normal" style="font-size: 0.6rem;">
+                        {{ disciplines|length }} Disziplinen
+                    </span>
                 </h3>
-                <i class="fas fa-chevron-down collapse-icon"></i>
+                
+                <div class="d-flex align-items-center">
+                    {# Kleiner Status-Indikator: Zeigt an, ob in dieser Kat. schon was erledigt ist #}
+                    {% if catStatus[catName] %}
+                        <i class="fas fa-check-circle text-success me-3"></i>
+                    {% endif %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                </div>
             </div>
             
-            {# Einklappbarer Bereich #}
-            <div class="collapse show" id="{{ collapseId }}">
-                <div class="row g-3 pb-3">
+            {# Einklappbarer Bereich: Ohne die Klasse "show", damit es zu Beginn zu ist #}
+            <div class="collapse" id="{{ collapseId }}">
+                <div class="row g-3 py-3 px-1">
                     {% for row in disciplines %}
-                        {% set has_off = row.official_result is not empty %}
-                        {% set has_tra = row.training_value is not empty %}
-                        {% set is_done = has_off and row.official_result.points > 0 %}
-                        {% set unit = unitMap[row.einheit]|default('') %}
-
+                        {# ... (Hier bleibt dein Card-Inhalt exakt gleich wie im vorigen Schritt) ... #}
                         <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 exam-card border-0">
-                                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center 
-                                    {% if is_done %}bg-osa-green{% else %}bg-secondary{% endif %}">
-                                    <span class="fw-bold text-white">{{ row.name }}</span>
-                                    {% if is_done %}<i class="fas fa-certificate text-white"></i>{% endif %}
-                                </div>
-
-                                <div class="card-body">
-                                    <div class="requirement-box mb-4">
-                                        <div class="flex-fill">
-                                            <small class="text-muted d-block x-small">Bronze</small>
-                                            <b class="color-bronze">{{ row.bronze }}</b>
-                                        </div>
-                                        <div class="flex-fill border-start border-end">
-                                            <small class="text-muted d-block x-small">Silber</small>
-                                            <b class="color-silber">{{ row.silber }}</b>
-                                        </div>
-                                        <div class="flex-fill">
-                                            <small class="text-muted d-block x-small">Gold</small>
-                                            <b class="color-gold">{{ row.gold }}</b>
-                                        </div>
-                                    </div>
-
-                                    <div class="result-box-official text-center {% if not has_off %}opacity-50 bg-light{% endif %}">
-                                        <small class="text-uppercase fw-bold text-muted d-block x-small mb-1">Prüfer-Ergebnis</small>
-                                        {% if has_off %}
-                                            <div class="h3 mb-0 fw-bold">{{ row.official_result.leistung }} <small class="h6">{{ unit }}</small></div>
-                                            <div class="mt-1">
-                                                {% if row.official_result.points > 0 %}
-                                                    {% for i in 1..row.official_result.points %}
-                                                        <i class="fas fa-medal text-warning"></i>
-                                                    {% endfor %}
-                                                    <span class="small fw-bold ms-1">{{ row.official_result.points }} Pkt.</span>
-                                                {% endif %}
-                                            </div>
-                                        {% else %}
-                                            <div class="h4 mb-0 text-muted">--</div>
-                                        {% endif %}
-                                    </div>
-
-                                    <div class="result-box-training text-center">
-                                        <small class="text-muted text-uppercase d-block x-small mb-1">Beste Trainingsleistung</small>
-                                        <span class="fw-bold {% if has_tra %}text-primary{% else %}text-muted opacity-50{% endif %}">
-                                            {% if has_tra %}
-                                                <i class="fas fa-running me-1"></i>{{ row.training_value }} {{ unit }}
-                                            {% else %}
-                                                Kein Eintrag
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="card-footer border-0 bg-transparent">
-                                    <a href="{{ path('training_detail', { disciplineId: row.discipline_id }) }}" class="btn btn-sm btn-outline-secondary w-100">
-                                        <i class="fas fa-history me-1"></i>Details
-                                    </a>
-                                </div>
-                            </div>
+                            {# Deine Cards... #}
                         </div>
                     {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endfor %}
                 </div>
             </div>
         </section>
