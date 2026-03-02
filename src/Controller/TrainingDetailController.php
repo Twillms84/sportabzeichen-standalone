@@ -25,27 +25,24 @@ class TrainingDetailController extends AbstractController
             throw $this->createAccessDeniedException('Nicht eingeloggt.');
         }
 
-        // --- FIX 1: ID SICHER ERMITTELN ---
-        // Wenn du das User-Objekt hast, nutze direkt getId(), statt erneut die DB zu fragen
-        // Falls dein User-Entity getId() hat:
+        // --- 1. ID ERMITTELN ---
+        // Direkt vom User-Objekt, das ist am sichersten.
         $userId = $user->getId(); 
-        
         $currentYear = (int)date('Y');
 
-        // --- FIX 2: PARTICIPANT CHECK ---
+        // --- 2. PARTICIPANT CHECK ---
         $participant = $this->conn->fetchAssociative("
             SELECT geburtsdatum, geschlecht 
             FROM sportabzeichen_participants 
             WHERE user_id = ?
         ", [$userId]);
 
-        // Wenn kein Profil existiert, können wir keine Details anzeigen
         if (!$participant) {
             $this->addFlash('warning', 'Bitte erstelle zuerst dein Profil unter "Meine Ergebnisse".');
             return $this->redirectToRoute('my_results');
         }
 
-        // --- FIX 3: DATUM CHECK ---
+        // --- 3. ALTER & ANFORDERUNGEN ---
         $birthDate = new \DateTime($participant['geburtsdatum'] ?? '2000-01-01');
         $age = $currentYear - (int)$birthDate->format('Y');
 
@@ -64,20 +61,18 @@ class TrainingDetailController extends AbstractController
             'year' => $currentYear
         ]);
 
-        // Hier wird die Exception geworfen, falls keine Anforderungen gefunden werden
         if (!$req) {
             throw $this->createNotFoundException('Disziplin für dein Alter/Geschlecht nicht verfügbar.');
         }
 
-        // --- SPEICHERN (unverändert, aber mit sicherer userId) ---
+        // --- 4. SPEICHERN (PostgreSQL Fix: updated_at statt created_at) ---
         if ($request->isMethod('POST')) {
             $newValue = trim((string)$request->request->get('value'));
             if ($newValue !== '') {
-                // Tipp: Ersetze Komma durch Punkt für mathematische Korrektheit
                 $newValue = str_replace(',', '.', $newValue); 
 
                 $this->conn->executeStatement("
-                    INSERT INTO sportabzeichen_training (user_id, discipline_id, year, value, created_at)
+                    INSERT INTO sportabzeichen_training (user_id, discipline_id, year, value, updated_at)
                     VALUES (:uid, :did, :yr, :val, NOW())
                 ", [
                     'uid' => $userId,
@@ -90,19 +85,19 @@ class TrainingDetailController extends AbstractController
             }
         }
 
-        // --- HISTORIE & ANALYSE ---
+        // --- 5. HISTORIE & ANALYSE (PostgreSQL Fix: updated_at) ---
+        // Wir nutzen "AS created_at", damit Twig im Template weiterhin entry.created_at nutzen kann
         $history = $this->conn->fetchAllAssociative("
-            SELECT value, created_at 
+            SELECT value, updated_at AS created_at 
             FROM sportabzeichen_training 
             WHERE user_id = :uid AND discipline_id = :did AND year = :yr
-            ORDER BY created_at DESC
+            ORDER BY updated_at DESC
         ", [
             'uid' => $userId,
             'did' => $disciplineId,
             'yr'  => $currentYear
         ]);
 
-        // Sicherstellen, dass history[0] existiert, bevor man analyzePerformance aufruft
         $latestValue = $history[0]['value'] ?? null;
         $analysis = $this->analyzePerformance($latestValue, $req);
 
@@ -112,5 +107,43 @@ class TrainingDetailController extends AbstractController
             'analysis' => $analysis,
             'year' => $currentYear
         ]);
+    }
+
+    private function analyzePerformance(?string $currentVal, array $req): array
+    {
+        if ($currentVal === null) return [];
+
+        $val = (float)str_replace(',', '.', $currentVal);
+        $gold = (float)str_replace(',', '.', (string)$req['gold']);
+        $bronze = (float)str_replace(',', '.', (string)$req['bronze']);
+
+        // Logik: Ist weniger besser (Zeit) oder mehr besser (Weite/Anzahl)?
+        $lessIsBetter = ($gold < $bronze);
+
+        $targets = [
+            'Bronze' => (float)str_replace(',', '.', (string)$req['bronze']),
+            'Silber' => (float)str_replace(',', '.', (string)$req['silber']),
+            'Gold'   => (float)str_replace(',', '.', (string)$req['gold']),
+        ];
+
+        $nextGoal = null;
+        $gap = 0;
+
+        foreach ($targets as $label => $targetVal) {
+            $reached = $lessIsBetter ? ($val <= $targetVal) : ($val >= $targetVal);
+            if (!$reached) {
+                $nextGoal = $label;
+                $gap = $lessIsBetter ? ($val - $targetVal) : ($targetVal - $val);
+                break;
+            }
+        }
+
+        return [
+            'current_float' => $val,
+            'next_goal_label' => $nextGoal,
+            'gap' => round($gap, 2),
+            'unit' => $req['einheit'],
+            'less_is_better' => $lessIsBetter
+        ];
     }
 }
