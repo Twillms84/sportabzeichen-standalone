@@ -17,6 +17,7 @@ import { Application } from '@hotwired/stimulus';
 const app = Application.start();
 
 // Controller-Klassen importieren
+import PasswordValidatorController from './controllers/password_validator_controller.js';
 import GroupsController from './controllers/groups_controller.js';
 import ParticipantController from './controllers/admin_participant_controller.js';
 import ExamOverviewController from './controllers/exam_overview_controller.js';
